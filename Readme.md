@@ -41,7 +41,7 @@ code" for our case.
 
 In linux, we can set up this way:
 
-export PATH=$PATH:/path-to-csmith/src
-export CSMITH_PATH=/path-to-csmith
-export C_INCLUDE_PATH=/path-to-csmith/runtime
+    export PATH=$PATH:/path-to-csmith/src
+    export CSMITH_PATH=/path-to-csmith
+    export C_INCLUDE_PATH=/path-to-csmith/runtime
 
