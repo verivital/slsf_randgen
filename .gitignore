@@ -1,0 +1,11 @@
+backup
+backup/*
+*.out
+*~
+*.mexa64
+randgen.c
+dhakacity.c
+randgen
+platform.info
+ctest.sh
+test.c

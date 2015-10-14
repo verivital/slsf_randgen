@@ -1,0 +1,32 @@
+Building with 'gcc'.
+Error using mex
+In file included from /home/shafiul/workspace/csmith/runtime/random_inc.h:100:0,
+                 from /home/shafiul/workspace/csmith/runtime/csmith.h:45,
+                 from /home/shafiul/workspace/test/randgen.c:10,
+                 from /home/shafiul/workspace/test/randsfun.c:6:
+/home/shafiul/workspace/csmith/runtime/safe_math.h: In function ‘safe_mul_func_float_f_f’:
+/home/shafiul/workspace/csmith/runtime/safe_math.h:982:13: error: exponent has no digits
+/home/shafiul/workspace/csmith/runtime/safe_math.h:982:20: error: invalid suffix "f" on integer constant
+/home/shafiul/workspace/csmith/runtime/safe_math.h:982:35: error: exponent has no digits
+/home/shafiul/workspace/csmith/runtime/safe_math.h:982:42: error: invalid suffix "f" on integer constant
+/home/shafiul/workspace/csmith/runtime/safe_math.h:982:57: error: exponent has no digits
+/home/shafiul/workspace/csmith/runtime/safe_math.h:982:64: error: invalid suffix "f" on integer constant
+/home/shafiul/workspace/csmith/runtime/safe_math.h:982:72: error: exponent has no digits
+/home/shafiul/workspace/csmith/runtime/safe_math.h:982:79: error: invalid suffix "f" on integer constant
+/home/shafiul/workspace/csmith/runtime/safe_math.h: In function ‘safe_div_func_float_f_f’:
+/home/shafiul/workspace/csmith/runtime/safe_math.h:994:56: error: exponent has no digits
+/home/shafiul/workspace/csmith/runtime/safe_math.h:994:63: error: invalid suffix "f" on integer constant
+/home/shafiul/workspace/csmith/runtime/safe_math.h:994:100: error: exponent has no digits
+/home/shafiul/workspace/csmith/runtime/safe_math.h:994:107: error: invalid suffix "f" on integer constant
+/home/shafiul/workspace/csmith/runtime/safe_math.h:994:115: error: exponent has no digits
+/home/shafiul/workspace/csmith/runtime/safe_math.h:994:122: error: invalid suffix "f" on integer constant
+/home/shafiul/workspace/csmith/runtime/safe_math.h: In function ‘safe_mul_func_double_f_f’:
+/home/shafiul/workspace/csmith/runtime/safe_math.h:1033:12: error: exponent has no digits
+/home/shafiul/workspace/csmith/runtime/safe_math.h:1033:33: error: exponent has no digits
+/home/shafiul/workspace/csmith/runtime/safe_math.h:1033:55: error: exponent has no digits
+/home/shafiul/workspace/csmith/runtime/safe_math.h:1033:69: error: exponent has no digits
+/home/shafiul/workspace/csmith/runtime/safe_math.h: In function ‘safe_div_func_double_f_f’:
+/home/shafiul/workspace/csmith/runtime/safe_math.h:1045:52: error: exponent has no digits
+/home/shafiul/workspace/csmith/runtime/safe_math.h:1045:95: error: exponent has no digits
+/home/shafiul/workspace/csmith/runtime/safe_math.h:1045:109: error: exponent has no digits
+
