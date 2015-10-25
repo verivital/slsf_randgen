@@ -16,9 +16,9 @@ while num_run > 0
         continue;
     end
     
-    mex CFLAGS="\$CFLAGS -std=gnu99" randsfun.c;
+    mex CFLAGS="\$CFLAGS -std=gnu99" staticsfun.c;
     
-    disp('Now Calling our S-function randsfun...');
-    randsfun(s, A);
+    disp('Now Calling our Model...');
+    sim staticmodel
 end
 
