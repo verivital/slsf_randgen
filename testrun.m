@@ -17,7 +17,7 @@ while num_run > 0
         disp('Csmith was not called.');
     end
     
-    eval('mex CFLAGS="\$CFLAGS -std=gnu99 -w -O2" staticsfun.c;');
+    eval('mex CFLAGS="\$CFLAGS -std=gnu99 -w" COPTIMFLAGS="-O2" staticsfun.c;');
     
     disp('Now Calling our Model...');
     sim staticmodel
