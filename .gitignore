@@ -14,3 +14,4 @@ ghum.sh
 *.autosave
 checksum.txt
 errors/*
+staticsfun.c
