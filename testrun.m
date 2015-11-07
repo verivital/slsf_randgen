@@ -1,4 +1,4 @@
-num_run = 1;    % Number of times the loop will run
+num_run = 10000;    % Number of times the loop will run
 gen_random_c = true; % Will Call csmith if set to `true`
 
 gcc_opt_flags = {'-O0', '-O1', '-O2', '-O3', '-Os'};
