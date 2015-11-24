@@ -1,4 +1,9 @@
 /*
+    * This code is placed at the bottom of "staticsfun.c" file.
+    * This file contains a simple s-function, copied from Matlab's user guide.
+*/
+
+/*
  * File : timestwo.c
  * Abstract:
  *       An example C-file S-function for multiplying an input by 2,
@@ -29,7 +34,7 @@
  * Build checking *
  *================*/
 
-static bool is_main_called;     /* To ensure main() is called just once */
+static bool is_main_called = false;     /* To ensure main() is called just once */
 
 
 /* Function: mdlInitializeSizes ===============================================
@@ -104,7 +109,7 @@ static void mdlOutputs(SimStruct *S, int_T tid)
     
     if(!is_main_called){
         main();
-        is_main_called = false;
+        is_main_called = true;
     }
 }
 

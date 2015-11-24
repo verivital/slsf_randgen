@@ -15,3 +15,6 @@ ghum.sh
 checksum.txt
 errors/*
 staticsfun.c
+*.sublime-project
+*.sublime-workspace
+.fuse_hidden*

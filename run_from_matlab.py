@@ -1,15 +1,29 @@
 #! /usr/bin/env python3
+"""
+    Do not execute this script directly. This script will be exceuted by Matlab.
+
+    When called (executed) by Matlab, this script will:
+
+    1. Call csmith to generated a C program
+    2. Build the generated program using GCC and then run it to determine if it terminates.
+    3. Based on terminaion/non-termination of the program, a value is returned to Matlab.
+    4. If the program terminates (in step 2), we concate the files 'randgen.c' and 'ee_post.c'
+        into one single file 'staticsfun.c'
+"""
 
 import subprocess
 import sys
 import os
 import signal
 
-TIMEOUT = 10
+TIMEOUT = 10  # The generated C program is allowed this much seconds to terminate.
 
 p_randgen = None
 
 def copy_files():
+    """
+        Used to concat multiple files into one single file
+    """
     filenames = ['randgen.c', 'ee_post.c']
     with open('staticsfun.c', 'w') as outfile:
         for fname in filenames:
