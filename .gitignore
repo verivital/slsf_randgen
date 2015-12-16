@@ -18,3 +18,8 @@ staticsfun.c
 *.sublime-project
 *.sublime-workspace
 .fuse_hidden*
+__pycache__/
+c_with_main
+c_with_main.c
+current.c
+
