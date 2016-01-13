@@ -81,46 +81,62 @@ classdef simple_generator < handle
             while num_inp_ports > 0 || num_oup_ports > 0
     
                 fprintf('Num Input port: %d; num output port: %d\n', num_inp_ports, num_oup_ports);
+                
+                r_i_blk = 0;
+                r_i_port = 0;
 
                 if num_inp_ports > 0
                    % choose an input port
-                   rand_num = randi([1, num_inp_blocks], 1, 1);
-                   r_i_blk = inp_blocks{rand_num(1)};
-
-                   % get a port of this input block
-                   t_all_ports = obj.slb.inp_ports{r_i_blk};
-
-                   r_i_port = 0;
-
-                   for t_i = t_all_ports
-                       r_i_port = r_i_port + 1;
-
-                       if t_i{1} == 0
-                           break;
-                       end
-                   end
+                   [r_i_blk, r_i_port] = obj.choose_bp(num_inp_blocks, inp_blocks, obj.slb.inp_ports);
+                   
+                   
+%                    rand_num = randi([1, num_inp_blocks], 1, 1);
+%                    r_i_blk = inp_blocks{rand_num(1)};
+% 
+%                    % get a port of this input block
+%                    t_all_ports = obj.slb.inp_ports{r_i_blk};
+% 
+%                    r_i_port = 0;
+% 
+%                    for t_i = t_all_ports
+%                        r_i_port = r_i_port + 1;
+% 
+%                        if t_i{1} == 0
+%                            break;
+%                        end
+%                    end
 
                    fprintf('Input: Blk %d Port %d chosen.\n', r_i_blk, r_i_port);
                 end
 
                 if num_oup_ports > 0
                     % Choose output port
+                    
+                    % Choose block not already taken for input.
+                    if r_i_blk > 0
+                        [op_blk_len, op_blk] = obj.del_from_cell(r_i_blk, num_oup_blocks, oup_blocks);
+                    else
+                        op_blk_len = num_oup_blocks;
+                        op_blk = oup_blocks;
+                    end
+                    
+                    [r_o_blk, r_o_port] = obj.choose_bp(op_blk_len, op_blk, obj.slb.oup_ports);
 
-                   rand_num = randi([1, num_oup_blocks], 1, 1);
-                   r_o_blk = oup_blocks{rand_num(1)};
-
-                   % get a port of this output block
-                   t_all_ports = obj.slb.oup_ports{r_o_blk};
-
-                   r_o_port = 0;
-
-                   for t_i = t_all_ports
-                       r_o_port = r_o_port + 1;
-
-                       if t_i{1} == 0
-                           break;
-                       end
-                   end
+%                    rand_num = randi([1, num_oup_blocks], 1, 1);
+%                    r_o_blk = oup_blocks{rand_num(1)};
+% 
+%                    % get a port of this output block
+%                    t_all_ports = obj.slb.oup_ports{r_o_blk};
+% 
+%                    r_o_port = 0;
+% 
+%                    for t_i = t_all_ports
+%                        r_o_port = r_o_port + 1;
+% 
+%                        if t_i{1} == 0
+%                            break;
+%                        end
+%                    end
 
                    fprintf('Output: Blk %d Port %d chosen.\n', r_o_blk, r_o_port);
                 end
@@ -130,12 +146,63 @@ classdef simple_generator < handle
                 t_o = strcat(obj.slb.all{r_o_blk}, '/', int2str(r_o_port));
                 disp(t_i);
 
-                add_line(obj.sys,t_i, t_o,'autorouting','on')
+                add_line(obj.sys, t_o, t_i, 'autorouting','on')
 
                 break;  % AFter one iteration
 
 
             end
+           
+        end
+        
+        
+        
+        function [ret_len, ret_cell] = del_from_cell(obj, sub, num_target, target)
+            % If `sub` is one of the elements of the cell `target`, then
+            % it is removed.
+            
+            is_found = false;
+            
+            for inx = 1 : num_target
+                if target{inx} == sub
+                    is_found = true;
+                    target{inx} = [];
+                    break;
+                end
+            end
+            
+            if is_found
+                ret_cell = target(~cellfun(@isempty, target));    % Removes empty cell
+                ret_len = num_target - 1;
+            else
+                ret_cell = target;
+                ret_len = num_target;
+            end
+            
+        end
+        
+        
+        
+        
+        function [r_blk, r_port] = choose_bp(obj, num_blocks, blocks, ports)
+            % Choose a block and pointer
+            
+            % choose an input port
+           rand_num = randi([1, num_blocks], 1, 1);
+           r_blk = blocks{rand_num(1)};
+
+           % get a port of this input block
+           t_all_ports = ports{r_blk};
+
+           r_port = 0;
+
+           for t_i = t_all_ports
+               r_port = r_port + 1;
+
+               if t_i{1} == 0
+                   break;
+               end
+           end
             
         end
         
