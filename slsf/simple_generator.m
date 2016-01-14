@@ -19,8 +19,10 @@ classdef simple_generator < handle
     end
     
     methods
-        function obj = simple_generator()
+        function obj = simple_generator(num_blocks, model_name)
             % Constructor for simple_generator
+            obj.NUM_BLOCKS = num_blocks;
+            obj.sys = model_name;
         end
         
         
@@ -34,6 +36,7 @@ classdef simple_generator < handle
             obj.draw_blocks();
             obj.connect_blocks();
             
+            fprintf('--Done Connecting!--\n');
             sim(obj.sys);    
             
             fprintf('-- END --\n');
@@ -43,7 +46,6 @@ classdef simple_generator < handle
         
         function obj = init(obj)
             % Perform Initialization
-            rng(0,'twister');           % Random Number Generator Init
             
             obj.a = 1;
                         
@@ -65,7 +67,19 @@ classdef simple_generator < handle
         
         
         function obj = get_candidate_blocks(obj)
-            obj.candi_blocks = {'simulink/Sources/Constant', 'simulink/Sinks/Scope', 'simulink/Sources/Constant', 'simulink/Sinks/Display', 'simulink/Math Operations/Add'};
+            all = obj.get_all_simulink_blocks();  
+            obj.candi_blocks = cell(1, obj.NUM_BLOCKS);
+            rand_vals = randi([1, numel(all)], 1, obj.NUM_BLOCKS);
+            
+            for index = 1:obj.NUM_BLOCKS
+                obj.candi_blocks{index} = all{rand_vals(index)};
+            end
+        end
+        
+        
+        
+        function ret = get_all_simulink_blocks(obj)
+            ret = {'simulink/Sources/Constant', 'simulink/Sinks/Scope', 'simulink/Sources/Constant', 'simulink/Sinks/Display', 'simulink/Math Operations/Add'};
         end
         
         
@@ -103,6 +117,7 @@ classdef simple_generator < handle
 
                 if num_inp_ports > 0
                    % choose an input port
+                   fprintf('(d) num_inp_blk: %d\n', num_inp_blocks);
                    [r_i_blk, r_i_port] = obj.choose_bp(num_inp_blocks, inp_blocks, obj.slb.inp_ports);
                    
                    new_inp_used = true;
@@ -131,6 +146,8 @@ classdef simple_generator < handle
                     
                     % Choose block not already taken for input.
                     
+                    fprintf('(d) num_oup_blk: %d\n', num_oup_blocks);  
+                    
 %                     if r_i_blk > 0
 %                         [op_blk_len, op_blk] = obj.del_from_cell(r_i_blk, num_oup_blocks, oup_blocks);
 %                     else
@@ -139,9 +156,23 @@ classdef simple_generator < handle
 %                     end
 %                     
 %                     [r_o_blk, r_o_port] = obj.choose_bp(op_blk_len, op_blk, obj.slb.oup_ports);
-                    
-                    [r_o_blk, r_o_port] = obj.choose_bp_without_chosen(num_oup_blocks, oup_blocks, obj.slb.oup_ports, r_i_blk);
-                    
+                    try
+                        [r_o_blk, r_o_port] = obj.choose_bp_without_chosen(num_oup_blocks, oup_blocks, obj.slb.oup_ports, r_i_blk);
+                    catch e
+                        % Possible clause: only one output block available
+                        % and it's same as the chosen input block for this
+                        % iteration.
+                        
+                        if num_inp_blocks > 1
+                            fprintf('SKIPPING THIS ITERATION...');
+                            continue;
+                        else
+                            % Can not use this output block. pick another
+                            % in later code
+                            
+                        end
+                    end
+                        
                     new_oup_used = true;
 
 %                    rand_num = randi([1, num_oup_blocks], 1, 1);
@@ -180,7 +211,13 @@ classdef simple_generator < handle
                 t_o = strcat(obj.slb.all{r_o_blk}, '/', int2str(r_o_port));
 %                 disp(t_i);
 
-                add_line(obj.sys, t_o, t_i, 'autorouting','on')
+                try
+                    add_line(obj.sys, t_o, t_i, 'autorouting','on')
+                catch e
+                    fprintf('Error: %s', e.identifier);
+                    fprintf('[!] RETURNGING FROM BLOCK CONNECTION...');
+                    break;
+                end
                 
                 % Mark used blocks/ports
                 
@@ -196,9 +233,9 @@ classdef simple_generator < handle
                 end
                 
                 if new_oup_used
-                    obj.slb.inp_ports{r_o_blk}{r_o_port} = 1;
+                    obj.slb.oup_ports{r_o_blk}{r_o_port} = 1;
                     
-                    if obj.is_all_ports_used(obj.slb.inp_ports{r_o_blk})
+                    if obj.is_all_ports_used(obj.slb.oup_ports{r_o_blk})
                         fprintf('ALL oup PORTS OF BLOCK IS USED: %d\n', r_o_blk);
                         [num_oup_blocks, oup_blocks] = obj.del_from_cell(r_o_blk, num_oup_blocks, oup_blocks);
                     end
