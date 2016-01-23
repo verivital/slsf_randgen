@@ -7,22 +7,25 @@ classdef simple_generator < handle
     end
     
     properties
-        NUM_BLOCKS = 5;
+        NUM_BLOCKS;                 % These many blocks will be placed in chart
         
         slb;                        % Object of class slblocks
         
-        sys = 'sampleModel';
+        sys;                        % Name of the chart
         
-        candi_blocks;               % Candidate Blocks
+        candi_blocks;               % Will choose from these blocks
         
         a = 2;
+        
+        simulate_models;
     end
     
     methods
-        function obj = simple_generator(num_blocks, model_name)
+        function obj = simple_generator(num_blocks, model_name, simulate_models)
             % Constructor for simple_generator
             obj.NUM_BLOCKS = num_blocks;
             obj.sys = model_name;
+            obj.simulate_models = simulate_models;
         end
         
         
@@ -37,7 +40,11 @@ classdef simple_generator < handle
             obj.connect_blocks();
             
             fprintf('--Done Connecting!--\n');
-            sim(obj.sys);    
+            
+            if obj.simulate_models
+                fprintf('[~] Simulating...');
+                sim(obj.sys);  
+            end
             
             fprintf('-- END --\n');
         end
@@ -121,24 +128,7 @@ classdef simple_generator < handle
                    [r_i_blk, r_i_port] = obj.choose_bp(num_inp_blocks, inp_blocks, obj.slb.inp_ports);
                    
                    new_inp_used = true;
-                   
-                   
-%                    rand_num = randi([1, num_inp_blocks], 1, 1);
-%                    r_i_blk = inp_blocks{rand_num(1)};
-% 
-%                    % get a port of this input block
-%                    t_all_ports = obj.slb.inp_ports{r_i_blk};
-% 
-%                    r_i_port = 0;
-% 
-%                    for t_i = t_all_ports
-%                        r_i_port = r_i_port + 1;
-% 
-%                        if t_i{1} == 0
-%                            break;
-%                        end
-%                    end
-
+                
                 end
 
                 if num_oup_ports > 0
@@ -148,14 +138,7 @@ classdef simple_generator < handle
                     
                     fprintf('(d) num_oup_blk: %d\n', num_oup_blocks);  
                     
-%                     if r_i_blk > 0
-%                         [op_blk_len, op_blk] = obj.del_from_cell(r_i_blk, num_oup_blocks, oup_blocks);
-%                     else
-%                         op_blk_len = num_oup_blocks;
-%                         op_blk = oup_blocks;
-%                     end
-%                     
-%                     [r_o_blk, r_o_port] = obj.choose_bp(op_blk_len, op_blk, obj.slb.oup_ports);
+
                     try
                         [r_o_blk, r_o_port] = obj.choose_bp_without_chosen(num_oup_blocks, oup_blocks, obj.slb.oup_ports, r_i_blk);
                     catch e
@@ -175,21 +158,6 @@ classdef simple_generator < handle
                         
                     new_oup_used = true;
 
-%                    rand_num = randi([1, num_oup_blocks], 1, 1);
-%                    r_o_blk = oup_blocks{rand_num(1)};
-% 
-%                    % get a port of this output block
-%                    t_all_ports = obj.slb.oup_ports{r_o_blk};
-% 
-%                    r_o_port = 0;
-% 
-%                    for t_i = t_all_ports
-%                        r_o_port = r_o_port + 1;
-% 
-%                        if t_i{1} == 0
-%                            break;
-%                        end
-%                    end
 
                 end
                 
