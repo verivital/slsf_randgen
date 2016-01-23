@@ -22,7 +22,7 @@ classdef simple_generator < handle
     
     methods
         function obj = simple_generator(num_blocks, model_name, simulate_models)
-            % Constructor for simple_generator
+            % Constructor %
             obj.NUM_BLOCKS = num_blocks;
             obj.sys = model_name;
             obj.simulate_models = simulate_models;
@@ -31,6 +31,7 @@ classdef simple_generator < handle
         
         
         function obj = go(obj)
+            % Call this function to start
             obj.p('--- Starting ---');
             
             obj.init();
@@ -74,6 +75,8 @@ classdef simple_generator < handle
         
         
         function obj = get_candidate_blocks(obj)
+            % Randomly choose which blocks will be used to populate the
+            % chart
             all = obj.get_all_simulink_blocks();  
             obj.candi_blocks = cell(1, obj.NUM_BLOCKS);
             rand_vals = randi([1, numel(all)], 1, obj.NUM_BLOCKS);
@@ -343,6 +346,11 @@ classdef simple_generator < handle
                 this_blk_name = strcat('/', this_blk_name);
 
                 h = add_block(block_name{1}, [obj.sys, this_blk_name], 'Position', pos);
+                
+                % Save the handle of this new block. Accessing a block by
+                % its handle is faster than accessing by its name
+                
+                obj.slb.handles{cur_blk} = h;
                 
 
                 % Get its inputs and outputs

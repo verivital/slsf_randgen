@@ -6,6 +6,7 @@ classdef slblocks < handle
         NUM_BLOCKS;
         
         all;
+        handles;
        
         inp = struct('len', 0);
         inp_ports;
@@ -24,6 +25,8 @@ classdef slblocks < handle
             obj.NUM_BLOCKS = num_blocks;
             
             obj.all = cell(1, num_blocks);
+            obj.handles = cell(1, num_blocks);
+
             
             obj.inp_ports = cell(1, num_blocks);
             obj.oup_ports = cell(1, num_blocks);
