@@ -5,6 +5,6 @@ NUM_TESTS = 1;
 
 for ind = 1:NUM_TESTS
     chart_name = strcat('sampleModel', int2str(ind));
-    sg = simple_generator(10, chart_name, true);
+    sg = simple_generator(2, chart_name, true);
     sg.go();
 end

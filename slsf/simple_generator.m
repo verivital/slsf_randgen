@@ -18,6 +18,8 @@ classdef simple_generator < handle
         a = 2;
         
         simulate_models;
+        
+        blkcfg;
     end
     
     methods
@@ -43,7 +45,7 @@ classdef simple_generator < handle
             fprintf('--Done Connecting!--\n');
             
             if obj.simulate_models
-                fprintf('[~] Simulating...');
+                fprintf('[~] Simulating...\n');
                 sim(obj.sys);  
             end
             
@@ -58,6 +60,7 @@ classdef simple_generator < handle
             obj.a = 1;
                         
             obj.slb = slblocks(obj.NUM_BLOCKS);
+            obj.blkcfg = blockconfigure();
             
             new_system(obj.sys);
             open_system(obj.sys);
@@ -357,6 +360,12 @@ classdef simple_generator < handle
                 ports = get_param(h, 'Ports');
 
                 obj.slb.new_block_added(cur_blk, ports);
+                
+                % Configure block parameters
+                
+                obj.config_block(h, block_name{1});
+                
+                %%%%%%% Done configuring block %%%%%%%%%
 
                 % Update x
                 x = h_len;
@@ -372,6 +381,31 @@ classdef simple_generator < handle
             end
             
         end
+        
+        
+        function obj=config_block(obj, h, blk_type)
+            found = obj.blkcfg.get_block_configs(blk_type);
+            
+%             bp = get_param(h, 'Inputs');
+%             disp(bp);
+            
+            if isempty(found)
+                disp(['[!] Did not find config db for block ', blk_type]);
+                return;
+            end
+            
+            disp(['[i] Will config block type ', blk_type]);
+            
+            for i=found
+                disp(['Configuring ', i{1}.p()]);
+                set_param(h, i{1}.p(), i{1}.get());
+            end
+           
+            
+        end
+        
+        
+        
         
         
     end
