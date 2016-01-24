@@ -4,6 +4,7 @@ classdef simple_generator < handle
     
     properties(Constant = true)
        DEBUG = true;
+       LIST_BLOCK_PARAMS = true;    % Will list all parameters of a block
     end
     
     properties
@@ -14,9 +15,7 @@ classdef simple_generator < handle
         sys;                        % Name of the chart
         
         candi_blocks;               % Will choose from these blocks
-        
-        a = 2;
-        
+                
         simulate_models;
         
         blkcfg;
@@ -56,9 +55,7 @@ classdef simple_generator < handle
         
         function obj = init(obj)
             % Perform Initialization
-            
-            obj.a = 1;
-                        
+                                    
             obj.slb = slblocks(obj.NUM_BLOCKS);
             obj.blkcfg = blockconfigure();
             
@@ -324,7 +321,7 @@ classdef simple_generator < handle
             hz_space = 100;
             vt_space = 150;
 
-            blk_in_line = 3;
+            blk_in_line = 5;
 
             cur_blk = 0;
 
@@ -386,8 +383,10 @@ classdef simple_generator < handle
         function obj=config_block(obj, h, blk_type)
             found = obj.blkcfg.get_block_configs(blk_type);
             
-%             bp = get_param(h, 'Inputs');
-%             disp(bp);
+            if obj.LIST_BLOCK_PARAMS
+                bp = get_param(h, 'DialogParameters');
+                disp(bp);
+            end
             
             if isempty(found)
                 disp(['[!] Did not find config db for block ', blk_type]);

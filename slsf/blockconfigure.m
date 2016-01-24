@@ -39,8 +39,14 @@ classdef blockconfigure < handle
             t = {
                 bcprops('Inputs', char(['+' '-']), 2)
             };
-           
             d.(util.mvn('simulink/Math Operations/Add')) = t;
+            
+            % simulink/Sources/Constant
+            
+            t = {
+                bcprops('Value', char('0':'9'), 4)
+            };
+            d.(util.mvn('simulink/Sources/Constant')) = t;
             
             % Save All
             
