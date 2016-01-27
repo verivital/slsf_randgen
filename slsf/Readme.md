@@ -6,19 +6,22 @@ Run sgtest.m file
 ## Issues
 General Issues
 
- - Algebraic Loop
+ - Algebraic Loop: not handled yet
 
 ### Block connecting
 Connect ports randomly till all ports are connected
 
- - Throwing away chart if number of output ports > number of input ports
- - Block connection bug: Already used input port chosen (no more inputs?)
-then do not use this output port, mark as used maybe
+ - If number of output ports > number of input ports, then we can not 
+connect any more. Stopping there. Shall we choose blocks will more input 
+ports?
+ - Block connection bug: Already used input port chosen (previous issue)
 
 ### Block Parameters
-Randomly choose parameter values
+Randomly choose parameter values. Using a database of chosen blocks,
+can not infer parameter type yet.
 
- - Block parameters may result in invalid chart
+ - Randomly chosen block parameters values may result in invalid chart
+ - Manual process, only 2/3 parameters (blocks) are chosen now.
 
 ### Simulation Warnings
 These warnings were produced while simulating the chart
