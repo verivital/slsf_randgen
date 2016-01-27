@@ -43,10 +43,7 @@ classdef simple_generator < handle
             
             fprintf('--Done Connecting!--\n');
             
-            if obj.simulate_models
-                fprintf('[~] Simulating...\n');
-                sim(obj.sys);  
-            end
+            obj.simulate();
             
             fprintf('-- END --\n');
         end
@@ -61,6 +58,27 @@ classdef simple_generator < handle
             
             new_system(obj.sys);
             open_system(obj.sys);
+        end
+        
+        
+        
+        function obj = simulate(obj)
+            
+            if ~ obj.simulate_models
+                return;
+            end
+            
+            fprintf('[~] Simulating...\n');
+            
+            try
+                sim(obj.sys);  
+            catch e
+                disp(['[E] Error in simulation: ', e.identifier]);
+            end
+            
+%             al = Simulink.BlockDiagram.getAlgebraicLoops(obj.sys);
+            
+%             disp(al);
         end
         
         
@@ -89,7 +107,8 @@ classdef simple_generator < handle
         
         
         function ret = get_all_simulink_blocks(obj)
-            ret = {'simulink/Sources/Constant', 'simulink/Sinks/Scope', 'simulink/Sources/Constant', 'simulink/Sinks/Display', 'simulink/Math Operations/Add'};
+%             ret = {'simulink/Sources/Constant', 'simulink/Sinks/Scope', 'simulink/Sources/Constant', 'simulink/Sinks/Display', 'simulink/Math Operations/Add'};
+            ret = blockchooser().get();
         end
         
         
@@ -150,7 +169,7 @@ classdef simple_generator < handle
                         % iteration.
                         
                         if num_inp_blocks > 1
-                            fprintf('SKIPPING THIS ITERATION...');
+                            fprintf('SKIPPING THIS ITERATION...\n');
                             continue;
                         else
                             % Can not use this output block. pick another
@@ -185,8 +204,8 @@ classdef simple_generator < handle
                 try
                     add_line(obj.sys, t_o, t_i, 'autorouting','on')
                 catch e
-                    fprintf('Error: %s', e.identifier);
-                    fprintf('[!] RETURNGING FROM BLOCK CONNECTION...');
+                    fprintf('Error while connecting: %s\n', e.identifier);
+                    fprintf('[!] Giving up... RETURNGING FROM BLOCK CONNECTION...\n');
                     break;
                 end
                 
@@ -321,7 +340,7 @@ classdef simple_generator < handle
             hz_space = 100;
             vt_space = 150;
 
-            blk_in_line = 5;
+            blk_in_line = 3;
 
             cur_blk = 0;
 
@@ -381,6 +400,9 @@ classdef simple_generator < handle
         
         
         function obj=config_block(obj, h, blk_type)
+            
+            disp(['(b) Attempting to config block ', blk_type]);
+            
             found = obj.blkcfg.get_block_configs(blk_type);
             
             if obj.LIST_BLOCK_PARAMS

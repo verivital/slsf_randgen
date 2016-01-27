@@ -34,19 +34,26 @@ classdef blockconfigure < handle
         
         function obj = populate_data(obj)
             d = struct();
-            
             %   simulink/Math Operations/Add
             t = {
                 bcprops('Inputs', char(['+' '-']), 2)
             };
             d.(util.mvn('simulink/Math Operations/Add')) = t;
             
-            % simulink/Sources/Constant
             
+            % simulink/Sources/Constant
             t = {
                 bcprops('Value', char('0':'9'), 4)
             };
             d.(util.mvn('simulink/Sources/Constant')) = t;
+            
+            
+            % simulink/Sources/Step
+            t = {
+                bcprops('After', char('1':'9'), 2)
+            };
+            d.(util.mvn('simulink/Sources/Step')) = t;
+            
             
             % Save All
             
