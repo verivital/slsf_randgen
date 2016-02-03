@@ -23,6 +23,11 @@ can not infer parameter type yet.
  - Randomly chosen block parameters values may result in invalid chart
  - Manual process, only 2/3 parameters (blocks) are chosen now.
 
+
+### Simulation Errors
+
+ - Simulink:Engine:InvCompDiscSampleTime
+
 ### Simulation Warnings
 These warnings were produced while simulating the chart
 

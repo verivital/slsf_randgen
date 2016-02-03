@@ -1,5 +1,5 @@
 classdef simple_generator < handle
-    %UNTITLED Summary of this class goes here
+    %Main Random Generator Class
     %   Detailed explanation goes here
     
     properties(Constant = true)
@@ -19,6 +19,28 @@ classdef simple_generator < handle
         simulate_models;
         
         blkcfg;
+        
+        simul;                      % Instance of simulator class
+        max_simul_attempt = 5;
+        
+        
+        % Drawing related
+        d_x;
+        d_y;
+        c_block;
+        
+        width = 60;
+        height = 60;
+        
+        pos_x = 30;
+        pos_y = 30;
+
+        hz_space = 100;
+        vt_space = 150;
+
+        blk_in_line = 5;
+        
+        
     end
     
     methods
@@ -45,7 +67,7 @@ classdef simple_generator < handle
             
             obj.simulate();
             
-            fprintf('-- END --\n');
+            fprintf('------------------- END -------------------\n');
         end
         
         
@@ -55,6 +77,7 @@ classdef simple_generator < handle
                                     
             obj.slb = slblocks(obj.NUM_BLOCKS);
             obj.blkcfg = blockconfigure();
+            obj.simul = simulator(obj, obj.max_simul_attempt);
             
             new_system(obj.sys);
             open_system(obj.sys);
@@ -70,15 +93,7 @@ classdef simple_generator < handle
             
             fprintf('[~] Simulating...\n');
             
-            try
-                sim(obj.sys);  
-            catch e
-                disp(['[E] Error in simulation: ', e.identifier]);
-            end
-            
-%             al = Simulink.BlockDiagram.getAlgebraicLoops(obj.sys);
-            
-%             disp(al);
+            obj.simul.simulate();
         end
         
         
@@ -326,26 +341,21 @@ classdef simple_generator < handle
         
         
         
+        function ret=create_blk_name(obj, num)
+            ret = strcat('bl', num2str(num));
+        end
+        
+        
+        
         function obj = draw_blocks(obj)
             % Draw blocks in the screen
             
-            obj.p('DRAWING BLOCKS...');
+            disp('DRAWING BLOCKS...');
             
-            pos_x = 30;
-            pos_y = 30;
-
-            width = 60;
-            height = 60;
-
-            hz_space = 100;
-            vt_space = 150;
-
-            blk_in_line = 3;
-
             cur_blk = 0;
 
-            x = pos_x;
-            y = pos_y;
+            x = obj.pos_x;
+            y = obj.pos_y;
             
             disp('Candidate Blocks:');
             disp(obj.candi_blocks);
@@ -353,11 +363,11 @@ classdef simple_generator < handle
             for block_name = obj.candi_blocks
                 cur_blk = cur_blk + 1;          % Create block name
                 
-                h_len = x + width;
+                h_len = x + obj.width;
 
-                pos = [x, y, h_len, y + height];
+                pos = [x, y, h_len, y + obj.height];
 
-                this_blk_name = strcat('bl', num2str(cur_blk));
+                this_blk_name = obj.create_blk_name(cur_blk);
 
                 % Add this block name to list of all added blocks
                 obj.slb.all{cur_blk} = this_blk_name;
@@ -379,7 +389,7 @@ classdef simple_generator < handle
                 
                 % Configure block parameters
                 
-                obj.config_block(h, block_name{1});
+                obj.config_block(h, block_name{1}, this_blk_name);
                 
                 %%%%%%% Done configuring block %%%%%%%%%
 
@@ -387,21 +397,56 @@ classdef simple_generator < handle
                 x = h_len;
 
                 % Update y
-                if rem(cur_blk, blk_in_line) == 0
-                    y = y + vt_space;
-                    x = pos_x;
+                if rem(cur_blk, obj.blk_in_line) == 0
+                    y = y + obj.vt_space;
+                    x = obj.pos_x;
                 else
-                    x = x + hz_space;
+                    x = x + obj.hz_space;
                 end
 
+            end
+            
+            % Store drawing properties
+            obj.d_x = x;
+            obj.d_y = y;
+            obj.c_block = cur_blk;
+            
+        end
+        
+        
+        
+        
+        function [this_blk_name, h] = add_new_block(obj, block_type)
+            
+            obj.c_block = obj.c_block + 1;
+            
+            h_len = obj.d_x + obj.width;
+
+            pos = [obj.d_x, obj.d_y, h_len, obj.d_y + obj.height];
+            
+            this_blk_name = obj.create_blk_name(obj.c_block);
+            
+            h = add_block(block_type, [obj.sys '/' this_blk_name], 'Position', pos);
+            
+            % Update x
+            obj.d_x = h_len;
+
+            % Update y
+            if rem(obj.c_block, obj.blk_in_line) == 0
+                obj.d_y = obj.d_y + obj.vt_space;
+                obj.d_x = obj.pos_x;
+            else
+                obj.d_x = obj.d_x + obj.hz_space;
             end
             
         end
         
         
-        function obj=config_block(obj, h, blk_type)
+        
+        
+        function obj=config_block(obj, h, blk_type, blk_name)
             
-            disp(['(b) Attempting to config block ', blk_type]);
+            disp(['(' blk_name ') Attempting to config block ', blk_type]);
             
             found = obj.blkcfg.get_block_configs(blk_type);
             

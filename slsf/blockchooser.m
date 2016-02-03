@@ -5,7 +5,7 @@ classdef blockchooser < handle
     
     properties
         categories = {
-            struct('name', 'Discrete', 'num', 5)
+            struct('name', 'Discrete', 'num', 10)
             struct('name', 'Sinks', 'num', 5)
             struct('name', 'Sources', 'num', 5)
         };
@@ -21,6 +21,7 @@ classdef blockchooser < handle
             
             % Blocklist some blocks
             obj.blocklist.(util.mvn('simulink/Sources/From File')) = 1;
+            obj.blocklist.(util.mvn('simulink/Sources/FromWorkspace')) = 1;
         end
         
         

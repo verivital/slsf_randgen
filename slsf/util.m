@@ -12,6 +12,17 @@ classdef util < handle
             ret = matlab.lang.makeValidName(s);
         end
         
+        function ret = starts_with(s1, s2)
+            % Returs true if s2 starts with s1
+            res = strfind(s1, s2);
+            
+            if res == 1
+                ret = true;
+            else
+                ret = false;
+            end
+        end
+        
     end
     
 end
