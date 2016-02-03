@@ -4,7 +4,8 @@ classdef simple_generator < handle
     
     properties(Constant = true)
        DEBUG = true;
-       LIST_BLOCK_PARAMS = true;    % Will list all parameters of a block
+       LIST_BLOCK_PARAMS = true;    % Will list all dialog parameters of a block which is chosen for current chart
+       LIST_CONN = false;            % If true will print info when connecting blocks
     end
     
     properties
@@ -21,7 +22,7 @@ classdef simple_generator < handle
         blkcfg;
         
         simul;                      % Instance of simulator class
-        max_simul_attempt = 5;
+        max_simul_attempt = 1;
         
         
         % Drawing related
@@ -128,6 +129,15 @@ classdef simple_generator < handle
         
         
         
+        function c_p(obj, str, condition)
+            % Will print str if conditionis true
+            if condition && obj.DEBUG
+                disp(str);
+            end
+        end
+        
+        
+        
         function obj = connect_blocks(obj)
             % CONNECT BLOCKS
             
@@ -161,7 +171,9 @@ classdef simple_generator < handle
 
                 if num_inp_ports > 0
                    % choose an input port
-                   fprintf('(d) num_inp_blk: %d\n', num_inp_blocks);
+                   if obj.LIST_CONN
+                    fprintf('(d) num_inp_blk: %d\n', num_inp_blocks);
+                   end
                    [r_i_blk, r_i_port] = obj.choose_bp(num_inp_blocks, inp_blocks, obj.slb.inp_ports);
                    
                    new_inp_used = true;
@@ -173,8 +185,9 @@ classdef simple_generator < handle
                     
                     % Choose block not already taken for input.
                     
-                    fprintf('(d) num_oup_blk: %d\n', num_oup_blocks);  
-                    
+                    if obj.LIST_CONN
+                        fprintf('(d) num_oup_blk: %d\n', num_oup_blocks);  
+                    end
 
                     try
                         [r_o_blk, r_o_port] = obj.choose_bp_without_chosen(num_oup_blocks, oup_blocks, obj.slb.oup_ports, r_i_blk);
@@ -199,17 +212,21 @@ classdef simple_generator < handle
                 end
                 
                 if r_i_port == 0 || r_i_blk == 0
-                    fprintf('No new inputs available!\n');
+                   
+                    obj.c_p('No new inputs available!', obj.LIST_CONN);
+                    
                     [r_i_blk, r_i_port] = obj.choose_bp(obj.slb.inp.len, obj.slb.inp.blocks, obj.slb.inp_ports);
                 end
                 
                 if r_o_port == 0 || r_o_blk == 0
-                    fprintf('No new outputs available!\n');
+                    obj.c_p('No new outputs available!', obj.LIST_CONN);
                     [r_o_blk, r_o_port] = obj.choose_bp_without_chosen(obj.slb.oup.len, obj.slb.oup.blocks, obj.slb.oup_ports, r_i_blk);
                 end
                 
-                fprintf('Input: Blk %d Port %d chosen.\n', r_i_blk, r_i_port);
-                fprintf('Output: Blk %d Port %d chosen.\n', r_o_blk, r_o_port);
+                if obj.LIST_CONN
+                    fprintf('Input: Blk %d Port %d chosen.\n', r_i_blk, r_i_port);
+                    fprintf('Output: Blk %d Port %d chosen.\n', r_o_blk, r_o_port);
+                end
 
                 % Add line
                 t_i = strcat(obj.slb.all{r_i_blk}, '/', int2str(r_i_port));

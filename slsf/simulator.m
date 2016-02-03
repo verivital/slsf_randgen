@@ -40,10 +40,15 @@ classdef simulator < handle
                         if util.starts_with(e.identifier, 'Simulink:Engine:AlgLoopTrouble')
                             obj.fix_alg_loop(e);
                         else
-                            done = true;                                    % TODO
+                            
                             switch e.identifier
                                 case {'Simulink:Parameters:InvParamSetting'}
                                     obj.fix_invParamSetting(e);
+                                    done = true;                                    % TODO
+                                case {'Simulink:Engine:InvCompDiscSampleTime'}
+                                    done = obj.fix_inv_comp_disc_sample_time(e);
+                                otherwise
+                                    done = true;
                             end
                         end
                         
@@ -72,7 +77,47 @@ classdef simulator < handle
         
         
         
+        function done = fix_inv_comp_disc_sample_time(obj, e)
+            done = false;
+            MAX_TRY = 10;
+            
+            for i=1:MAX_TRY
+                disp(['Attempt ' int2str(i) ' - Fixing inv-disc-comp-sample-time']);
+                try
+                    
+                    for j = 1:numel(e.handles)
+                        handles = e.handles{j}
+                        
+                        for k = 1:numel(handles)
+                            h = handles(k);
+                            set_param(h, 'SampleTime', num2str(rand));
+                        end
+                        
+                    end
+                    
+                    % Try Simulating
+                    sim(obj.generator.sys);
+                    disp('Success in fixing inv-disc-comp-sample-time!');
+                    done = true;
+                    return;
+                catch e
+                    if ~ strcmp(e.identifier, 'Simulink:Engine:InvCompDiscSampleTime')
+                        disp(['[E] Some other error occ. when fixing sample time: ']);
+                        e
+                        return;
+                    end
+                end
+            end
+            
+            
+            
+        end
+        
+        
+        
+        
         function obj = fix_alg_loop(obj, e)
+            % Fix Algebraic Loop 
 %             handles = e.handles{1}
 
 %             handles(1)

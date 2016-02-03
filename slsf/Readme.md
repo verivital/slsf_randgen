@@ -26,9 +26,13 @@ can not infer parameter type yet.
 
 ### Simulation Errors
 
- - Simulink:Engine:InvCompDiscSampleTime
+ - Simulink:Engine:InvCompDiscSampleTime: 'The sample time after propagation is [0, 0]. 
+Enter a discrete sample time in 'sampleModel1/bl12'.
 
 ### Simulation Warnings
 These warnings were produced while simulating the chart
 
  - 'sampleModel1/bl4/LimitedCounter/Output' is discrete, yet is inheriting a continuous sample time
+
+ - Warning: Overriding parameters of 'sampleModel1/bl1/Delay Input' which is inside a library link. These changes can be
+changed, propagated, or viewed using the 'Library Link' menu item 

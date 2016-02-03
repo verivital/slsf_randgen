@@ -1,6 +1,6 @@
 classdef blockchooser < handle
-    %BLOCKCHOOSER Choose some blocks which will be used for random
-    %generation of models
+    %BLOCKCHOOSER Choose which blocks to use in random generator
+    %Can blocklist some blocks
     %   Detailed explanation goes here
     
     properties
@@ -54,6 +54,10 @@ classdef blockchooser < handle
                         now_blk = all_blocks{i_rand};
                     end
 %                     end
+
+                    
+%                     disp('BBBBBBBB ');
+%                     get_param(now_blk, 'Tag')
 
                     count = count + 1;
                     ret{count} = now_blk;

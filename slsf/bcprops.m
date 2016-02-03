@@ -1,5 +1,5 @@
 classdef bcprops < handle
-    %BCPROPS Block Config Properties
+    %BCPROPS Data Structure for configuring blocks
     %   Detailed explanation goes here
     
     properties

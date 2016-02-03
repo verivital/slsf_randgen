@@ -1,5 +1,6 @@
 classdef blockconfigure < handle
-    %BLOCKCONFIGURE Summary of this class goes here
+    %BLOCKCONFIGURE Specify how to choose Dialog Parameters of Blocks
+    %randomly
     %   Detailed explanation goes here
     
     properties
@@ -53,6 +54,13 @@ classdef blockconfigure < handle
                 bcprops('After', char('1':'9'), 2)
             };
             d.(util.mvn('simulink/Sources/Step')) = t;
+            
+            
+            % simulink/Sinks/To Workspace
+            t = {
+                bcprops('VariableName', char('a':'z'), 7)
+            };
+            d.(util.mvn('simulink/Sinks/To Workspace')) = t;
             
             
             % Save All
