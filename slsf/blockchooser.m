@@ -22,6 +22,8 @@ classdef blockchooser < handle
             % Blocklist some blocks
             obj.blocklist.(util.mvn('simulink/Sources/From File')) = 1;
             obj.blocklist.(util.mvn('simulink/Sources/FromWorkspace')) = 1;
+            obj.blocklist.(util.mvn('simulink/Sources/EnumeratedConstant')) = 1;
+            
         end
         
         

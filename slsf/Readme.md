@@ -26,6 +26,8 @@ can not infer parameter type yet.
 
 ### Simulation Errors
 
+- MATLAB:MException:MultipleErrors - Data Type Mismatch: Only 'single' or 'double' signals are accepted by block type DiscreteZeroPole.  The signals at the ports of 'sampleModel2/bl7' are of data type 'SlDemoSign'.
+
  - Simulink:Engine:InvCompDiscSampleTime: 'The sample time after propagation is [0, 0]. 
 Enter a discrete sample time in 'sampleModel1/bl12'.
 

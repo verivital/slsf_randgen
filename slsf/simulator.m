@@ -18,9 +18,11 @@ classdef simulator < handle
         
         
         
-        function obj = simulate(obj)
+        function ret = simulate(obj)
+            % Returns true if simulation did not raise any error.
             
             done = false;
+            ret = false;
             
             for i=1:obj.max_try
                 disp(['(s) Simulation attempt ' int2str(i)]);
@@ -29,11 +31,25 @@ classdef simulator < handle
                     sim(obj.generator.sys);  
                     disp('Success!');
                     done = true;
+                    ret = true;
                 catch e
                     disp(['[E] Error in simulation: ', e.identifier]);
                     
                     e
                     e.message
+                    e.cause
+                    e.stack
+                    
+%                     try
+%                         disp('Testing...');
+%                         
+%                         if numel(e.cause) == 2
+% 
+%                             e.cause{1}.message
+%                             e.cause{2}.message
+%                         end
+%                     catch e
+%                     end
                     
                     if isa(e, 'MSLException')
                         
@@ -47,6 +63,7 @@ classdef simulator < handle
                                     done = true;                                    % TODO
                                 case {'Simulink:Engine:InvCompDiscSampleTime'}
                                     done = obj.fix_inv_comp_disc_sample_time(e);
+                                    ret = done;
                                 otherwise
                                     done = true;
                             end

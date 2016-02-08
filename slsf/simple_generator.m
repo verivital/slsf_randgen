@@ -24,6 +24,10 @@ classdef simple_generator < handle
         simul;                      % Instance of simulator class
         max_simul_attempt = 1;
         
+        close_model = true;         % Close after simulation
+        
+        stop = false;                       % Stop future steps of this class
+        
         
         % Drawing related
         d_x;
@@ -54,19 +58,65 @@ classdef simple_generator < handle
         
         
         
-        function obj = go(obj)
+        function ret = go(obj)
             % Call this function to start
             obj.p('--- Starting ---');
             
+            ret = false;
+            
             obj.init();
                         
+            
+            
             obj.get_candidate_blocks();
+            
+            
+            
+            if obj.stop
+                return;
+            end
+            
+            
+            
             obj.draw_blocks();
+            
+            
+            
+            if obj.stop
+                return;
+            end
+            
+            
+            
+            
+            
+            obj.chk_compatibility();
+            
+            
+            
+            if obj.stop
+                return;
+            end
+            
+            
+            
+            
             obj.connect_blocks();
+            
+            
+            
             
             fprintf('--Done Connecting!--\n');
             
-            obj.simulate();
+            if obj.stop
+                return;
+            end
+            
+            
+            
+            
+            
+            ret = obj.simulate();
             
             fprintf('------------------- END -------------------\n');
         end
@@ -86,15 +136,58 @@ classdef simple_generator < handle
         
         
         
-        function obj = simulate(obj)
+        
+        function ret = chk_compatibility(obj)
+            
+            disp('-- START COMPILING');
+            cpl_cmd = [obj.sys '([],[],[],''compile'');']
+            eval(cpl_cmd);
+            disp('-- END COMPILING');
+            
+            
+            for i=1:numel(obj.slb.handles)
+                h = obj.slb.handles{i};
+                display(['CompiledPortConnectivity for block ' int2str(i) obj.candi_blocks{i}]);
+                
+                cpdt = get_param(h, 'CompiledPortDataTypes')
+                
+                if isfield('Inport', cpdt)
+                    cpdt.Inport
+                else
+                    disp('empty');
+                end
+                
+                if isfield('Outport', cpdt)
+                    cpdt.Outport
+                else
+                    disp('Empty');
+                end
+                
+            end
+            
+            obj.stop = true;
+        end
+        
+        
+        
+        
+        function ret = simulate(obj)
+            % Returns false ONLY if we asked to simulate and it raised error.
             
             if ~ obj.simulate_models
+                ret = true;
                 return;
             end
             
             fprintf('[~] Simulating...\n');
             
-            obj.simul.simulate();
+            if obj.simul.simulate()
+                close_system(obj.sys, 0);
+                ret = true;
+            else
+                ret = false;
+            end
+                
         end
         
         
