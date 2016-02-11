@@ -22,7 +22,7 @@ classdef simple_generator < handle
         blkcfg;
         
         simul;                      % Instance of simulator class
-        max_simul_attempt = 1;
+        max_simul_attempt = 10;
         
         close_model = true;         % Close after simulation
         
@@ -49,11 +49,12 @@ classdef simple_generator < handle
     end
     
     methods
-        function obj = simple_generator(num_blocks, model_name, simulate_models)
+        function obj = simple_generator(num_blocks, model_name, simulate_models, close_model)
             % Constructor %
             obj.NUM_BLOCKS = num_blocks;
             obj.sys = model_name;
             obj.simulate_models = simulate_models;
+            obj.close_model = close_model;
         end
         
         
@@ -138,11 +139,22 @@ classdef simple_generator < handle
         
         
         function ret = chk_compatibility(obj)
-            
-            disp('-- START COMPILING');
-            cpl_cmd = [obj.sys '([],[],[],''compile'');']
-            eval(cpl_cmd);
-            disp('-- END COMPILING');
+            return;
+            done = false;
+            while ~done
+                try
+                    disp('-- START COMPILING');
+                    cpl_cmd = [obj.sys '([],[],[],''compile'');']
+                    eval(cpl_cmd);
+                    disp('-- END COMPILING');
+                catch e
+                    e
+                    e.message
+                    done = true;
+                    obj.stop = true;
+                    return;
+                end
+            end
             
             
             for i=1:numel(obj.slb.handles)
@@ -150,19 +162,27 @@ classdef simple_generator < handle
                 display(['CompiledPortConnectivity for block ' int2str(i) obj.candi_blocks{i}]);
                 
                 cpdt = get_param(h, 'CompiledPortDataTypes')
+%         
+%                 try
+%                     get_param(h,'OutDataTypeStr')
+%                 catch mye
+%                     disp('NO OUT PARAM');
+%                 end
+%                 
+%                 if isfield('Inport', cpdt)
+%                     cpdt.Inport
+%                 else
+%                     disp('empty');
+%                 end
+%                 
+%                 if isfield('Outport', cpdt)
+%                     cpdt.Outport
+%                 else
+%                     disp('Empty');
+%                 end
                 
-                if isfield('Inport', cpdt)
-                    cpdt.Inport
-                else
-                    disp('empty');
-                end
-                
-                if isfield('Outport', cpdt)
-                    cpdt.Outport
-                else
-                    disp('Empty');
-                end
-                
+                get_param(h, 'InputSignalNames')
+                get_param(h, 'OutputSignalNames')
             end
             
             obj.stop = true;
@@ -181,11 +201,10 @@ classdef simple_generator < handle
             
             fprintf('[~] Simulating...\n');
             
-            if obj.simul.simulate()
+            ret =  obj.simul.simulate();
+            
+            if obj.close_model
                 close_system(obj.sys, 0);
-                ret = true;
-            else
-                ret = false;
             end
                 
         end

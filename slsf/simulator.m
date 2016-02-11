@@ -40,6 +40,23 @@ classdef simulator < handle
                     e.cause
                     e.stack
                     
+                    disp('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%');
+                    
+                    is_multi_exception = false;
+                    
+                    if(strcmp(e.identifier, 'MATLAB:MException:MultipleErrors'))
+                        disp('Multiple Errors. Solving first one');
+                        is_multi_exception = true;
+                        e = e.cause{1}
+                        
+                        e.message
+                        e.cause
+                        e.stack
+                        
+                        
+                        disp('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%');
+                    end
+                    
 %                     try
 %                         disp('Testing...');
 %                         
@@ -61,9 +78,11 @@ classdef simulator < handle
                                 case {'Simulink:Parameters:InvParamSetting'}
                                     obj.fix_invParamSetting(e);
                                     done = true;                                    % TODO
-                                case {'Simulink:Engine:InvCompDiscSampleTime'}
-                                    done = obj.fix_inv_comp_disc_sample_time(e);
+                                case {'Simulink:Engine:InvCompDiscSampleTime', 'Simulink:blocks:WSTimeContinuousSampleTime'}
+                                    done = obj.fix_inv_comp_disc_sample_time(e, is_multi_exception);
                                     ret = done;
+                                case{'Simulink:DataType:InputPortDataTypeMismatch'}
+                                    done = obj.fix_data_type_mismatch(e);
                                 otherwise
                                     done = true;
                             end
@@ -94,19 +113,31 @@ classdef simulator < handle
         
         
         
-        function done = fix_inv_comp_disc_sample_time(obj, e)
+        
+        
+        
+        
+        
+        
+        function done = fix_inv_comp_disc_sample_time(obj, e, do_parent)
             done = false;
             MAX_TRY = 10;
             
             for i=1:MAX_TRY
-                disp(['Attempt ' int2str(i) ' - Fixing inv-disc-comp-sample-time']);
+                disp(['Attempt ' int2str(i) ' - Fixing inv-disc-comp-sample-time.']);
                 try
                     
                     for j = 1:numel(e.handles)
-                        handles = e.handles{j}
+                        handles = e.handles{j};
                         
                         for k = 1:numel(handles)
                             h = handles(k);
+                            
+                            if do_parent
+                                h = get_param(get_param(h, 'Parent'), 'Handle');
+                            end
+                            
+                            disp(['Current Block: ' get_param(h, 'Name')]);
                             set_param(h, 'SampleTime', num2str(rand));
                         end
                         
@@ -126,9 +157,31 @@ classdef simulator < handle
                 end
             end
             
-            
-            
         end
+        
+        
+        
+        
+        
+        function done = fix_data_type_mismatch(obj, e)
+            done = false;
+            
+            for i = 1:numel(e.handles)
+                inner = e.handles{i};
+                h = get_param(get_param(inner, 'parent'), 'Handle');
+%                 break;
+                
+                % Assume only output ports are giving errors   TODO
+                
+                obj.add_block_in_the_middle(h, 'Simulink/Signal Attributes/Data Type Conversion', true, false);
+                
+            end
+            
+%             disp('Handle:');
+%             
+%             h = e.handles{1}
+        end
+        
         
         
         
@@ -148,59 +201,142 @@ classdef simulator < handle
                 for i=1:numel(current)
 %                     disp('in loop');
                     h = current(i);
-                    
-
+                    new_delay_block = obj.add_block_in_the_middle(h, 'Simulink/Discrete/Delay', false, true);
+                    set_param(new_delay_block, 'SampleTime', '1');                  %       TODO sample time
 %                     disp(h);
                     
-                    my_name = get_param(h, 'Name');
-
-                    disp(['Trying to fix Alg. loop for block ' my_name '; handle ' num2str(h)]);
-
-                    try
-                        ports = get_param(h,'PortConnectivity');
-                    catch e
-%                         if isa(e.identifier, 'Simulink:Commands:ParamUnknown')
-%                             continue
-%                         end
-                        disp('~ Skipping, not a block');
-                        continue
-                    end
-
-                    for j = 1:numel(ports)
-                        p = ports(j);
-                        
-                        if isempty(p.SrcBlock) || p.SrcBlock == -1
-                            continue
-                        end
-                        
-                        src_name = get_param(p.SrcBlock, 'Name');
-                        src_port = p.SrcPort + 1;                                               % TODO
-                        
-                        disp(['Con. from ' src_name ' port ' num2str(src_port) ' ;type ' p.Type ]);
-                                                
-                        src_b_p = [src_name '/' num2str(src_port)];
-                        my_b_p = [my_name '/' p.Type];
-                        
-                        delete_line( obj.generator.sys, src_b_p , my_b_p);
-                        
-                        % get a new delay block
-                        
-                        [d_name, d_h] = obj.generator.add_new_block('Simulink/Discrete/Delay');
-                        set_param(d_h, 'SampleTime', '1');                                         % TODO
-                        
-                        % Connect
-                        
-                        d_b_p = [d_name '/1'];
-                        
-                        add_line(obj.generator.sys, src_b_p, d_b_p , 'autorouting','on');
-                        add_line(obj.generator.sys, d_b_p, my_b_p , 'autorouting','on');
-
-                    end
+                    
                     
                 end
                 
                 
             end
+        end
+        
+        
+        
+        
+        
+        
+        
+        function d_h = add_block_in_the_middle(obj, h, replacement, ignore_in, ignore_out)
+            
+            my_name = get_param(h, 'Name');
+
+            disp(['Add Block in the middle: For ' my_name '; handle ' num2str(h)]);
+
+            try
+                ports = get_param(h,'PortConnectivity');
+            catch e
+                disp('~ Skipping, not a block');
+                return;
+            end
+
+            for j = 1:numel(ports)
+                p = ports(j);
+                is_inp = [];
+                
+                % Detect if current port is Input or Output
+
+                if isempty(p.SrcBlock) || p.SrcBlock == -1
+                    is_inp = false;
+                end
+                
+                if isempty(p.DstBlock)
+                    is_inp = true;
+                end
+                
+                if isempty(is_inp)
+                    % Could not determine input or output port. Throw error
+                    % for now
+                    throw(MException('RandGen:SL:BlockReplace', 'Could not determine input or output port'));
+                end
+                
+                
+                if(is_inp)
+                    if ignore_in
+                        disp(['Skipping input port ' int2str(j)]);
+                        continue;
+                    end
+                    other_name = get_param(p.SrcBlock, 'Name');
+                    other_port = p.SrcPort + 1; 
+                    dir = 'from';
+                else
+                    if ignore_out
+                        disp(['Skipping output port ' int2str(j)]);
+                        continue;
+                    end
+                    dir = 'to';
+                    other_name = get_param(p.DstBlock, 'Name');
+                    other_port = p.DstPort + 1; 
+                end 
+                
+                my_b_p = [my_name '/' p.Type];
+                
+                if numel(other_port) > 1
+                    disp('Multiple src/ports Here');
+                    other_name
+                    other_port
+                    d_h = obj.add_block_in_middle_multi(my_b_p, other_name, other_port, replacement);
+                    return;
+                end
+
+                disp(['Const. ' dir ' ' other_name ' ; port ' num2str(other_port) '; My type ' p.Type ]);
+
+                other_b_p = [other_name '/' num2str(other_port)];
+                
+
+                % get a new block
+
+                [d_name, d_h] = obj.generator.add_new_block(replacement);
+
+                %  delete and Connect
+
+                new_blk_port = [d_name '/1'];
+                
+                if is_inp
+                    b_a = other_b_p;
+                    b_b = my_b_p;
+                    
+                else
+                    b_a = my_b_p;
+                    b_b = other_b_p;
+                end
+                
+                delete_line( obj.generator.sys, b_a , b_b);
+                add_line(obj.generator.sys, b_a, new_blk_port , 'autorouting','on');
+                add_line(obj.generator.sys, new_blk_port, b_b , 'autorouting','on');
+
+                
+%                 delete_line( obj.generator.sys, src_b_p , my_b_p);
+%                 add_line(obj.generator.sys, src_b_p, d_b_p , 'autorouting','on');
+%                 add_line(obj.generator.sys, d_b_p, my_b_p , 'autorouting','on');
+
+            end
+            
+            
+        end
+        
+        
+        
+        function d_h = add_block_in_middle_multi(obj,my_b_p, o_names, o_ports, replacement)
+            
+            % get a new block
+
+            [d_name, d_h] = obj.generator.add_new_block(replacement);
+
+            %  delete and Connect
+
+            new_blk_port = [d_name '/1'];
+            add_line(obj.generator.sys, my_b_p, new_blk_port , 'autorouting','on');
+                        
+            for i = 1:numel(o_ports)
+                other_b_p = [char(o_names(i)), '/', num2str(o_ports(i))];
+                
+                delete_line( obj.generator.sys, my_b_p , other_b_p);
+                add_line(obj.generator.sys, new_blk_port, other_b_p , 'autorouting','on');
+            end
+            
         end
         
         

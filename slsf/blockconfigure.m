@@ -63,6 +63,13 @@ classdef blockconfigure < handle
             d.(util.mvn('simulink/Sinks/To Workspace')) = t;
             
             
+            % simulink/Discrete/Tapped Delay
+            t = {
+                bcprops('NumDelays', char('1':'1'), 1)
+            };
+            d.(util.mvn('simulink/Discrete/Tapped Delay')) = t;
+            
+            
             % Save All
             
             obj.data = d;
