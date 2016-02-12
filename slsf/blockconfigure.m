@@ -65,9 +65,17 @@ classdef blockconfigure < handle
             
             % simulink/Discrete/Tapped Delay
             t = {
-                bcprops('NumDelays', char('1':'1'), 1)
+                bcprops('NumDelays', char('1':'1'), 1)  % Otherwise creates dimension problem
             };
             d.(util.mvn('simulink/Discrete/Tapped Delay')) = t;
+            
+            
+            
+            % simulink/Sinks/To File
+            t = {
+                bcprops('Filename', char('a':'z'), 4)
+            };
+            d.(util.mvn('simulink/Sinks/To File')) = t;
             
             
             % Save All

@@ -22,4 +22,4 @@ __pycache__/
 c_with_main
 c_with_main.c
 current.c
-
+*.mat

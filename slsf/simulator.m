@@ -34,6 +34,7 @@ classdef simulator < handle
                     ret = true;
                 catch e
                     disp(['[E] Error in simulation: ', e.identifier]);
+                    obj.generator.last_exc = e;
                     
                     e
                     e.message
@@ -45,53 +46,31 @@ classdef simulator < handle
                     is_multi_exception = false;
                     
                     if(strcmp(e.identifier, 'MATLAB:MException:MultipleErrors'))
-                        disp('Multiple Errors. Solving first one');
-                        is_multi_exception = true;
-                        e = e.cause{1}
                         
-                        e.message
-                        e.cause
-                        e.stack
-                        
-                        
-                        disp('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%');
-                    end
-                    
-%                     try
-%                         disp('Testing...');
-%                         
-%                         if numel(e.cause) == 2
-% 
-%                             e.cause{1}.message
-%                             e.cause{2}.message
-%                         end
-%                     catch e
-%                     end
-                    
-                    if isa(e, 'MSLException')
-                        
-                        if util.starts_with(e.identifier, 'Simulink:Engine:AlgLoopTrouble')
-                            obj.fix_alg_loop(e);
-                        else
+                        for m_i = 1:numel(e.cause)
+                            disp(['Multiple Errors. Solving ' int2str(m_i)]);
+                            ei = e.cause{m_i}
+                            obj.generator.last_exc = ei;
+
+                            ei.message
+                            ei.cause
+                            ei.stack
+
+                            disp('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%');
                             
-                            switch e.identifier
-                                case {'Simulink:Parameters:InvParamSetting'}
-                                    obj.fix_invParamSetting(e);
-                                    done = true;                                    % TODO
-                                case {'Simulink:Engine:InvCompDiscSampleTime', 'Simulink:blocks:WSTimeContinuousSampleTime'}
-                                    done = obj.fix_inv_comp_disc_sample_time(e, is_multi_exception);
-                                    ret = done;
-                                case{'Simulink:DataType:InputPortDataTypeMismatch'}
-                                    done = obj.fix_data_type_mismatch(e);
-                                otherwise
-                                    done = true;
+                            [done, ret, found] = obj.look_for_solutions(ei, true, done, ret);
+                            
+                            if found
+                                disp('Found at least one exception fixer. Breaking.');
+                                break;
                             end
+                            
                         end
-                        
+
                     else
-                        done = true;                                        % TODO
+                        [done, ret, found] = obj.look_for_solutions(e, false, done, ret);
                     end
-                    
+
                 end
                 
                 if done
@@ -101,19 +80,50 @@ classdef simulator < handle
                 
                 
             end
-            
-            
-            
-            
-%             al = Simulink.BlockDiagram.getAlgebraicLoops(obj.sys);
-%             disp(al);
-            
-            
+
+                    
         end
         
         
         
-        
+        function [done, ret, found] = look_for_solutions(obj, e, is_multi_exception, done, ret)
+            found = false;          % Did the exception matched with any of our fixers
+            
+            if isa(e, 'MSLException')
+
+                if util.starts_with(e.identifier, 'Simulink:Engine:AlgLoopTrouble')
+                    obj.fix_alg_loop(e);
+                    found = true;
+                else
+
+                    switch e.identifier
+                        case {'Simulink:Parameters:InvParamSetting'}
+                            obj.fix_invParamSetting(e);
+                            done = true;                                    % TODO
+                            found = true;
+                        case {'Simulink:Engine:InvCompDiscSampleTime', 'Simulink:blocks:WSTimeContinuousSampleTime'}
+                            done = obj.fix_inv_comp_disc_sample_time(e, is_multi_exception);
+                            ret = done;                             % TODO suspicious logic
+                            found = true;
+                        case{'Simulink:DataType:InputPortDataTypeMismatch'}
+                            done = obj.fix_data_type_mismatch(e, true, true);
+                            found = true;
+                        case {'Simulink:DataType:PropForwardDataTypeError'}
+                            done = obj.fix_data_type_mismatch(e, false, true);
+                            found = true;
+                        case {'Simulink:DataType:PropBackwardDataTypeError'}
+                            done = obj.fix_data_type_mismatch(e, false, false);
+                            found = true;
+                            
+                        otherwise
+                            done = true;
+                    end
+                end
+
+            else
+                done = true;                                        % TODO
+            end
+        end  
         
         
         
@@ -163,17 +173,43 @@ classdef simulator < handle
         
         
         
-        function done = fix_data_type_mismatch(obj, e)
+        function done = fix_data_type_mismatch(obj, e, fetch_parent, at_output)
             done = false;
+           
             
             for i = 1:numel(e.handles)
-                inner = e.handles{i};
-                h = get_param(get_param(inner, 'parent'), 'Handle');
+%                 if fetch_parent
+                    inner = e.handles{i};
+                    parent = get_param(inner, 'parent');
+                    
+                    if strcmp(get_param(parent, 'Type'), 'block')
+                        disp('WILL FETCH PARENT');
+                        h = get_param(get_param(inner, 'parent'), 'Handle');
+                    else
+                         disp('NOT fetching PARENT');
+                        h = inner;
+                    end
+                    
+%                     my_name = get_param(inner, 'Name')
+%                     if length(strfind(my_name, '/')) > 1
+%                         disp('WILL FETCH PARENT');
+%                         h = get_param(get_param(inner, 'parent'), 'Handle');
+%                     else
+%                         disp('NOT fetching PARENT');
+%                         h = inner;
+%                     end
+
+%                 else
+%                     h = e.handles{i};
+%                 end
 %                 break;
                 
                 % Assume only output ports are giving errors   TODO
-                
-                obj.add_block_in_the_middle(h, 'Simulink/Signal Attributes/Data Type Conversion', true, false);
+                if at_output
+                    obj.add_block_in_the_middle(h, 'Simulink/Signal Attributes/Data Type Conversion', true, false);
+                else
+                    obj.add_block_in_the_middle(h, 'Simulink/Signal Attributes/Data Type Conversion', false, true);
+                end
                 
             end
             

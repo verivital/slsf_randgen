@@ -26,7 +26,9 @@ classdef simple_generator < handle
         
         close_model = true;         % Close after simulation
         
-        stop = false;                       % Stop future steps of this class
+        stop = false;                       % Stop future steps from go() method
+        
+        last_exc = [];
         
         
         % Drawing related
@@ -204,10 +206,18 @@ classdef simple_generator < handle
             ret =  obj.simul.simulate();
             
             if obj.close_model
-                close_system(obj.sys, 0);
+                obj.close();
             end
                 
         end
+        
+        
+        
+        
+        function close(obj)
+            close_system(obj.sys, 0);
+        end
+        
         
         
         
