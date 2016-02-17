@@ -23,6 +23,24 @@ classdef util < handle
             end
         end
         
+        
+        
+        
+        function h = select_me_or_parent(inner)
+            % If `inner` is a block inside a subsystem, then get the parent
+            % block.
+            parent = get_param(inner, 'parent');
+                    
+            if strcmp(get_param(parent, 'Type'), 'block')
+                disp('WILL FETCH PARENT');
+                h = get_param(get_param(inner, 'parent'), 'Handle');
+            else
+                 disp('NOT fetching PARENT');
+                h = inner;
+            end
+        end
+        
+        
     end
     
 end

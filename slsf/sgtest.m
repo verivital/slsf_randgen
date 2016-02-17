@@ -1,9 +1,10 @@
 % Test simple_generator
 
-NUM_TESTS = 10;
-STOP_IF_ERROR = true;
+NUM_TESTS = 100;
+STOP_IF_ERROR = false;
 CLOSE_MODEL = false;
 SIMULATE_MODELS = true;
+NUM_BLOCKS = 30;
 
 %%%%%%%%%%%%%%%%%%%% End of Options %%%%%%%%%%%%%%%%%%%%
 
@@ -37,7 +38,7 @@ for ind = 1:NUM_TESTS
     % Store random number settings
     rng_state = rng;
     
-    sg = simple_generator(30, chart_name, SIMULATE_MODELS, CLOSE_MODEL);
+    sg = simple_generator(NUM_BLOCKS, chart_name, SIMULATE_MODELS, CLOSE_MODEL);
     
     if ~sg.go()
         
@@ -56,24 +57,32 @@ for ind = 1:NUM_TESTS
         map_k = util.mvn(e.identifier);
         
         if isfield(e_map, map_k)
-            e_map.(map_k) = e.(map_k) + 1;
+            e_map.(map_k) = e_map.(map_k) + 1;
         else
             e_map.(map_k) = 1;
         end
+        
         
         if STOP_IF_ERROR
             disp('BREAKING FROM MAIN LOOP AS ERROR OCCURRED IN SIMULATION');
             break;
         end
         
+        if ~strcmp(e.identifier, 'Simulink:DataType:PropForwardDataTypeError')
+            break;
+        end
+        
     else
         num_suc_sim = num_suc_sim + 1;
         sg.close();           % Close Model
+    
+    
+        disp('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%');
+        num_suc_sim
+        num_err_sim
+        e_map
+
     end
 end
 
-disp('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%');
-
-num_suc_sim
-num_err_sim
-e_map
+disp('----------- SGTEST END -------------');

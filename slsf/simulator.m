@@ -5,6 +5,11 @@ classdef simulator < handle
     properties
         generator;
         max_try;
+        
+        
+        % Data type fixer related
+        last_handle = [];
+        last_at_output = [];
     end
     
     methods
@@ -103,7 +108,7 @@ classdef simulator < handle
                             found = true;
                         case {'Simulink:Engine:InvCompDiscSampleTime', 'Simulink:blocks:WSTimeContinuousSampleTime'}
                             done = obj.fix_inv_comp_disc_sample_time(e, is_multi_exception);
-                            ret = done;                             % TODO suspicious logic
+                            ret = done;                             
                             found = true;
                         case{'Simulink:DataType:InputPortDataTypeMismatch'}
                             done = obj.fix_data_type_mismatch(e, true, true);
@@ -175,47 +180,24 @@ classdef simulator < handle
         
         function done = fix_data_type_mismatch(obj, e, fetch_parent, at_output)
             done = false;
-           
+            
+%             if ~isempty(obj.last_handle) && strcmp(obj.generator.last_exc.identifier, e.identifier)
+%                 disp('Same error as last one. Check for handle...');
+%                 if obj.last_handle == 
+%             end
             
             for i = 1:numel(e.handles)
-%                 if fetch_parent
-                    inner = e.handles{i};
-                    parent = get_param(inner, 'parent');
-                    
-                    if strcmp(get_param(parent, 'Type'), 'block')
-                        disp('WILL FETCH PARENT');
-                        h = get_param(get_param(inner, 'parent'), 'Handle');
-                    else
-                         disp('NOT fetching PARENT');
-                        h = inner;
-                    end
-                    
-%                     my_name = get_param(inner, 'Name')
-%                     if length(strfind(my_name, '/')) > 1
-%                         disp('WILL FETCH PARENT');
-%                         h = get_param(get_param(inner, 'parent'), 'Handle');
-%                     else
-%                         disp('NOT fetching PARENT');
-%                         h = inner;
-%                     end
+                inner = e.handles{i};
 
-%                 else
-%                     h = e.handles{i};
-%                 end
-%                 break;
-                
-                % Assume only output ports are giving errors   TODO
+                h = util.select_me_or_parent(inner);
+
                 if at_output
                     obj.add_block_in_the_middle(h, 'Simulink/Signal Attributes/Data Type Conversion', true, false);
                 else
                     obj.add_block_in_the_middle(h, 'Simulink/Signal Attributes/Data Type Conversion', false, true);
                 end
-                
             end
-            
-%             disp('Handle:');
-%             
-%             h = e.handles{1}
+                 
         end
         
         
@@ -236,7 +218,11 @@ classdef simulator < handle
                 
                 for i=1:numel(current)
 %                     disp('in loop');
-                    h = current(i);
+                    if ~strcmp(get_param(current(i), 'Type'), 'block')
+                        disp('Not a block! Skipping...');
+                        continue;
+                    end
+                    h = util.select_me_or_parent(current(i));
                     new_delay_block = obj.add_block_in_the_middle(h, 'Simulink/Discrete/Delay', false, true);
                     set_param(new_delay_block, 'SampleTime', '1');                  %       TODO sample time
 %                     disp(h);
