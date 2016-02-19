@@ -179,6 +179,7 @@ classdef simulator < handle
         
         
         function done = fix_data_type_mismatch(obj, e, fetch_parent, at_output)
+            disp('FIXING DATA TYPE MISMATCH...');
             done = false;
             
 %             if ~isempty(obj.last_handle) && strcmp(obj.generator.last_exc.identifier, e.identifier)

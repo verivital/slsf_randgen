@@ -41,6 +41,17 @@ classdef util < handle
         end
         
         
+        function m = map_inc(m, k)
+            map_k = util.mvn(k);
+
+            if isfield(m, map_k)
+                m.(map_k) = m.(map_k) + 1;
+            else
+                m.(map_k) = 1;
+            end
+        end
+        
+        
     end
     
 end
