@@ -26,7 +26,21 @@ can not infer parameter type yet.
 
 ### Simulation Errors
 
-- MATLAB:MException:MultipleErrors - Data Type Mismatch: Only 'single' or 'double' signals are accepted by block type DiscreteZeroPole.  The signals at the ports of 'sampleModel2/bl7' are of data type 'SlDemoSign'.
+ - Simulink:Engine:DerivNotFinite: An error occurred while running the simulation and the simulation was terminated
+
+Derivative of state '1' in block 'sampleModel2/bl15' at time 0.0 is not finite. The simulation will be stopped. There may be a singularity in the solution.  If not, try reducing the step size (either by reducing the fixed step size or by tightening the error tolerances)
+
+ - Simulink:Engine:DerivNotFinite: Problem is, script and simulation window becomes unresponsive and does not terminate
+even after timeout.
+
+An error occurred while running the simulation and the simulation was terminated
+Derivative of state '1' in block 'sampleModel3/bl16/Integrator' at time 4.4501477170144E-309 is not finite. The simulation will be stopped. There may be a singularity in the solution.  If not, try reducing the step size (either by reducing the fixed step size or by tightening the error tolerances)
+
+
+ - Simulink:Engine:SolverConsecutiveZCNum: At time 3.1592930568844847E-27, simulation hits (1000) consecutive zero crossings. Consecutive zero crossings will slow down the simulation or cause the simulation to hang. To continue the simulation, you may 1) Try using Adaptive zero-crossing detection algorithm or 2) Disable the zero crossing of the blocks shown in the following table. 
+for block SecondOrderIntegrator
+
+ - MATLAB:MException:MultipleErrors - Data Type Mismatch: Only 'single' or 'double' signals are accepted by block type DiscreteZeroPole.  The signals at the ports of 'sampleModel2/bl7' are of data type 'SlDemoSign'.
 
  - Simulink:Engine:InvCompDiscSampleTime: 'The sample time after propagation is [0, 0]. 
 Enter a discrete sample time in 'sampleModel1/bl12'.

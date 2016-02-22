@@ -78,6 +78,31 @@ classdef blockconfigure < handle
             d.(util.mvn('simulink/Sinks/To File')) = t;
             
             
+            
+            % simulink/Continuous/VariableTime Delay
+            t = {
+                bcprops('InitialOutput', char('1':'3'), 1)
+            };
+            d.(util.mvn('simulink/Continuous/VariableTime Delay')) = t;
+            
+            
+            % simulink/Continuous/TransportDelay
+            t = {
+                bcprops('InitialOutput', char('1':'3'), 1)
+            };
+            d.(util.mvn('simulink/Continuous/TransportDelay')) = t;
+            
+            
+            
+            % simulink/Continuous/VariableTransportDelay
+            t = {
+                bcprops('InitialOutput', char('1':'4'), 1)
+            };
+            d.(util.mvn('simulink/Continuous/VariableTransportDelay')) = t;
+            
+            
+            
+            
             % Save All
             
             obj.data = d;

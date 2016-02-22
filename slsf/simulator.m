@@ -6,11 +6,16 @@ classdef simulator < handle
         generator;
         max_try;
         
+        simulation_timeout = 12;        % After this many seconds simulation will be killed. 
+        sim_status = [];
+        
         
         % Data type fixer related
         last_handle = [];
         last_at_output = [];
     end
+    
+    
     
     methods
         
@@ -19,6 +24,28 @@ classdef simulator < handle
             % CONSTRUCTOR %
             obj.generator = generator;
             obj.max_try = max_try;
+        end
+        
+        
+        
+        
+        function obj = sim(obj)
+            % A wrapper to the built in `sim` command - which is used to
+            % start the simulation.
+            obj.sim_status = [];
+            myTimer = timer('StartDelay',obj.simulation_timeout, 'TimerFcn', {@sim_timeout_callback, obj});
+%             myTimer = timer('StartDelay',obj.simulation_timeout, 'TimerFcn',['set_param(''' obj.generator.sys ''',''SimulationCommand'',''stop'')']);
+            start(myTimer);
+            sim(obj.generator.sys);
+            disp(['RETURN FROM SIMULATION. STATUS: ' obj.sim_status ]);
+            stop(myTimer);
+            
+            delete(myTimer);
+            
+            if ~isempty(obj.sim_status) && ~strcmp(obj.sim_status, 'stopped')
+                disp('xxxxxxxxxxxxxxxx SIMULATION TIMEOUT xxxxxxxxxxxxxxxxxxxx');
+                throw(MException('RandGen:SL:SimeTimeout', 'TimeOut'));
+            end
         end
         
         
@@ -33,7 +60,8 @@ classdef simulator < handle
                 disp(['(s) Simulation attempt ' int2str(i)]);
                 
                 try
-                    sim(obj.generator.sys);  
+                    obj.sim();
+%                     sim(obj.generator.sys);  
                     disp('Success!');
                     done = true;
                     ret = true;
@@ -41,12 +69,16 @@ classdef simulator < handle
                     disp(['[E] Error in simulation: ', e.identifier]);
                     obj.generator.last_exc = e;
                     
+                    if(strcmp(e.identifier, 'RandGen:SL:SimTimeout'))
+                        return;
+                    end
+                    
                     e
                     e.message
                     e.cause
                     e.stack
                     
-                    disp('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%');
+                    disp('-------------- Fixing Simulation --------------');
                     
                     is_multi_exception = false;
                     
@@ -159,7 +191,8 @@ classdef simulator < handle
                     end
                     
                     % Try Simulating
-                    sim(obj.generator.sys);
+                    obj.sim();
+%                     sim(obj.generator.sys);
                     disp('Success in fixing inv-disc-comp-sample-time!');
                     done = true;
                     return;

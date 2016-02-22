@@ -5,7 +5,10 @@ classdef blockchooser < handle
     
     properties
         categories = {
-            struct('name', 'Discrete', 'num', 10)
+%             struct('name', 'Discrete', 'num', 10)
+            struct('name', 'Continuous', 'num', 10)
+%             struct('name', 'Math Operations', 'num', 10)
+%             struct('name', 'Logic and Bit Operations', 'num', 10)
             struct('name', 'Sinks', 'num', 5)
             struct('name', 'Sources', 'num', 5)
         };
@@ -24,6 +27,8 @@ classdef blockchooser < handle
             obj.blocklist.(util.mvn('simulink/Sources/FromWorkspace')) = 1;
             obj.blocklist.(util.mvn('simulink/Sources/EnumeratedConstant')) = 1;
             obj.blocklist.(util.mvn('simulink/Discrete/Discrete Derivative')) = 1;
+            obj.blocklist.(util.mvn('simulink/Math Operations/FindNonzeroElements')) = 1;
+            obj.blocklist.(util.mvn('simulink/Continuous/VariableTransport Delay')) = 1;
             
         end
         
