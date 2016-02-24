@@ -1,6 +1,6 @@
 % Test simple_generator
 
-NUM_TESTS = 100;                    % Number of models to generate
+NUM_TESTS = 10;                    % Number of models to generate
 STOP_IF_ERROR = false;              % Stop when meet the first simulation error
 STOP_IF_OTHER_ERROR = false;         % For errors not related to simulation e.g. unhandled simulation exceptions or code bug
 CLOSE_MODEL = true;                 % Close models after simulation

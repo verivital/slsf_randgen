@@ -225,11 +225,11 @@ classdef simulator < handle
 
                 h = util.select_me_or_parent(inner);
 
-                if at_output
+%                 if at_output
                     obj.add_block_in_the_middle(h, 'Simulink/Signal Attributes/Data Type Conversion', true, false);
-                else
+%                 else
                     obj.add_block_in_the_middle(h, 'Simulink/Signal Attributes/Data Type Conversion', false, true);
-                end
+%                 end
             end
                  
         end
