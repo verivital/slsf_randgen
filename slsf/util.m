@@ -52,6 +52,12 @@ classdef util < handle
         end
         
         
+        function ret=rand_int(start, finish, num_numbers_to_generate)
+            % Get a random Integer.
+            ret  = randi([start, finish], 1, num_numbers_to_generate);
+        end
+        
+        
     end
     
 end

@@ -29,6 +29,7 @@ classdef blockchooser < handle
             obj.blocklist.(util.mvn('simulink/Discrete/Discrete Derivative')) = 1;
             obj.blocklist.(util.mvn('simulink/Math Operations/FindNonzeroElements')) = 1;
             obj.blocklist.(util.mvn('simulink/Continuous/VariableTransport Delay')) = 1;
+%             obj.blocklist.(util.mvn('simulink/Continuous/PID Controller (2DOF)')) = 1;
             
         end
         
