@@ -6,6 +6,7 @@ classdef simple_generator < handle
        DEBUG = true;
        LIST_BLOCK_PARAMS = true;    % Will list all dialog parameters of a block which is chosen for current chart
        LIST_CONN = false;            % If true will print info when connecting blocks
+       TEMP_SAVE_NAME = 'slsfRandgenTempModel';
     end
     
     properties
@@ -212,12 +213,38 @@ classdef simple_generator < handle
             
             obj.simulation_data = cell(1, numel(obj.simulation_mode_values));
             
+%             Simulink.sdi.changeLoggedToStreamed(obj.sys);   % Stream logged signals in Simulink Data Inspector: http://bit.ly/1RK6wTn
+            
             for i = 1:numel(obj.simulation_mode_values)
+                
+                % Open the model first
+                if i > 1
+                    fprintf('Opening Model...\n');
+                    open_system(obj.sys);
+                end
+                
                 mode_val = obj.simulation_mode_values{i};
                 fprintf('[!] Simulating in mode %s for value %s...\n', obj.simulation_mode, mode_val);
-                simOut = sim(obj.sys, 'SimulationMode', obj.simulation_mode, 'SimCompilerOptimization', mode_val);
+                simOut = sim(obj.sys, 'SimulationMode', obj.simulation_mode, 'SimCompilerOptimization', mode_val, 'SignalLogging','on');
                 obj.simulation_data{i} = simOut.get('logsout');
+                
+                % Delete generated stuffs
+                fprintf('Deleting generated stuffs...\n');
+                delete([obj.sys '_acc*']);
+                rmdir('slprj', 's');
+                
+                % Save and close the system
+                if i ~= numel(obj.simulation_mode_values)
+                    fprintf('Saving Model...\n');
+                    save_system(obj.sys);
+                    obj.close();
+                end
+                
             end
+            
+            % Delete the saved model
+            fprintf('Deleting model...\n');
+            delete([obj.sys '.slx']);
             
 %             obj.simulation_data{1}
 %             obj.simulation_data{2}
