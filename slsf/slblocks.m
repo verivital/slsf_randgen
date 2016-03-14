@@ -1,5 +1,5 @@
 classdef slblocks < handle
-    %SLBLOCKS Summary of this class goes here
+    %SLBLOCKS Information about blocks in the generated model
     %   Detailed explanation goes here
     
     properties

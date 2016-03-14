@@ -16,8 +16,10 @@ classdef simple_generator < handle
         sys;                        % Name of the chart
         
         candi_blocks;               % Will choose from these blocks
+        
+        diff_tester;                % Instance of comparator class
                 
-        simulate_models;
+        simulate_models;            % Boolean: whether to simulate or not
         
         blkcfg;
         
@@ -26,10 +28,20 @@ classdef simple_generator < handle
         
         close_model = true;         % Close after simulation
         
-        stop = false;                       % Stop future steps from go() method
+        stop = false;               % Stop future steps from go() method
         
         last_exc = [];
         
+        log_signals = true;
+        simulation_mode = [];
+        compare_results = true;
+        
+        
+        simulation_mode_values = {'on' 'off'};
+        
+        is_simulation_successful = [];  % Boolean, whether the model can be simulated without any error.
+        
+        simulation_data = [];
         
         % Drawing related
         d_x;
@@ -51,12 +63,15 @@ classdef simple_generator < handle
     end
     
     methods
-        function obj = simple_generator(num_blocks, model_name, simulate_models, close_model)
+        function obj = simple_generator(num_blocks, model_name, simulate_models, close_model, log_signals, simulation_mode, compare_results)
             % Constructor %
             obj.NUM_BLOCKS = num_blocks;
             obj.sys = model_name;
             obj.simulate_models = simulate_models;
             obj.close_model = close_model;
+            obj.log_signals = log_signals;
+            obj.simulation_mode = simulation_mode;
+            obj.compare_results = compare_results;
         end
         
         
@@ -119,9 +134,27 @@ classdef simple_generator < handle
             
             
             
-            ret = obj.simulate();
+            obj.is_simulation_successful = obj.simulate();
+            ret = obj.is_simulation_successful;
             
-            fprintf('------------------- END -------------------\n');
+            
+            fprintf('Done Simulating\n');
+            
+            
+            
+            % Signal Logging Setup and Compilation %
+            
+            if obj.is_simulation_successful
+                fprintf('[SIGNAL LOGGING] Now setting up...\n');
+                
+                obj.signal_logging_setup();
+                obj.simulate_for_data_logging();
+                ret = obj.compare_sim_results();
+            end
+            
+            
+            
+            fprintf('------------------- END of One Generator Call -------------------\n');
         end
         
         
@@ -140,8 +173,63 @@ classdef simple_generator < handle
         
         
         
+        function ret = compare_sim_results(obj)
+            if ~ obj.compare_results
+                fprintf('Will not compare simulation results, returning...');
+            end
+            
+            obj.diff_tester = comparator(obj, obj.simulation_data);
+            ret = obj.diff_tester.compare();
+        end
+        
+        
+        
+        
+        
+        function obj = signal_logging_setup(obj)
+            if ~ obj.log_signals
+                fprintf('Returning from signal logging setup');
+                return;
+            end
+            
+            for i = obj.slb.handles
+                port_handles = get_param(i{1}, 'PortHandles');
+                out_ports = port_handles.Outport;
+                
+                for j = 1: numel(out_ports)
+                    set_param(out_ports(j), 'DataLogging', 'On');
+                end
+                
+            end
+            
+        end
+        
+        
+        function obj = simulate_for_data_logging(obj)
+            if isempty(obj.simulation_mode)
+                fprintf('No simulation mode provided. returning...\n');
+            end
+            
+            obj.simulation_data = cell(1, numel(obj.simulation_mode_values));
+            
+            for i = 1:numel(obj.simulation_mode_values)
+                mode_val = obj.simulation_mode_values{i};
+                fprintf('[!] Simulating in mode %s for value %s...\n', obj.simulation_mode, mode_val);
+                simOut = sim(obj.sys, 'SimulationMode', obj.simulation_mode, 'SimCompilerOptimization', mode_val);
+                obj.simulation_data{i} = simOut.get('logsout');
+            end
+            
+%             obj.simulation_data{1}
+%             obj.simulation_data{2}
+            
+        end
+        
+        
+        
+        
+        
         function ret = chk_compatibility(obj)
-            return;
+            return;         % NOT DOING ANYTHING IN THIS FUNCTION
             done = false;
             while ~done
                 try

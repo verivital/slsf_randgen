@@ -1,11 +1,17 @@
-% Test simple_generator
+% This is entry point to the Random Generator.
+% Run this script from the command line. You can edit following options
+% (options are always written using all upper-case letters).
 
-NUM_TESTS = 1;                    % Number of models to generate
-STOP_IF_ERROR = true;              % Stop when meet the first simulation error
-STOP_IF_OTHER_ERROR = true;         % For errors not related to simulation e.g. unhandled simulation exceptions or code bug
-CLOSE_MODEL = false;                 % Close models after simulation
-SIMULATE_MODELS = true;             % Will simulate model if value is true
-NUM_BLOCKS = 30;                    % Number of blocks in each model (flat hierarchy)
+NUM_TESTS = 1;                          % Number of models to generate
+STOP_IF_ERROR = true;                   % Stop when meet the first simulation error
+STOP_IF_OTHER_ERROR = true;             % For errors not related to simulation e.g. unhandled simulation exceptions or code bug
+CLOSE_MODEL = false;                    % Close models after simulation
+SIMULATE_MODELS = true;                 % Will simulate model if value is true
+NUM_BLOCKS = 30;                        % Number of blocks in each model (flat hierarchy)
+
+LOG_SIGNALS = true;                     % If set to true, will log all output signals for later comparison
+SIMULATION_MODE = 'accelerator';        % See 'SimulationMode' parameter in http://bit.ly/1WjA4uE
+COMPARE_SIM_RESULTS = true;             % Compare simulation results.
 
 %%%%%%%%%%%%%%%%%%%% End of Options %%%%%%%%%%%%%%%%%%%%
 
@@ -39,12 +45,12 @@ errors = {};
 e_map = struct;
 
 for ind = 1:NUM_TESTS
-    chart_name = strcat('sampleModel', int2str(ind));
+    model_name = strcat('sampleModel', int2str(ind));
     
     % Store random number settings
     rng_state = rng;
     
-    sg = simple_generator(NUM_BLOCKS, chart_name, SIMULATE_MODELS, CLOSE_MODEL);
+    sg = simple_generator(NUM_BLOCKS, model_name, SIMULATE_MODELS, CLOSE_MODEL, LOG_SIGNALS, SIMULATION_MODE, COMPARE_SIM_RESULTS);
     
     try
         if ~sg.go()
@@ -54,7 +60,7 @@ for ind = 1:NUM_TESTS
             % Keep record of the exception
 
             c = struct;
-            c.m_no = chart_name;
+            c.m_no = model_name;
             e = sg.last_exc;
 
             if(strcmp(e.identifier, 'MATLAB:MException:MultipleErrors'))
@@ -80,10 +86,11 @@ for ind = 1:NUM_TESTS
     catch e
         % Exception occurred when simulating, but the error was not caught.
         % Reason: new types of simulation errors
-        disp('EEEEEE Unhandled Error In Simulation EEEEEE');
+        disp('EEEEEEEEEEEEEEEEEEEE Unhandled Error In Simulation EEEEEEEEEEEEEEEEEEEEEEEEEE');
         e
         e.message
         e.cause
+        e.stack.line
         
         if STOP_IF_OTHER_ERROR
             disp('Stopping: STOP_IF_OTHER_ERROR=True.');
@@ -93,7 +100,7 @@ for ind = 1:NUM_TESTS
         end
     end
     
-    disp(['%%%%%%%%%%%%%%%%%% AFTER ' int2str(ind) 'th SIMULATION %%%%%%%%%%%%%%%%%%%%%%%']);
+    disp(['%%% %%%% %%%% %%%% %%%% AFTER ' int2str(ind) 'th SIMULATION %%% %%%% %%%% %%%% %%%%']);
     num_suc_sim
     num_err_sim
     e_map
