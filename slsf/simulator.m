@@ -134,6 +134,9 @@ classdef simulator < handle
                 else
 
                     switch e.identifier
+                        case {'Simulink:Engine:AlgStateNotFinite'}
+                            obj.fix_alg_loop(e);
+                            found = true;
                         case {'Simulink:Parameters:InvParamSetting'}
                             obj.fix_invParamSetting(e);
                             done = true;                                    % TODO
