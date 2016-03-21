@@ -2,10 +2,11 @@
 % Run this script from the command line. You can edit following options
 % (options are always written using all upper-case letters).
 
-NUM_TESTS = 1;                          % Number of models to generate
-STOP_IF_ERROR = true;                   % Stop when meet the first simulation error
-STOP_IF_OTHER_ERROR = true;             % For errors not related to simulation e.g. unhandled simulation exceptions or code bug
-CLOSE_MODEL = false;                    % Close models after simulation
+NUM_TESTS = 20;                          % Number of models to generate
+STOP_IF_ERROR = false;                   % Stop when meet the first simulation error
+STOP_IF_OTHER_ERROR = true;             % For errors not related to simulation e.g. unhandled exceptions or code bug. ALWAYS KEEP IT TRUE
+CLOSE_MODEL = true;                    % Close models after simulation
+CLOSE_OK_MODELS = false;                % Close models for which simulation ran OK
 SIMULATE_MODELS = true;                 % Will simulate model if value is true
 NUM_BLOCKS = 30;                        % Number of blocks in each model (flat hierarchy)
 
@@ -38,11 +39,14 @@ end
 
 load_system('Simulink');
 
+num_total_sim = 0;
 num_suc_sim = 0;
 num_err_sim = 0;
+num_timedout_sim = 0;
 
 errors = {};
 e_map = struct;
+e_later = struct;  % Errors which occurred after Normal simulation went OK
 
 for ind = 1:NUM_TESTS
     model_name = strcat('sampleModel', int2str(ind));
@@ -52,8 +56,16 @@ for ind = 1:NUM_TESTS
     
     sg = simple_generator(NUM_BLOCKS, model_name, SIMULATE_MODELS, CLOSE_MODEL, LOG_SIGNALS, SIMULATION_MODE, COMPARE_SIM_RESULTS);
     
+    num_total_sim = num_total_sim + 1;
+    
     try
-        if ~sg.go()
+        sim_res = sg.go();
+        
+        if CLOSE_MODEL
+            sg.close();
+        end
+        
+        if ~ sim_res
 
             num_err_sim = num_err_sim + 1;
 
@@ -62,10 +74,24 @@ for ind = 1:NUM_TESTS
             c = struct;
             c.m_no = model_name;
             e = sg.last_exc;
-
-            if(strcmp(e.identifier, 'MATLAB:MException:MultipleErrors'))
-                e = e.cause{1};
+            
+            switch e.identifier
+                case {'MATLAB:MException:MultipleErrors'}
+                    e = e.cause{1};
+                    
+                case {'RandGen:SL:SimTimeout'}
+                    num_timedout_sim = num_timedout_sim + 1;
+                    disp('Timed Out Simulation. Proceeding to the next model...');
+                    continue;
+                    
+                case {'RandGen:SL:ErrAfterNormalSimulation'}
+                    e_later = util.map_inc(e_later, e.message);
+                
             end
+
+%             if(strcmp(e.identifier, 'MATLAB:MException:MultipleErrors'))
+%                 e = e.cause{1};
+%             end
 
             e_map = util.map_inc(e_map, e.identifier);
 
@@ -78,33 +104,57 @@ for ind = 1:NUM_TESTS
     %             break;
     %         end
 
-        else
+        else % Successful Simulation! %
             num_suc_sim = num_suc_sim + 1;
-%             sg.close();           % Close Model
+            if CLOSE_OK_MODELS
+                sg.close();           % Close Model
+            end
 
         end
     catch e
         % Exception occurred when simulating, but the error was not caught.
-        % Reason: new types of simulation errors
+        % Reason: code bug/unhandled errors. ALWAYS INSPECT THESE ERRORS!!
         disp('EEEEEEEEEEEEEEEEEEEE Unhandled Error In Simulation EEEEEEEEEEEEEEEEEEEEEEEEEE');
         e
         e.message
         e.cause
+%         e.cause{1}
+%         e.cause{2}
         e.stack.line
+        
+        % Following timeout will never occur here?
+%         if strcmp(e.identifier, 'RandGen:SL:SimTimeout')
+%             num_timedout_sim = num_timedout_sim + 1;
+%             disp('Timed Out Simulation. Proceeding to the next model...');
+%             continue;
+%         end
+        
+        e_map = util.map_inc(e_map, e.identifier);
         
         if STOP_IF_OTHER_ERROR
             disp('Stopping: STOP_IF_OTHER_ERROR=True.');
             break;
-        else
-            e_map = util.map_inc(e_map, e.identifier);
         end
     end
     
     disp(['%%% %%%% %%%% %%%% %%%% AFTER ' int2str(ind) 'th SIMULATION %%% %%%% %%%% %%%% %%%%']);
+    
+    num_total_sim
     num_suc_sim
     num_err_sim
+    num_timedout_sim
     e_map
+    e_later
     
 end
 
 disp('----------- SGTEST END -------------');
+
+disp(['%%% %%%% %%%% %%%% %%%% Final Statistics %%% %%%% %%%% %%%% %%%%']);
+
+num_total_sim
+num_suc_sim
+num_err_sim
+num_timedout_sim
+e_map
+e_later

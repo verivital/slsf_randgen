@@ -41,13 +41,19 @@ classdef comparator < handle
                 
                 for j = 1 : numel(blocks)
                     bl_name = blocks{j};
-                    fprintf('Comparing block: %s\n', bl_name);
+%                     fprintf('Comparing block: %s\n', bl_name);
                     
                     data_1 = f.(bl_name);
                     data_2 = obj.refined_data{i}.(bl_name);
                     
-%                     data_1
-%                     data_2
+%                     fprintf('-----------------\n');
+%                     
+%                     data_1.Time
+%                     data_1.Data
+%                     data_2.Time
+%                     data_2.Data
+%                     
+%                     fprintf('-----------------\n');
                     
                     % Last Data
                     d_1 = data_1.Data(numel(data_1.Data));
@@ -61,6 +67,7 @@ classdef comparator < handle
                     else
                         fprintf('Data Mismatch!\n');
                         ret = false;
+                        obj.generator.last_exc = MException('RandGen:SL:CompareError', 'Compared Data Mismatch');
                         d_1
                         d_2
                     end
@@ -71,6 +78,7 @@ classdef comparator < handle
                     else
                         fprintf('Time Mismatch!\n');
                         ret = false;
+                        obj.generator.last_exc = MException('RandGen:SL:CompareError', 'Compared Time Mismatch');
                         t_1
                         t_2
                     end

@@ -5,7 +5,9 @@ function sim_timeout_callback(obj, event, sim_ob)
     try
 %         disp('TIMEOUT CALLED');
         sim_ob.sim_status = get_param(sim_ob.generator.sys,'SimulationStatus');
-        set_param(sim_ob.generator.sys, 'SimulationCommand', 'stop');
+        if strcmp(sim_ob.sim_status, 'running')
+            set_param(sim_ob.generator.sys, 'SimulationCommand', 'stop');
+        end
     catch e
         % Do Nothing
     end

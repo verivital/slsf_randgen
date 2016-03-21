@@ -22,14 +22,16 @@ classdef blockchooser < handle
         function obj=blockchooser()
             % CONSTRUCTOR %
             
-            % Blocklist some blocks
+            % Blacklist some blocks
             obj.blocklist.(util.mvn('simulink/Sources/From File')) = 1;
             obj.blocklist.(util.mvn('simulink/Sources/FromWorkspace')) = 1;
             obj.blocklist.(util.mvn('simulink/Sources/EnumeratedConstant')) = 1;
             obj.blocklist.(util.mvn('simulink/Discrete/Discrete Derivative')) = 1;
             obj.blocklist.(util.mvn('simulink/Math Operations/FindNonzeroElements')) = 1;
             obj.blocklist.(util.mvn('simulink/Continuous/VariableTransport Delay')) = 1;
+            obj.blocklist.(util.mvn('simulink/Sinks/StopSimulation')) = 1;
 %             obj.blocklist.(util.mvn('simulink/Continuous/PID Controller (2DOF)')) = 1;
+
             
         end
         

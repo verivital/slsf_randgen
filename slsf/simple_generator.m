@@ -6,7 +6,7 @@ classdef simple_generator < handle
        DEBUG = true;
        LIST_BLOCK_PARAMS = true;    % Will list all dialog parameters of a block which is chosen for current chart
        LIST_CONN = false;            % If true will print info when connecting blocks
-       TEMP_SAVE_NAME = 'slsfRandgenTempModel';
+       
     end
     
     properties
@@ -38,11 +38,12 @@ classdef simple_generator < handle
         compare_results = true;
         
         
-        simulation_mode_values = {'on' 'off'};
+        simulation_mode_values = {'off' 'on'};
         
-        is_simulation_successful = [];  % Boolean, whether the model can be simulated without any error.
+        is_simulation_successful = [];  % Boolean, whether the model can be simulated in Normal mode without any error.
         
         simulation_data = [];
+        my_result = [];                 % Instance of Single result
         
         % Drawing related
         d_x;
@@ -131,26 +132,44 @@ classdef simple_generator < handle
                 return;
             end
             
-            
-            
+%             disp('Returning abruptly');
+%             return;
             
             
             obj.is_simulation_successful = obj.simulate();
             ret = obj.is_simulation_successful;
             
             
-            fprintf('Done Simulating\n');
+%             fprintf('Done Simulating\n');
+%             
+%             disp('Returning abruptly');
+%             return;
             
             
             
             % Signal Logging Setup and Compilation %
             
             if obj.is_simulation_successful
+                obj.my_result.set_ok_normal_mode();
                 fprintf('[SIGNAL LOGGING] Now setting up...\n');
                 
                 obj.signal_logging_setup();
+                
+%                 disp('Returning abruptly');
+%                 return;
+                
                 obj.simulate_for_data_logging();
+                
+                if ~ obj.my_result.is_acc_sim_ok
+                    ret = false;
+                    return;
+                end
+                
                 ret = obj.compare_sim_results();
+            else
+                obj.my_result.set_error_normal_mode(obj.last_exc);
+                % Don't need to record timed_out, it is already logged
+                % inside Simulator.m class
             end
             
             
@@ -166,6 +185,7 @@ classdef simple_generator < handle
             obj.slb = slblocks(obj.NUM_BLOCKS);
             obj.blkcfg = blockconfigure();
             obj.simul = simulator(obj, obj.max_simul_attempt);
+            obj.my_result = singleresult(obj.sys);
             
             new_system(obj.sys);
             open_system(obj.sys);
@@ -211,10 +231,15 @@ classdef simple_generator < handle
                 fprintf('No simulation mode provided. returning...\n');
             end
             
+            obj.my_result.set_ok_acc_mode();    % Will be over-written if not ok
+            
             obj.simulation_data = cell(1, numel(obj.simulation_mode_values));
             
-%             Simulink.sdi.changeLoggedToStreamed(obj.sys);   % Stream logged signals in Simulink Data Inspector: http://bit.ly/1RK6wTn
+%             Simulink.sdi.changeLoggedToStreamed(obj.sys);   % Stream
+%             logged signals in Simulink Data Inspector:
+%             http://bit.ly/1RK6wTn - Only available from R2016
             
+
             for i = 1:numel(obj.simulation_mode_values)
                 
                 % Open the model first
@@ -225,7 +250,15 @@ classdef simple_generator < handle
                 
                 mode_val = obj.simulation_mode_values{i};
                 fprintf('[!] Simulating in mode %s for value %s...\n', obj.simulation_mode, mode_val);
-                simOut = sim(obj.sys, 'SimulationMode', obj.simulation_mode, 'SimCompilerOptimization', mode_val, 'SignalLogging','on');
+                try
+                    simOut = sim(obj.sys, 'SimulationMode', obj.simulation_mode, 'SimCompilerOptimization', mode_val, 'SignalLogging','on');
+                catch e
+                    fprintf('ERROR SIMULATION in advanced modes');
+                    e
+                    obj.my_result.set_error_acc_mode(e, mode_val);
+                    obj.last_exc = MException('RandGen:SL:ErrAfterNormalSimulation', e.identifier);
+                    return;
+                end
                 obj.simulation_data{i} = simOut.get('logsout');
                 
                 % Delete generated stuffs
@@ -319,10 +352,6 @@ classdef simple_generator < handle
             fprintf('[~] Simulating...\n');
             
             ret =  obj.simul.simulate();
-            
-            if obj.close_model
-                obj.close();
-            end
                 
         end
         

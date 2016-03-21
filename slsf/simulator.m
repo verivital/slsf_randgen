@@ -36,16 +36,21 @@ classdef simulator < handle
             myTimer = timer('StartDelay',obj.simulation_timeout, 'TimerFcn', {@sim_timeout_callback, obj});
 %             myTimer = timer('StartDelay',obj.simulation_timeout, 'TimerFcn',['set_param(''' obj.generator.sys ''',''SimulationCommand'',''stop'')']);
             start(myTimer);
-            sim(obj.generator.sys);
-            disp(['RETURN FROM SIMULATION. STATUS: ' obj.sim_status ]);
-            stop(myTimer);
-            
-            delete(myTimer);
+            try
+                sim(obj.generator.sys);
+                disp(['RETURN FROM SIMULATION. STATUS: ' obj.sim_status ]);
+                stop(myTimer);
+
+                delete(myTimer);
+            catch e
+                throw(e);
+            end
             
             if ~isempty(obj.sim_status) && ~strcmp(obj.sim_status, 'stopped')
                 disp('xxxxxxxxxxxxxxxx SIMULATION TIMEOUT xxxxxxxxxxxxxxxxxxxx');
-                throw(MException('RandGen:SL:SimeTimeout', 'TimeOut'));
+                throw(MException('RandGen:SL:SimTimeout', 'TimeOut'));
             end
+            
         end
         
         
@@ -62,7 +67,7 @@ classdef simulator < handle
                 try
                     obj.sim();
 %                     sim(obj.generator.sys);  
-                    disp('Success!');
+                    disp('Success simulating in NORMAL mode!');
                     done = true;
                     ret = true;
                 catch e
@@ -70,6 +75,7 @@ classdef simulator < handle
                     obj.generator.last_exc = e;
                     
                     if(strcmp(e.identifier, 'RandGen:SL:SimTimeout'))
+                        obj.generator.my_result.set_timed_out_normal_mode(obj.simulation_timeout);
                         return;
                     end
                     
