@@ -11,6 +11,8 @@ classdef singleresult < handle
         last_exc = [];               % Last exception the model threw
         mode_diff_val = [];          % Value used for differential testing
         last_action = [];            % Last action (Normal mode or Acc mode) performed 
+        is_log_len_mismatch = false; % After signal logging, length of two simulation was not same.
+        log_len_mismatch_count = 0;
     end
     
     methods

@@ -158,14 +158,28 @@ classdef simple_generator < handle
 %                 disp('Returning abruptly');
 %                 return;
                 
-                obj.simulate_for_data_logging();
+      
                 
-                if ~ obj.my_result.is_acc_sim_ok
-                    ret = false;
-                    return;
+                % Run simulation again for comparing results
+                max_try = 2;
+                
+                for i=1:max_try
+                    
+                    obj.simulate_for_data_logging();
+                
+                    if ~ obj.my_result.is_acc_sim_ok
+                        ret = false;
+                        return;
+                    end
+                    
+                    ret = obj.compare_sim_results(i);
+                    
+                    if ~ obj.my_result.is_log_len_mismatch
+                        break; % No need to run all those simulations again
+                    end
+                    
                 end
                 
-                ret = obj.compare_sim_results();
             else
                 obj.my_result.set_error_normal_mode(obj.last_exc);
                 % Don't need to record timed_out, it is already logged
@@ -194,12 +208,12 @@ classdef simple_generator < handle
         
         
         
-        function ret = compare_sim_results(obj)
+        function ret = compare_sim_results(obj, try_count)
             if ~ obj.compare_results
                 fprintf('Will not compare simulation results, returning...');
             end
             
-            obj.diff_tester = comparator(obj, obj.simulation_data);
+            obj.diff_tester = comparator(obj, obj.simulation_data, try_count);
             ret = obj.diff_tester.compare();
         end
         

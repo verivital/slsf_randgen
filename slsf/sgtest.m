@@ -2,7 +2,7 @@
 % Run this script from the command line. You can edit following options
 % (options are always written using all upper-case letters).
 
-NUM_TESTS = 20;                          % Number of models to generate
+NUM_TESTS = 60;                          % Number of models to generate
 STOP_IF_ERROR = false;                   % Stop when meet the first simulation error
 STOP_IF_OTHER_ERROR = true;             % For errors not related to simulation e.g. unhandled exceptions or code bug. ALWAYS KEEP IT TRUE
 CLOSE_MODEL = true;                    % Close models after simulation
@@ -37,12 +37,18 @@ else
     rng(rng_state);
 end
 
+
+% Script is Starting %
+
 load_system('Simulink');
 
 num_total_sim = 0;
 num_suc_sim = 0;
 num_err_sim = 0;
 num_timedout_sim = 0;
+
+log_len_mismatch_count = 0;
+log_len_mismatch_names = mycell(NUM_TESTS);
 
 errors = {};
 e_map = struct;
@@ -61,10 +67,6 @@ for ind = 1:NUM_TESTS
     try
         sim_res = sg.go();
         
-        if CLOSE_MODEL
-            sg.close();
-        end
-        
         if ~ sim_res
 
             num_err_sim = num_err_sim + 1;
@@ -82,10 +84,17 @@ for ind = 1:NUM_TESTS
                 case {'RandGen:SL:SimTimeout'}
                     num_timedout_sim = num_timedout_sim + 1;
                     disp('Timed Out Simulation. Proceeding to the next model...');
+                    
+                    if CLOSE_MODEL sg.close(); end
+           
                     continue;
                     
                 case {'RandGen:SL:ErrAfterNormalSimulation'}
                     e_later = util.map_inc(e_later, e.message);
+                    
+                case {'RandGen:SL:CompareError'}
+                    fprintf('Compare Error occurred. Breaking...\n');
+                    break;
                 
             end
 
@@ -99,14 +108,20 @@ for ind = 1:NUM_TESTS
                 disp('BREAKING FROM MAIN LOOP AS ERROR OCCURRED IN SIMULATION');
                 break;
             end
-
-    %         if ~strcmp(e.identifier, 'Simulink:DataType:PropForwardDataTypeError')
-    %             break;
-    %         end
+            
+            if CLOSE_MODEL
+                sg.close();
+            end
 
         else % Successful Simulation! %
             num_suc_sim = num_suc_sim + 1;
-            if CLOSE_OK_MODELS
+            
+            if sg.my_result.log_len_mismatch_count > 0
+            	log_len_mismatch_count = log_len_mismatch_count + 1;
+                log_len_mismatch_names.add(model_name);
+            end
+            
+            if CLOSE_MODEL || CLOSE_OK_MODELS
                 sg.close();           % Close Model
             end
 
@@ -145,8 +160,15 @@ for ind = 1:NUM_TESTS
     num_timedout_sim
     e_map
     e_later
+    log_len_mismatch_count
+    
+    disp('-- printing log_length mismatch model names --');
+    log_len_mismatch_names.print_all();
     
 end
+
+% Clean-up
+delete('*.mat');
 
 disp('----------- SGTEST END -------------');
 
@@ -158,3 +180,7 @@ num_err_sim
 num_timedout_sim
 e_map
 e_later
+log_len_mismatch_count
+
+disp('-- printing log_length mismatch model names --');
+log_len_mismatch_names.print_all();
