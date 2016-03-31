@@ -2,7 +2,7 @@
 % Run this script from the command line. You can edit following options
 % (options are always written using all upper-case letters).
 
-NUM_TESTS = 60;                          % Number of models to generate
+NUM_TESTS = 2;                          % Number of models to generate
 STOP_IF_ERROR = false;                   % Stop when meet the first simulation error
 STOP_IF_OTHER_ERROR = true;             % For errors not related to simulation e.g. unhandled exceptions or code bug. ALWAYS KEEP IT TRUE
 CLOSE_MODEL = true;                    % Close models after simulation
@@ -15,6 +15,8 @@ SIMULATION_MODE = 'accelerator';        % See 'SimulationMode' parameter in http
 COMPARE_SIM_RESULTS = true;             % Compare simulation results.
 
 %%%%%%%%%%%%%%%%%%%% End of Options %%%%%%%%%%%%%%%%%%%%
+
+WS_FILE_NAME = 'slsf/savedws.mat';       % Saving ws vars so that we can continue from new random models next time the script is run.
 
 % For each run of this script, new random numbers will be selected. If you
 % want to stop this behavior (e.g. if you want to generate the SAME models
@@ -59,6 +61,8 @@ for ind = 1:NUM_TESTS
     
     % Store random number settings
     rng_state = rng;
+    
+    save(WS_FILE_NAME, 'rng_state'); % Saving workspace variables (we're only interested in the variable rng_state)
     
     sg = simple_generator(NUM_BLOCKS, model_name, SIMULATE_MODELS, CLOSE_MODEL, LOG_SIGNALS, SIMULATION_MODE, COMPARE_SIM_RESULTS);
     
