@@ -289,6 +289,14 @@ classdef simulator < handle
             my_name = get_param(h, 'Name');
 
             disp(['Add Block in the middle: For ' my_name '; handle ' num2str(h)]);
+            
+            if ignore_in
+                disp('INGORE INPUTS');
+            end
+            
+            if ignore_out
+                disp('IGNORE OUTPUTS');
+            end
 
             try
                 ports = get_param(h,'PortConnectivity');
@@ -336,6 +344,16 @@ classdef simulator < handle
                     other_port = p.DstPort + 1; 
                 end 
                 
+                if isempty(other_name)
+                    disp('Can not find other end of the port. No blocks there or port misidentified');
+                    % For example if an OUTPUT port 'x' of a block is not
+                    % connected, that port 'x' will be wrongly identified
+                    % as an INPUT port, and at this point variable
+                    % `other_name` is empty as there is no other blocks
+                    % connected to this port.
+                    continue;
+                end
+                
                 my_b_p = [my_name '/' p.Type];
                 
                 if numel(other_port) > 1
@@ -371,6 +389,8 @@ classdef simulator < handle
                 delete_line( obj.generator.sys, b_a , b_b);
                 add_line(obj.generator.sys, b_a, new_blk_port , 'autorouting','on');
                 add_line(obj.generator.sys, new_blk_port, b_b , 'autorouting','on');
+                
+                disp('Done adding block!');
 
                 
 %                 delete_line( obj.generator.sys, src_b_p , my_b_p);

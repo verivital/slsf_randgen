@@ -149,7 +149,7 @@ classdef simple_generator < handle
             
             % Signal Logging Setup and Compilation %
             
-            if obj.is_simulation_successful
+            if obj.simulate_models && obj.is_simulation_successful
                 obj.my_result.set_ok_normal_mode();
                 fprintf('[SIGNAL LOGGING] Now setting up...\n');
                 
