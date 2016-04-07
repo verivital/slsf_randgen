@@ -35,7 +35,7 @@ classdef mycell < handle
         
         
         function obj = print_all(obj)
-            for i=1:numel(obj.data)
+            for i=1:obj.len
                 fprintf('%s\t', obj.data{i});
             end
             

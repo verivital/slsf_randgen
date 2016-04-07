@@ -1,0 +1,1 @@
+We store SLSF generator's various data permanently in this folder.

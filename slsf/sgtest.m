@@ -14,9 +14,19 @@ LOG_SIGNALS = true;                     % If set to true, will log all output si
 SIMULATION_MODE = 'accelerator';        % See 'SimulationMode' parameter in http://bit.ly/1WjA4uE
 COMPARE_SIM_RESULTS = true;             % Compare simulation results.
 
-%%%%%%%%%%%%%%%%%%%% End of Options %%%%%%%%%%%%%%%%%%%%
+LOAD_RNG_STATE = true;                  % Load Random_Number_Generator state from Disc. Desired, if we want to create NEW models each time the script is run.
 
-WS_FILE_NAME = 'slsf/savedws.mat';       % Saving ws vars so that we can continue from new random models next time the script is run.
+%%%%%%%%%%%%%%%%%%%% End of Options %%%%%%%%%%%%%%%%%%%%
+fprintf('\n =========== STARTING SGTEST ================\n');
+
+% addpath('slsf');
+
+WS_FILE_NAME = ['data' filesep 'savedws.mat'];       % Saving ws vars so that we can continue from new random models next time the script is run.
+
+if LOAD_RNG_STATE
+    disp('Restoring RNG state from disc')
+    load(WS_FILE_NAME);
+end
 
 % For each run of this script, new random numbers will be selected. If you
 % want to stop this behavior (e.g. if you want to generate the SAME models
@@ -25,6 +35,7 @@ WS_FILE_NAME = 'slsf/savedws.mat';       % Saving ws vars so that we can continu
 
 if ~ exist('rng_state', 'var')
     rng_state = [];
+    mdl_counter = 0; % To count how many unique models we generate
 end
 
 if ~exist('rand_start_over', 'var')
@@ -33,11 +44,14 @@ end
 
 if isempty(rng_state) || rand_start_over
     disp('~~ RandomNumbers: Starting Over ~~');
-    rng(0,'twister');           % Random Number Generator Init
+    rng(0,'twister');           % Random Number Generator  - Initialize
+    mdl_counter = 0;
 else
     disp('~~ RandomNumbers: Storing from previous state ~~');
     rng(rng_state);
 end
+
+REPORT_FILE = ['reports' filesep datestr(now, 'yyyy-mm-dd-HH-MM-SS')];
 
 
 % Script is Starting %
@@ -57,12 +71,12 @@ e_map = struct;
 e_later = struct;  % Errors which occurred after Normal simulation went OK
 
 for ind = 1:NUM_TESTS
-    model_name = strcat('sampleModel', int2str(ind));
-    
-    % Store random number settings
+    % Store random number settings for future usate
     rng_state = rng;
+    save(WS_FILE_NAME, 'rng_state', 'mdl_counter'); % Saving workspace variables (we're only interested in the variable rng_state)
     
-    save(WS_FILE_NAME, 'rng_state'); % Saving workspace variables (we're only interested in the variable rng_state)
+    mdl_counter = mdl_counter + 1;
+    model_name = strcat('sampleModel', int2str(mdl_counter));
     
     sg = simple_generator(NUM_BLOCKS, model_name, SIMULATE_MODELS, CLOSE_MODEL, LOG_SIGNALS, SIMULATION_MODE, COMPARE_SIM_RESULTS);
     
@@ -156,8 +170,12 @@ for ind = 1:NUM_TESTS
         end
     end
     
-    disp(['%%% %%%% %%%% %%%% %%%% AFTER ' int2str(ind) 'th SIMULATION %%% %%%% %%%% %%%% %%%%']);
+%     delete sg;
+%     clear sg;
     
+    disp(['%%% %%%% %%%% %%%% %%%% AFTER ' int2str(mdl_counter) 'th SIMULATION %%% %%%% %%%% %%%% %%%%']);
+    
+    mdl_counter
     num_total_sim
     num_suc_sim
     num_err_sim
@@ -169,6 +187,9 @@ for ind = 1:NUM_TESTS
     disp('-- printing log_length mismatch model names --');
     log_len_mismatch_names.print_all();
     
+    % Save statistics in file
+    save(REPORT_FILE, 'mdl_counter', 'num_total_sim', 'num_suc_sim', 'num_err_sim', 'num_timedout_sim', 'e_map',... 
+    'e_later', 'log_len_mismatch_count', 'log_len_mismatch_names');
 end
 
 % Clean-up
@@ -178,6 +199,7 @@ disp('----------- SGTEST END -------------');
 
 disp(['%%% %%%% %%%% %%%% %%%% Final Statistics %%% %%%% %%%% %%%% %%%%']);
 
+mdl_counter
 num_total_sim
 num_suc_sim
 num_err_sim
@@ -188,3 +210,5 @@ log_len_mismatch_count
 
 disp('-- printing log_length mismatch model names --');
 log_len_mismatch_names.print_all();
+
+disp('------ BYE from SGTEST -------');
