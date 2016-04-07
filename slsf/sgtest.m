@@ -2,13 +2,17 @@
 % Run this script from the command line. You can edit following options
 % (options are always written using all upper-case letters).
 
-NUM_TESTS = 2;                          % Number of models to generate
+NUM_TESTS = 40;                          % Number of models to generate
 STOP_IF_ERROR = false;                   % Stop when meet the first simulation error
 STOP_IF_OTHER_ERROR = true;             % For errors not related to simulation e.g. unhandled exceptions or code bug. ALWAYS KEEP IT TRUE
 CLOSE_MODEL = true;                    % Close models after simulation
 CLOSE_OK_MODELS = false;                % Close models for which simulation ran OK
 SIMULATE_MODELS = true;                 % Will simulate model if value is true
 NUM_BLOCKS = 30;                        % Number of blocks in each model (flat hierarchy)
+
+SAVE_ALL_ERR_MODELS = true;             % Save the models which we can not simulate 
+LOG_ERR_MODEL_NAMES = true;             % Log error model names keyed by their errors
+SAVE_COMPARE_ERR_MODELS = true;         % Save models for which we got signal compare error after diff. testing
 
 LOG_SIGNALS = true;                     % If set to true, will log all output signals for later comparison
 SIMULATION_MODE = 'accelerator';        % See 'SimulationMode' parameter in http://bit.ly/1WjA4uE
@@ -22,6 +26,9 @@ fprintf('\n =========== STARTING SGTEST ================\n');
 % addpath('slsf');
 
 WS_FILE_NAME = ['data' filesep 'savedws.mat'];       % Saving ws vars so that we can continue from new random models next time the script is run.
+ERR_MODEL_STORAGE = ['reports' filesep 'errors'];    % In this directory save all the error models (not including timed-out models)
+COMPARE_ERR_MODEL_STORAGE = ['reports' filesep 'comperrors'];    % In this directory save all the signal compare error models
+OTHER_ERR_MODEL_STORAGE = ['reports' filesep 'othererrors'];
 
 if LOAD_RNG_STATE
     disp('Restoring RNG state from disc')
@@ -62,9 +69,15 @@ num_total_sim = 0;
 num_suc_sim = 0;
 num_err_sim = 0;
 num_timedout_sim = 0;
+num_compare_error = 0;
+num_other_error = 0;
 
 log_len_mismatch_count = 0;
 log_len_mismatch_names = mycell(NUM_TESTS);
+
+err_model_names = struct;                       % For each error models save the names of the models
+compare_err_model_names = mycell(NUM_TESTS);     % Save those model names for which got signal compare error
+other_err_model_names = struct;
 
 errors = {};
 e_map = struct;
@@ -96,8 +109,8 @@ for ind = 1:NUM_TESTS
             e = sg.last_exc;
             
             switch e.identifier
-                case {'MATLAB:MException:MultipleErrors'}
-                    e = e.cause{1};
+%                 case {'MATLAB:MException:MultipleErrors'}
+%                     e = e.cause{1};
                     
                 case {'RandGen:SL:SimTimeout'}
                     num_timedout_sim = num_timedout_sim + 1;
@@ -108,11 +121,28 @@ for ind = 1:NUM_TESTS
                     continue;
                     
                 case {'RandGen:SL:ErrAfterNormalSimulation'}
+                    err_key = ['AfterError_' e.message];
                     e_later = util.map_inc(e_later, e.message);
                     
+                    if LOG_ERR_MODEL_NAMES
+                        util.map_append(err_model_names, err_key, model_name);
+                    end
+                    
+                    util.cond_save_model(SAVE_ALL_ERR_MODELS, model_name, ERR_MODEL_STORAGE);
+                    
                 case {'RandGen:SL:CompareError'}
-                    fprintf('Compare Error occurred. Breaking...\n');
-                    break;
+                    fprintf('Compare Error occurred...\n');
+                    num_compare_error = num_compare_error + 1;
+                    compare_err_model_names.add(model_name);
+                    util.cond_save_model(SAVE_COMPARE_ERR_MODELS, model_name, COMPARE_ERR_MODEL_STORAGE);
+                    
+                otherwise
+                    
+                    if LOG_ERR_MODEL_NAMES
+                        util.map_append(err_model_names, e.identifier, model_name);
+                    end
+                    
+                    util.cond_save_model(SAVE_ALL_ERR_MODELS, model_name, ERR_MODEL_STORAGE);
                 
             end
 
@@ -164,6 +194,11 @@ for ind = 1:NUM_TESTS
         
         e_map = util.map_inc(e_map, e.identifier);
         
+        num_other_error = num_other_error + 1;
+        
+        util.map_append(other_err_model_names, e.identifier, model_name);
+        util.cond_save_model(true, model_name, OTHER_ERR_MODEL_STORAGE);
+        
         if STOP_IF_OTHER_ERROR
             disp('Stopping: STOP_IF_OTHER_ERROR=True.');
             break;
@@ -179,17 +214,21 @@ for ind = 1:NUM_TESTS
     num_total_sim
     num_suc_sim
     num_err_sim
+    num_compare_error
+    num_other_error
     num_timedout_sim
     e_map
     e_later
     log_len_mismatch_count
     
-    disp('-- printing log_length mismatch model names --');
-    log_len_mismatch_names.print_all();
+    compare_err_model_names.print_all('-- printing COMPARE ERR model names --');
+%     log_len_mismatch_names.print_all('-- printing log_length mismatch model names --');
     
     % Save statistics in file
-    save(REPORT_FILE, 'mdl_counter', 'num_total_sim', 'num_suc_sim', 'num_err_sim', 'num_timedout_sim', 'e_map',... 
-    'e_later', 'log_len_mismatch_count', 'log_len_mismatch_names');
+    save(REPORT_FILE, 'mdl_counter', 'num_total_sim', 'num_suc_sim', 'num_err_sim', ...
+        'num_compare_error', 'num_other_error', 'num_timedout_sim', 'e_map', ... 
+        'err_model_names', 'compare_err_model_names', 'other_err_model_names', ...
+        'e_later', 'log_len_mismatch_count', 'log_len_mismatch_names');
 end
 
 % Clean-up
@@ -203,12 +242,16 @@ mdl_counter
 num_total_sim
 num_suc_sim
 num_err_sim
+num_compare_error
+num_other_error
 num_timedout_sim
 e_map
 e_later
 log_len_mismatch_count
 
-disp('-- printing log_length mismatch model names --');
-log_len_mismatch_names.print_all();
+
+compare_err_model_names.print_all('-- printing COMPARE ERR model names --');
+log_len_mismatch_names.print_all('-- printing log_length mismatch model names --');
+
 
 disp('------ BYE from SGTEST -------');

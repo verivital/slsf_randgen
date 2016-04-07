@@ -8,7 +8,7 @@ import time
 
 # Options
 
-OPT_NUM_RUN = 2
+OPT_NUM_RUN = 1
 
 # You can configure more options in slsf/sgtest.m file.
 
@@ -38,8 +38,8 @@ def run_tests():
 
             except Exception as e:
                 print('(!) Exception Occurred in main tester loop: {0}'.format(e))
-            print('python script: next run...')
-            time.sleep(5)
+            # print('python script: next run...')
+            # time.sleep(5)
     except KeyboardInterrupt as ke:
         print('(-/-) Interrupted by user, quiting.')
 

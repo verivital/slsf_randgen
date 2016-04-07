@@ -52,9 +52,28 @@ classdef util < handle
         end
         
         
+        function m = map_append(m, k, v)
+            map_k = util.mvn(k);
+
+            if ~ isfield(m, map_k)
+                m.(map_k) = mycell(-1);
+            end
+            
+            m.(map_k).add(v);
+        end
+        
+        
         function ret=rand_int(start, finish, num_numbers_to_generate)
             % Get a random Integer.
             ret  = randi([start, finish], 1, num_numbers_to_generate);
+        end
+        
+        
+        function cond_save_model(cond, mdl_name, store_dir)
+            % Conditionally save `mdl_name` only when `cond` is true
+            if cond
+                save_system(mdl_name, [store_dir filesep '.slx']);
+            end
         end
         
         

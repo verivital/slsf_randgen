@@ -34,7 +34,12 @@ classdef mycell < handle
         end
         
         
-        function obj = print_all(obj)
+        function obj = print_all(obj, header)
+            
+            if ~ isempty(header)
+                fprintf('%s\n', header);
+            end
+            
             for i=1:obj.len
                 fprintf('%s\t', obj.data{i});
             end
