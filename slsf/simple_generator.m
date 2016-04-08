@@ -248,7 +248,7 @@ classdef simple_generator < handle
             catch e
                 fprintf('ERROR SIMULATION (Logging) in Normal mode');
                 e
-                obj.my_result.set_error_acc_mode(e, mode_val);
+                obj.my_result.set_error_acc_mode(e, 'NormalMode');
                 obj.last_exc = MException('RandGen:SL:ErrAfterNormalSimulation', e.identifier);
                 ret = false;
                 return;
