@@ -2,7 +2,7 @@
 % Run this script from the command line. You can edit following options
 % (options are always written using all upper-case letters).
 
-NUM_TESTS = 1;                          % Number of models to generate
+NUM_TESTS = 300;                          % Number of models to generate
 STOP_IF_ERROR = false;                   % Stop when meet the first simulation error
 STOP_IF_OTHER_ERROR = true;             % For errors not related to simulation e.g. unhandled exceptions or code bug. ALWAYS KEEP IT TRUE
 CLOSE_MODEL = true;                    % Close models after simulation
@@ -126,7 +126,7 @@ for ind = 1:NUM_TESTS
                     e_later = util.map_inc(e_later, e.message);
                     
                     if LOG_ERR_MODEL_NAMES
-                        util.map_append(err_model_names, err_key, model_name);
+                        err_model_names = util.map_append(err_model_names, err_key, model_name);
                     end
                     
                     util.cond_save_model(SAVE_ALL_ERR_MODELS, model_name, ERR_MODEL_STORAGE);
@@ -145,7 +145,7 @@ for ind = 1:NUM_TESTS
                 otherwise
                     
                     if LOG_ERR_MODEL_NAMES
-                        util.map_append(err_model_names, e.identifier, model_name);
+                        err_model_names = util.map_append(err_model_names, e.identifier, model_name);
                     end
                     
                     util.cond_save_model(SAVE_ALL_ERR_MODELS, model_name, ERR_MODEL_STORAGE);
@@ -202,11 +202,11 @@ for ind = 1:NUM_TESTS
         
         num_other_error = num_other_error + 1;
         
-        util.map_append(other_err_model_names, e.identifier, model_name);
+        other_err_model_names = util.map_append(other_err_model_names, e.identifier, model_name);
         util.cond_save_model(true, model_name, OTHER_ERR_MODEL_STORAGE);
         
         if STOP_IF_OTHER_ERROR
-            disp('Stopping: STOP_IF_OTHER_ERROR=True.');
+            disp('Stopping: STOP_IF_OTHER_ERROR=True. WARNING: This will not be saved in reports.');
             break;
         end
     end
