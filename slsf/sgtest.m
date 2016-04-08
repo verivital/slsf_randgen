@@ -2,7 +2,7 @@
 % Run this script from the command line. You can edit following options
 % (options are always written using all upper-case letters).
 
-NUM_TESTS = 40;                          % Number of models to generate
+NUM_TESTS = 1;                          % Number of models to generate
 STOP_IF_ERROR = false;                   % Stop when meet the first simulation error
 STOP_IF_OTHER_ERROR = true;             % For errors not related to simulation e.g. unhandled exceptions or code bug. ALWAYS KEEP IT TRUE
 CLOSE_MODEL = true;                    % Close models after simulation
@@ -19,6 +19,7 @@ SIMULATION_MODE = 'accelerator';        % See 'SimulationMode' parameter in http
 COMPARE_SIM_RESULTS = true;             % Compare simulation results.
 
 LOAD_RNG_STATE = true;                  % Load Random_Number_Generator state from Disc. Desired, if we want to create NEW models each time the script is run.
+BREAK_AFTER_COMPARE_ERR = true;
 
 %%%%%%%%%%%%%%%%%%%% End of Options %%%%%%%%%%%%%%%%%%%%
 fprintf('\n =========== STARTING SGTEST ================\n');
@@ -136,6 +137,11 @@ for ind = 1:NUM_TESTS
                     compare_err_model_names.add(model_name);
                     util.cond_save_model(SAVE_COMPARE_ERR_MODELS, model_name, COMPARE_ERR_MODEL_STORAGE);
                     
+                    if BREAK_AFTER_COMPARE_ERR
+                        fprintf('COMPARE ERROR... BREAKING');
+                        break;
+                    end
+                    
                 otherwise
                     
                     if LOG_ERR_MODEL_NAMES
@@ -233,6 +239,7 @@ end
 
 % Clean-up
 delete('*.mat');
+delete('*_acc.mexa64');
 
 disp('----------- SGTEST END -------------');
 

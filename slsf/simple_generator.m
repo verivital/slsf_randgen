@@ -240,6 +240,29 @@ classdef simple_generator < handle
         end
         
         
+        function ret = simulate_log_signal_normal_mode(obj)
+            fprintf('[!] Simulating in NORMAL mode...\n');
+            ret = true;
+            try
+                simOut = sim(obj.sys, 'SimulationMode', 'normal', 'SignalLogging','on');
+            catch e
+                fprintf('ERROR SIMULATION (Logging) in Normal mode');
+                e
+                obj.my_result.set_error_acc_mode(e, mode_val);
+                obj.last_exc = MException('RandGen:SL:ErrAfterNormalSimulation', e.identifier);
+                ret = false;
+                return;
+            end
+            obj.simulation_data{1} = simOut.get('logsout');
+
+            % Save and close the system
+            fprintf('Saving Model...\n');
+            save_system(obj.sys);
+            obj.close();
+            
+        end
+        
+        
         function obj = simulate_for_data_logging(obj)
             if isempty(obj.simulation_mode)
                 fprintf('No simulation mode provided. returning...\n');
@@ -247,20 +270,24 @@ classdef simple_generator < handle
             
             obj.my_result.set_ok_acc_mode();    % Will be over-written if not ok
             
-            obj.simulation_data = cell(1, numel(obj.simulation_mode_values));
+            obj.simulation_data = cell(1, (numel(obj.simulation_mode_values) + 1)); % 1 extra for normal mode
             
 %             Simulink.sdi.changeLoggedToStreamed(obj.sys);   % Stream
 %             logged signals in Simulink Data Inspector:
 %             http://bit.ly/1RK6wTn - Only available from R2016
+
+            if ~ obj.simulate_log_signal_normal_mode()
+                return
+            end
             
 
             for i = 1:numel(obj.simulation_mode_values)
-                
-                % Open the model first
-                if i > 1
-                    fprintf('Opening Model...\n');
-                    open_system(obj.sys);
-                end
+                inc_i = i + 1;
+%                 % Open the model first
+%                 if i > 1
+%                     fprintf('Opening Model...\n');
+%                     open_system(obj.sys);
+%                 end
                 
                 mode_val = obj.simulation_mode_values{i};
                 fprintf('[!] Simulating in mode %s for value %s...\n', obj.simulation_mode, mode_val);
@@ -273,7 +300,7 @@ classdef simple_generator < handle
                     obj.last_exc = MException('RandGen:SL:ErrAfterNormalSimulation', e.identifier);
                     return;
                 end
-                obj.simulation_data{i} = simOut.get('logsout');
+                obj.simulation_data{inc_i} = simOut.get('logsout');
                 
                 % Delete generated stuffs
                 fprintf('Deleting generated stuffs...\n');

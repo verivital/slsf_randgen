@@ -72,7 +72,7 @@ classdef util < handle
         function cond_save_model(cond, mdl_name, store_dir)
             % Conditionally save `mdl_name` only when `cond` is true
             if cond
-                save_system(mdl_name, [store_dir filesep '.slx']);
+                save_system(mdl_name, [store_dir filesep mdl_name '.slx']);
             end
         end
         

@@ -16,7 +16,7 @@ classdef mycell < handle
             if capacity == -1
                 obj.data = {};
             else
-                obj.data = cell(obj.capacity);
+                obj.data = cell(1, obj.capacity);
             end
             
             obj.len = 0;
