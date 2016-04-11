@@ -72,10 +72,10 @@ classdef simulator < handle
                     ret = true;
                 catch e
                     disp(['[E] Error in simulation: ', e.identifier]);
-                    obj.generator.last_exc = e;
+                    obj.generator.my_result.exc = e;
                     
                     if(strcmp(e.identifier, 'RandGen:SL:SimTimeout'))
-                        obj.generator.my_result.set_timed_out_normal_mode(obj.simulation_timeout);
+                        obj.generator.my_result.set_to(singleresult.NORMAL, obj.simulation_timeout);
                         return;
                     end
                     
@@ -93,7 +93,7 @@ classdef simulator < handle
                         for m_i = 1:numel(e.cause)
                             disp(['Multiple Errors. Solving ' int2str(m_i)]);
                             ei = e.cause{m_i}
-                            obj.generator.last_exc = ei;
+                            obj.generator.my_result.exc = ei;
 
                             ei.message
                             ei.cause

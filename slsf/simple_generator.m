@@ -18,20 +18,20 @@ classdef simple_generator < handle
         
         candi_blocks;               % Will choose from these blocks
         
-        diff_tester;                % Instance of comparator class
+%         diff_tester;                % Instance of comparator class
                 
         simulate_models;            % Boolean: whether to simulate or not
         
         blkcfg;
         
-        simul;                      % Instance of simulator class
+%         simul;                      % Instance of simulator class
         max_simul_attempt = 10;
         
         close_model = true;         % Close after simulation
         
         stop = false;               % Stop future steps from go() method
         
-        last_exc = [];
+%         last_exc = [];
         
         log_signals = true;
         simulation_mode = [];
@@ -150,11 +150,14 @@ classdef simple_generator < handle
             % Signal Logging Setup and Compilation %
             
             if obj.simulate_models && obj.is_simulation_successful
-                obj.my_result.set_ok_normal_mode();
+%                 obj.my_result.set_ok_normal_mode();
+                obj.my_result.set_ok(singleresult.NORMAL)
+                
                 fprintf('[SIGNAL LOGGING] Now setting up...\n');
                 
                 obj.signal_logging_setup();
                 
+%                 save_system(obj.sys);
 %                 disp('Returning abruptly');
 %                 return;
                 
@@ -163,25 +166,28 @@ classdef simple_generator < handle
                 % Run simulation again for comparing results
                 max_try = 2;
                 
-                for i=1:max_try
-                    
-                    obj.simulate_for_data_logging();
-                
-                    if ~ obj.my_result.is_acc_sim_ok
-                        ret = false;
-                        return;
-                    end
-                    
-                    ret = obj.compare_sim_results(i);
-                    
-                    if ~ obj.my_result.is_log_len_mismatch
-                        break; % No need to run all those simulations again
-                    end
-                    
-                end
+                diff_tester = difftester(obj.sys, obj.my_result, max_try, obj.simulation_mode, obj.simulation_mode_values, obj.compare_results);
+                ret = diff_tester.go();
+%                 for i=1:max_try
+%                     
+%                     obj.simulate_for_data_logging();
+%                 
+%                     if ~ obj.my_result.is_acc_sim_ok
+%                         ret = false;
+%                         return;
+%                     end
+%                     
+%                     ret = obj.compare_sim_results(i);
+%                     
+%                     if ~ obj.my_result.is_log_len_mismatch
+%                         break; % No need to run all those simulations again
+%                     end
+%                     
+%                 end
                 
             else
-                obj.my_result.set_error_normal_mode(obj.last_exc);
+%                 obj.my_result.set_error_normal_mode(obj.last_exc);
+                obj.my_result.set_mode(singleresult.NORMAL, singleresult.ER);
                 % Don't need to record timed_out, it is already logged
                 % inside Simulator.m class
             end
@@ -198,7 +204,7 @@ classdef simple_generator < handle
                                     
             obj.slb = slblocks(obj.NUM_BLOCKS);
             obj.blkcfg = blockconfigure();
-            obj.simul = simulator(obj, obj.max_simul_attempt);
+%             obj.simul = simulator(obj, obj.max_simul_attempt);
             obj.my_result = singleresult(obj.sys);
             
             new_system(obj.sys);
@@ -208,14 +214,14 @@ classdef simple_generator < handle
         
         
         
-        function ret = compare_sim_results(obj, try_count)
-            if ~ obj.compare_results
-                fprintf('Will not compare simulation results, returning...');
-            end
-            
-            obj.diff_tester = comparator(obj, obj.simulation_data, try_count);
-            ret = obj.diff_tester.compare();
-        end
+%         function ret = compare_sim_results(obj, try_count)
+%             if ~ obj.compare_results
+%                 fprintf('Will not compare simulation results, returning...');
+%             end
+%             
+%             obj.diff_tester = comparator(obj, obj.simulation_data, try_count);
+%             ret = obj.diff_tester.compare();
+%         end
         
         
         
@@ -240,90 +246,90 @@ classdef simple_generator < handle
         end
         
         
-        function ret = simulate_log_signal_normal_mode(obj)
-            fprintf('[!] Simulating in NORMAL mode...\n');
-            ret = true;
-            try
-                simOut = sim(obj.sys, 'SimulationMode', 'normal', 'SignalLogging','on');
-            catch e
-                fprintf('ERROR SIMULATION (Logging) in Normal mode');
-                e
-                obj.my_result.set_error_acc_mode(e, 'NormalMode');
-                obj.last_exc = MException('RandGen:SL:ErrAfterNormalSimulation', e.identifier);
-                ret = false;
-                return;
-            end
-            obj.simulation_data{1} = simOut.get('logsout');
-
-            % Save and close the system
-            fprintf('Saving Model...\n');
-            save_system(obj.sys);
-            obj.close();
-            
-        end
-        
-        
-        function obj = simulate_for_data_logging(obj)
-            if isempty(obj.simulation_mode)
-                fprintf('No simulation mode provided. returning...\n');
-            end
-            
-            obj.my_result.set_ok_acc_mode();    % Will be over-written if not ok
-            
-            obj.simulation_data = cell(1, (numel(obj.simulation_mode_values) + 1)); % 1 extra for normal mode
-            
-%             Simulink.sdi.changeLoggedToStreamed(obj.sys);   % Stream
-%             logged signals in Simulink Data Inspector:
-%             http://bit.ly/1RK6wTn - Only available from R2016
-
-            if ~ obj.simulate_log_signal_normal_mode()
-                return
-            end
-            
-
-            for i = 1:numel(obj.simulation_mode_values)
-                inc_i = i + 1;
-%                 % Open the model first
-%                 if i > 1
-%                     fprintf('Opening Model...\n');
-%                     open_system(obj.sys);
+%         function ret = simulate_log_signal_normal_mode(obj)
+%             fprintf('[!] Simulating in NORMAL mode...\n');
+%             ret = true;
+%             try
+%                 simOut = sim(obj.sys, 'SimulationMode', 'normal', 'SignalLogging','on');
+%             catch e
+%                 fprintf('ERROR SIMULATION (Logging) in Normal mode');
+%                 e
+%                 obj.my_result.set_error_acc_mode(e, 'NormalMode');
+%                 obj.last_exc = MException('RandGen:SL:ErrAfterNormalSimulation', e.identifier);
+%                 ret = false;
+%                 return;
+%             end
+%             obj.simulation_data{1} = simOut.get('logsout');
+% 
+%             % Save and close the system
+%             fprintf('Saving Model...\n');
+%             save_system(obj.sys);
+%             obj.close();
+%             
+%         end
+%         
+%         
+%         function obj = simulate_for_data_logging(obj)
+%             if isempty(obj.simulation_mode)
+%                 fprintf('No simulation mode provided. returning...\n');
+%             end
+%             
+%             obj.my_result.set_ok_acc_mode();    % Will be over-written if not ok
+%             
+%             obj.simulation_data = cell(1, (numel(obj.simulation_mode_values) + 1)); % 1 extra for normal mode
+%             
+% %             Simulink.sdi.changeLoggedToStreamed(obj.sys);   % Stream
+% %             logged signals in Simulink Data Inspector:
+% %             http://bit.ly/1RK6wTn - Only available from R2016
+% 
+%             if ~ obj.simulate_log_signal_normal_mode()
+%                 return
+%             end
+%             
+% 
+%             for i = 1:numel(obj.simulation_mode_values)
+%                 inc_i = i + 1;
+% %                 % Open the model first
+% %                 if i > 1
+% %                     fprintf('Opening Model...\n');
+% %                     open_system(obj.sys);
+% %                 end
+%                 
+%                 mode_val = obj.simulation_mode_values{i};
+%                 fprintf('[!] Simulating in mode %s for value %s...\n', obj.simulation_mode, mode_val);
+%                 try
+%                     simOut = sim(obj.sys, 'SimulationMode', obj.simulation_mode, 'SimCompilerOptimization', mode_val, 'SignalLogging','on');
+%                 catch e
+%                     fprintf('ERROR SIMULATION in advanced modes');
+%                     e
+%                     obj.my_result.set_error_acc_mode(e, mode_val);
+%                     obj.last_exc = MException('RandGen:SL:ErrAfterNormalSimulation', e.identifier);
+%                     return;
 %                 end
-                
-                mode_val = obj.simulation_mode_values{i};
-                fprintf('[!] Simulating in mode %s for value %s...\n', obj.simulation_mode, mode_val);
-                try
-                    simOut = sim(obj.sys, 'SimulationMode', obj.simulation_mode, 'SimCompilerOptimization', mode_val, 'SignalLogging','on');
-                catch e
-                    fprintf('ERROR SIMULATION in advanced modes');
-                    e
-                    obj.my_result.set_error_acc_mode(e, mode_val);
-                    obj.last_exc = MException('RandGen:SL:ErrAfterNormalSimulation', e.identifier);
-                    return;
-                end
-                obj.simulation_data{inc_i} = simOut.get('logsout');
-                
-                % Delete generated stuffs
-                fprintf('Deleting generated stuffs...\n');
-                delete([obj.sys '_acc*']);
-                rmdir('slprj', 's');
-                
-                % Save and close the system
-                if i ~= numel(obj.simulation_mode_values)
-                    fprintf('Saving Model...\n');
-                    save_system(obj.sys);
-                    obj.close();
-                end
-                
-            end
-            
-            % Delete the saved model
-            fprintf('Deleting model...\n');
-            delete([obj.sys '.slx']);
-            
-%             obj.simulation_data{1}
-%             obj.simulation_data{2}
-            
-        end
+%                 obj.simulation_data{inc_i} = simOut.get('logsout');
+%                 
+%                 % Delete generated stuffs
+%                 fprintf('Deleting generated stuffs...\n');
+%                 delete([obj.sys '_acc*']);
+%                 rmdir('slprj', 's');
+%                 
+%                 % Save and close the system
+%                 if i ~= numel(obj.simulation_mode_values)
+%                     fprintf('Saving Model...\n');
+%                     save_system(obj.sys);
+%                     obj.close();
+%                 end
+%                 
+%             end
+%             
+%             % Delete the saved model
+%             fprintf('Deleting model...\n');
+%             delete([obj.sys '.slx']);
+%             
+% %             obj.simulation_data{1}
+% %             obj.simulation_data{2}
+%             
+%         end
         
         
         
@@ -391,8 +397,8 @@ classdef simple_generator < handle
             end
             
             fprintf('[~] Simulating...\n');
-            
-            ret =  obj.simul.simulate();
+            simul = simulator(obj, obj.max_simul_attempt);
+            ret =  simul.simulate();
                 
         end
         

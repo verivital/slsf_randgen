@@ -3,18 +3,20 @@ classdef comparator < handle
     %   Detailed explanation goes here
     
     properties
-        generator;
+%         generator;
         data;                       % Data we receive from generator
         refined_data;               % After we process the `data`;
         try_count;
+        my = [];    
     end
     
     methods
         
         
-        function obj = comparator(generator, data, try_count)
+        function obj = comparator(my_result, data, try_count)
             % CONSTRUCTOR %
-            obj.generator = generator;
+%             obj.generator = generator;
+            obj.my = my_result;
             obj.data = data;
             obj.try_count = try_count;
         end
@@ -68,8 +70,8 @@ classdef comparator < handle
                     if obj.try_count == 1
                         if num_data_1 ~= num_data_2 || num_time_1 ~= num_time_2
                             fprintf('[!E!] Length mismatch. Will try again\n');
-                            obj.generator.my_result.is_log_len_mismatch = true;
-                            obj.generator.my_result.log_len_mismatch_count = obj.generator.my_result.log_len_mismatch_count + 1;
+                            obj.my.is_log_len_mismatch = true;
+                            obj.my.log_len_mismatch_count = obj.my.log_len_mismatch_count + 1;
                             ret = false;
                             return;
                         end
@@ -86,7 +88,7 @@ classdef comparator < handle
                     else
                         fprintf('Data Mismatch!\n');
                         ret = false;
-                        obj.generator.last_exc = MException('RandGen:SL:CompareError', 'Compared Data Mismatch');
+                        obj.my.exc = MException('RandGen:SL:CompareError', 'Compared Data Mismatch');
                         d_1
                         d_2
                         num_data_1
@@ -101,7 +103,7 @@ classdef comparator < handle
                     else
                         fprintf('Time Mismatch!\n');
                         ret = false;
-                        obj.generator.last_exc = MException('RandGen:SL:CompareError', 'Compared Time Mismatch');
+                        obj.my.exc = MException('RandGen:SL:CompareError', 'Compared Time Mismatch');
                         t_1
                         t_2
                         num_time_1

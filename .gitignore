@@ -24,3 +24,5 @@ c_with_main.c
 current.c
 *.mat
 slprj
+slsf/reports/errors/*.slx
+slsf/reports/othererrors/*.slx

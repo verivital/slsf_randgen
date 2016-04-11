@@ -2,7 +2,7 @@
 % Run this script from the command line. You can edit following options
 % (options are always written using all upper-case letters).
 
-NUM_TESTS = 300;                          % Number of models to generate
+NUM_TESTS = 1;                          % Number of models to generate
 STOP_IF_ERROR = false;                   % Stop when meet the first simulation error
 STOP_IF_OTHER_ERROR = true;             % For errors not related to simulation e.g. unhandled exceptions or code bug. ALWAYS KEEP IT TRUE
 CLOSE_MODEL = true;                    % Close models after simulation
@@ -30,8 +30,14 @@ WS_FILE_NAME = ['data' filesep 'savedws.mat'];       % Saving ws vars so that we
 ERR_MODEL_STORAGE = ['reports' filesep 'errors'];    % In this directory save all the error models (not including timed-out models)
 COMPARE_ERR_MODEL_STORAGE = ['reports' filesep 'comperrors'];    % In this directory save all the signal compare error models
 OTHER_ERR_MODEL_STORAGE = ['reports' filesep 'othererrors'];
+LOG_LEN_MISMATCH_STORAGE = ['reports' filesep 'loglenmismatch'];
+WSVAR_BACKUP_DIR = ['data' filesep 'backup'];
+
+nowtime_str = datestr(now, 'yyyy-mm-dd-HH-MM-SS');
 
 if LOAD_RNG_STATE
+    % Backup the variable first
+    copyfile(WS_FILE_NAME, [WSVAR_BACKUP_DIR filesep nowtime_str '.mat']);
     disp('Restoring RNG state from disc')
     load(WS_FILE_NAME);
 end
@@ -59,11 +65,12 @@ else
     rng(rng_state);
 end
 
-REPORT_FILE = ['reports' filesep datestr(now, 'yyyy-mm-dd-HH-MM-SS')];
+REPORT_FILE = ['reports' filesep nowtime_str];
 
 
 % Script is Starting %
 
+fprintf('Loading Simulink...\n');
 load_system('Simulink');
 
 num_total_sim = 0;
@@ -107,7 +114,7 @@ for ind = 1:NUM_TESTS
 
             c = struct;
             c.m_no = model_name;
-            e = sg.last_exc;
+            e = sg.my_result.exc;
             
             switch e.identifier
 %                 case {'MATLAB:MException:MultipleErrors'}
@@ -173,6 +180,11 @@ for ind = 1:NUM_TESTS
             if sg.my_result.log_len_mismatch_count > 0
             	log_len_mismatch_count = log_len_mismatch_count + 1;
                 log_len_mismatch_names.add(model_name);
+                
+                util.cond_save_model(true, model_name, LOG_LEN_MISMATCH_STORAGE);
+                
+%                 fprintf('BREAKING DUE TO MISMATCH...\n');
+%                 break;
             end
             
             if CLOSE_MODEL || CLOSE_OK_MODELS
@@ -211,7 +223,7 @@ for ind = 1:NUM_TESTS
         end
     end
     
-%     delete sg;
+    delete(sg);
 %     clear sg;
     
     disp(['%%% %%%% %%%% %%%% %%%% AFTER ' int2str(mdl_counter) 'th SIMULATION %%% %%%% %%%% %%%% %%%%']);
