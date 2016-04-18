@@ -77,6 +77,18 @@ classdef util < handle
         end
         
         
+        function blnames()
+            sys = get_param(gcs, 'name');
+            fprintf('\n--- Printing blocks from %s ---\n', sys);
+            num_blocks = 30;
+            
+            for i = 1:num_blocks
+                fprintf('%s\t%s\n', int2str(i), get_param([sys '/bl' int2str(i)], 'BlockType'));
+            end
+            
+        end
+        
+        
     end
     
 end

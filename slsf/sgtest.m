@@ -2,7 +2,7 @@
 % Run this script from the command line. You can edit following options
 % (options are always written using all upper-case letters).
 
-NUM_TESTS = 1;                          % Number of models to generate
+NUM_TESTS = 300;                          % Number of models to generate
 STOP_IF_ERROR = false;                   % Stop when meet the first simulation error
 STOP_IF_OTHER_ERROR = true;             % For errors not related to simulation e.g. unhandled exceptions or code bug. ALWAYS KEEP IT TRUE
 CLOSE_MODEL = true;                    % Close models after simulation
@@ -20,6 +20,8 @@ COMPARE_SIM_RESULTS = true;             % Compare simulation results.
 
 LOAD_RNG_STATE = true;                  % Load Random_Number_Generator state from Disc. Desired, if we want to create NEW models each time the script is run.
 BREAK_AFTER_COMPARE_ERR = true;
+
+SAVE_SIGLOG_IN_DISC = true;
 
 %%%%%%%%%%%%%%%%%%%% End of Options %%%%%%%%%%%%%%%%%%%%
 fprintf('\n =========== STARTING SGTEST ================\n');
@@ -91,6 +93,9 @@ errors = {};
 e_map = struct;
 e_later = struct;  % Errors which occurred after Normal simulation went OK
 
+l_logged = [];
+all_siglog = mycell(NUM_TESTS);
+
 for ind = 1:NUM_TESTS
     % Store random number settings for future usate
     rng_state = rng;
@@ -105,6 +110,7 @@ for ind = 1:NUM_TESTS
     
     try
         sim_res = sg.go();
+%         l_logged = sg.my_result.logdata;
         
         if ~ sim_res
 
@@ -223,9 +229,6 @@ for ind = 1:NUM_TESTS
         end
     end
     
-    delete(sg);
-%     clear sg;
-    
     disp(['%%% %%%% %%%% %%%% %%%% AFTER ' int2str(mdl_counter) 'th SIMULATION %%% %%%% %%%% %%%% %%%%']);
     
     mdl_counter
@@ -243,10 +246,17 @@ for ind = 1:NUM_TESTS
 %     log_len_mismatch_names.print_all('-- printing log_length mismatch model names --');
     
     % Save statistics in file
+    if SAVE_SIGLOG_IN_DISC
+        all_siglog.add(sg.my_result.logdata);
+    end
+    
     save(REPORT_FILE, 'mdl_counter', 'num_total_sim', 'num_suc_sim', 'num_err_sim', ...
         'num_compare_error', 'num_other_error', 'num_timedout_sim', 'e_map', ... 
         'err_model_names', 'compare_err_model_names', 'other_err_model_names', ...
-        'e_later', 'log_len_mismatch_count', 'log_len_mismatch_names');
+        'e_later', 'log_len_mismatch_count', 'log_len_mismatch_names', 'all_siglog');
+    
+    delete(sg);
+%     clear sg;
 end
 
 % Clean-up
@@ -273,4 +283,4 @@ compare_err_model_names.print_all('-- printing COMPARE ERR model names --');
 log_len_mismatch_names.print_all('-- printing log_length mismatch model names --');
 
 
-disp('------ BYE from SGTEST -------');
+fprintf('------ BYE from SGTEST. Report saved in %s.mat -------\n', nowtime_str);

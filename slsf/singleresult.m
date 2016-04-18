@@ -37,6 +37,8 @@ classdef singleresult < handle
         exc = [];
         main_exc = [];
         
+        logdata = [];
+        
     end
     
     methods

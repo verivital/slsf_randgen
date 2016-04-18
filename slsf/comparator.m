@@ -7,7 +7,8 @@ classdef comparator < handle
         data;                       % Data we receive from generator
         refined_data;               % After we process the `data`;
         try_count;
-        my = [];    
+        my = [];  
+        
     end
     
     methods
@@ -27,6 +28,8 @@ classdef comparator < handle
             obj.prepare_data();
 %             fieldnames(obj.refined_data{1})
 %             fieldnames(obj.refined_data{2})
+            obj.log_all();
+%             obj.my.logdata
             ret = obj.final_val_compare();
             
             
@@ -148,6 +151,39 @@ classdef comparator < handle
             end
             
             
+        end
+        
+        
+        function obj = log_all(obj)
+            f = obj.refined_data{1};                    % First Simulation Trace
+            blocks = fieldnames(f);
+            
+            num_cols = numel(obj.refined_data);
+            
+            obj.my.logdata = cell(numel(blocks), num_cols * 2);
+            
+            
+            for i = 1: numel(obj.refined_data)
+%                 fprintf('Comparing Simulation Number %d with %d\n', i, 1);
+                
+                for j = 1 : numel(blocks)
+                    bl_name = blocks{j};
+                    
+                    bl_index = strsplit(bl_name, '_bl');
+                    bl_index = str2double(bl_index(2));
+                    
+                    data_2 = obj.refined_data{i}.(bl_name);
+                    
+                    d_2 = data_2.Data(numel(data_2.Data));
+                    t_2 = data_2.Time(numel(data_2.Time));
+                    
+                    obj.my.logdata{bl_index, i} = t_2;
+                    obj.my.logdata{bl_index, (i + num_cols)} = d_2;
+                    
+                    fprintf('[L]\t%d\t%d\t%f\t%f\n', bl_index, i, t_2, d_2);
+                    
+                end
+            end
         end
         
     end
