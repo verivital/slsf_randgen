@@ -14,7 +14,7 @@ classdef simple_generator < handle
         
         slb;                        % Object of class slblocks
         
-        sys;                        % Name of the chart
+        sys;                        % Name of the model
         
         candi_blocks;               % Will choose from these blocks
         
@@ -84,7 +84,7 @@ classdef simple_generator < handle
             
             ret = false;
             
-            obj.init();
+%             obj.init(); % NOTE: Client has to call init() explicityly!
                         
             
             
@@ -201,6 +201,13 @@ classdef simple_generator < handle
         
         function obj = init(obj)
             % Perform Initialization
+            
+            % Choose number of blocks to use
+            
+            if ~ isscalar(obj.NUM_BLOCKS)
+                obj.NUM_BLOCKS = util.rand_int(obj.NUM_BLOCKS(1), obj.NUM_BLOCKS(2), 1);
+                fprintf('NUM_BLOCKS chosen to %d \n', obj.NUM_BLOCKS);
+            end
                                     
             obj.slb = slblocks(obj.NUM_BLOCKS);
             obj.blkcfg = blockconfigure();
@@ -703,7 +710,8 @@ classdef simple_generator < handle
                 obj.slb.all{cur_blk} = this_blk_name;
 
                 this_blk_name = strcat('/', this_blk_name);
-
+%                 disp('Pos array is:');
+%                 disp(pos);
                 h = add_block(block_name{1}, [obj.sys, this_blk_name], 'Position', pos);
                 
                 % Save the handle of this new block. Accessing a block by

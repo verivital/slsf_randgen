@@ -2,13 +2,13 @@
 % Run this script from the command line. You can edit following options
 % (options are always written using all upper-case letters).
 
-NUM_TESTS = 300;                          % Number of models to generate
+NUM_TESTS = 50;                          % Number of models to generate
 STOP_IF_ERROR = false;                   % Stop when meet the first simulation error
 STOP_IF_OTHER_ERROR = true;             % For errors not related to simulation e.g. unhandled exceptions or code bug. ALWAYS KEEP IT TRUE
 CLOSE_MODEL = true;                    % Close models after simulation
 CLOSE_OK_MODELS = false;                % Close models for which simulation ran OK
 SIMULATE_MODELS = true;                 % Will simulate model if value is true
-NUM_BLOCKS = 30;                        % Number of blocks in each model (flat hierarchy)
+NUM_BLOCKS = [10 50];                        % Number of blocks in each model (flat hierarchy)
 
 SAVE_ALL_ERR_MODELS = true;             % Save the models which we can not simulate 
 LOG_ERR_MODEL_NAMES = true;             % Log error model names keyed by their errors
@@ -95,6 +95,9 @@ e_later = struct;  % Errors which occurred after Normal simulation went OK
 
 l_logged = [];
 all_siglog = mycell(NUM_TESTS);
+all_models = mycell(NUM_TESTS);             % Store some stats regarding all models e.g. number of blocks in the model
+
+tic
 
 for ind = 1:NUM_TESTS
     % Store random number settings for future usate
@@ -107,6 +110,15 @@ for ind = 1:NUM_TESTS
     sg = simple_generator(NUM_BLOCKS, model_name, SIMULATE_MODELS, CLOSE_MODEL, LOG_SIGNALS, SIMULATION_MODE, COMPARE_SIM_RESULTS);
     
     num_total_sim = num_total_sim + 1;
+    
+    sg.init();
+    
+    cur_mdl_data = struct;
+    
+    cur_mdl_data.sys = sg.sys;
+    cur_mdl_data.num_blocks = sg.NUM_BLOCKS;
+    
+    all_models.add(cur_mdl_data);
     
     try
         sim_res = sg.go();
@@ -202,12 +214,13 @@ for ind = 1:NUM_TESTS
         % Exception occurred when simulating, but the error was not caught.
         % Reason: code bug/unhandled errors. ALWAYS INSPECT THESE ERRORS!!
         disp('EEEEEEEEEEEEEEEEEEEE Unhandled Error In Simulation EEEEEEEEEEEEEEEEEEEEEEEEEE');
-        e
-        e.message
-        e.cause
-%         e.cause{1}
-%         e.cause{2}
-        e.stack.line
+%         e
+%         e.message
+%         e.cause
+% %         e.cause{1}
+% %         e.cause{2}
+%         e.stack.line
+          getReport(e)
         
         % Following timeout will never occur here?
 %         if strcmp(e.identifier, 'RandGen:SL:SimTimeout')
@@ -253,7 +266,7 @@ for ind = 1:NUM_TESTS
     save(REPORT_FILE, 'mdl_counter', 'num_total_sim', 'num_suc_sim', 'num_err_sim', ...
         'num_compare_error', 'num_other_error', 'num_timedout_sim', 'e_map', ... 
         'err_model_names', 'compare_err_model_names', 'other_err_model_names', ...
-        'e_later', 'log_len_mismatch_count', 'log_len_mismatch_names', 'all_siglog');
+        'e_later', 'log_len_mismatch_count', 'log_len_mismatch_names', 'all_siglog', 'all_models');
     
     delete(sg);
 %     clear sg;
@@ -266,6 +279,7 @@ delete('*_acc.mexa64');
 disp('----------- SGTEST END -------------');
 
 disp(['%%% %%%% %%%% %%%% %%%% Final Statistics %%% %%%% %%%% %%%% %%%%']);
+toc
 
 mdl_counter
 num_total_sim

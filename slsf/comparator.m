@@ -180,7 +180,12 @@ classdef comparator < handle
                     obj.my.logdata{bl_index, i} = t_2;
                     obj.my.logdata{bl_index, (i + num_cols)} = d_2;
                     
-                    fprintf('[L]\t%d\t%d\t%f\t%f\n', bl_index, i, t_2, d_2);
+                    d2_dbl = d_2;
+                    if isfi(d_2)
+                        d2_dbl = d_2.todoubles();
+                    end
+                    
+                    fprintf('[L]\t%d\t%d\t%f\t%f\n', bl_index, i, t_2, d2_dbl);
                     
                 end
             end
