@@ -6,14 +6,19 @@ classdef blockchooser < handle
     properties
         categories = {
 %             struct('name', 'Discrete', 'num', 10)
-            struct('name', 'Continuous', 'num', 10)
+%             struct('name', 'Continuous', 'num', 10)
 %             struct('name', 'Math Operations', 'num', 10)
 %             struct('name', 'Logic and Bit Operations', 'num', 10)
-            struct('name', 'Sinks', 'num', 5)
-            struct('name', 'Sources', 'num', 5)
+            struct('name', 'Sinks', 'num', 2)
+            struct('name', 'Sources', 'num', 2)
         };
     
+        allowlist = {struct('name', 'simulink/Ports & Subsystems/Model')};
+%         allowlist = {};
+    
         blocklist = struct;
+        
+        hierarchy_blocks = mymap();
     end
     
     methods
@@ -32,16 +37,27 @@ classdef blockchooser < handle
             obj.blocklist.(util.mvn('simulink/Sinks/StopSimulation')) = 1;
 %             obj.blocklist.(util.mvn('simulink/Continuous/PID Controller (2DOF)')) = 1;
 
+            % List the hierarchy blocks
+            obj.hierarchy_blocks.put('simulink/Ports & Subsystems/Model', 1);
+
             
         end
         
         
+        function ret = is_hierarchy_block(obj, bname)
+            ret = obj.hierarchy_blocks.contains(bname);
+        end
         
-        function ret = get(obj)
+        
+        
+        function ret = get(obj, cur_hierarchy_level, max_hierarchy_level)
             % Selects block names randomly
             ret = {};
+            can_not_choose_hierarchy_blocks = cur_hierarchy_level >= max_hierarchy_level;
             
             count = 0;
+            
+            % Chose from whitelisted Simulink Libraries
             
             for i=1:numel(obj.categories)
                 c = obj.categories{i};
@@ -73,8 +89,21 @@ classdef blockchooser < handle
                     count = count + 1;
                     ret{count} = now_blk;
                 end
+            end
+            
+            fprintf('Now including blocks from Allowlist...\n');
+            
+            for i=1:numel(obj.allowlist)
                 
+                cur = obj.allowlist{i}.name;
                 
+                if can_not_choose_hierarchy_blocks && obj.hierarchy_blocks.contains(cur)
+                    fprintf('Can not add hierarchy block %s as max level reached.\n', cur);
+                    continue;
+                end
+                
+                count = count + 1;
+                ret{count} = cur;
             end
             
         end

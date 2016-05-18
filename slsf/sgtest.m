@@ -2,13 +2,15 @@
 % Run this script from the command line. You can edit following options
 % (options are always written using all upper-case letters).
 
-NUM_TESTS = 50;                          % Number of models to generate
+NUM_TESTS = 1;                          % Number of models to generate
 STOP_IF_ERROR = false;                   % Stop when meet the first simulation error
 STOP_IF_OTHER_ERROR = true;             % For errors not related to simulation e.g. unhandled exceptions or code bug. ALWAYS KEEP IT TRUE
-CLOSE_MODEL = true;                    % Close models after simulation
+CLOSE_MODEL = false;                    % Close models after simulation
 CLOSE_OK_MODELS = false;                % Close models for which simulation ran OK
 SIMULATE_MODELS = true;                 % Will simulate model if value is true
-NUM_BLOCKS = [10 50];                        % Number of blocks in each model (flat hierarchy)
+NUM_BLOCKS = 5;                        % Number of blocks in each model (flat hierarchy)
+
+MAX_HIERARCHY_LEVELS = 2;               % Minimum value is 1 indicating a flat model.
 
 SAVE_ALL_ERR_MODELS = true;             % Save the models which we can not simulate 
 LOG_ERR_MODEL_NAMES = true;             % Log error model names keyed by their errors
@@ -108,6 +110,8 @@ for ind = 1:NUM_TESTS
     model_name = strcat('sampleModel', int2str(mdl_counter));
     
     sg = simple_generator(NUM_BLOCKS, model_name, SIMULATE_MODELS, CLOSE_MODEL, LOG_SIGNALS, SIMULATION_MODE, COMPARE_SIM_RESULTS);
+    sg.max_hierarchy_level = MAX_HIERARCHY_LEVELS;
+    sg.current_hierarchy_level = 1;
     
     num_total_sim = num_total_sim + 1;
     

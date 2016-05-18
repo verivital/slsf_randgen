@@ -23,6 +23,11 @@ classdef simple_generator < handle
         simulate_models;            % Boolean: whether to simulate or not
         
         blkcfg;
+        blkchooser = [];                 
+        
+        max_hierarchy_level = [];
+        current_hierarchy_level = [];
+        inner_model_num_blocks = 4;     % Number of blocks for models whose `current_hierarchy_level` is > 1 % TODO
         
 %         simul;                      % Instance of simulator class
         max_simul_attempt = 10;
@@ -132,8 +137,8 @@ classdef simple_generator < handle
                 return;
             end
             
-%             disp('Returning abruptly');
-%             return;
+            disp('Returning abruptly');
+            return;
             
             
             obj.is_simulation_successful = obj.simulate();
@@ -444,7 +449,13 @@ classdef simple_generator < handle
         
         function ret = get_all_simulink_blocks(obj)
 %             ret = {'simulink/Sources/Constant', 'simulink/Sinks/Scope', 'simulink/Sources/Constant', 'simulink/Sinks/Display', 'simulink/Math Operations/Add'};
-            ret = blockchooser().get();
+            bc = obj.blkchooser;
+            
+            if isempty(bc)
+                bc = blockchooser();
+            end
+            
+            ret = bc.get(obj.current_hierarchy_level, obj.max_hierarchy_level);
         end
         
         
@@ -781,8 +792,54 @@ classdef simple_generator < handle
         
         
         
+        function ret=handle_hierarchy_blocks(obj)
+            model_name = ['hier' int2str(util.rand_int(1, 10000, 1))]; % TODO fix Max number
+            
+            SIMULATE_MODELS = true;
+            CLOSE_MODEL = true;
+            LOG_SIGNALS = false;
+            SIMULATION_MODE = [];
+            COMPARE_SIM_RESULTS = false;
+            
+            sg = simple_generator(obj.inner_model_num_blocks, model_name, SIMULATE_MODELS, CLOSE_MODEL, LOG_SIGNALS, SIMULATION_MODE, COMPARE_SIM_RESULTS);
+            sg.max_hierarchy_level = obj.max_hierarchy_level;
+            sg.current_hierarchy_level = obj.current_hierarchy_level + 1;
+            
+            sg.blkchooser = innerblkchooser();
+
+            sg.init();
+            
+            try
+                sg.go();
+            catch e
+                fprintf('Exception in Inner block simulation: \n' );
+                e
+            end
+            
+            % Save this model?
+            
+            save_system(model_name);
+            
+            ret = model_name;
+        end
+        
+        
+        
         
         function obj=config_block(obj, h, blk_type, blk_name)
+            
+            if blockchooser().is_hierarchy_block(blk_type)
+                fprintf('Hierarchy block %s found.\n', blk_name);
+                
+                mdl_name = obj.handle_hierarchy_blocks();
+                fprintf('Generated this hierarchy model: %s\n', mdl_name);
+                
+                set_param(h, 'ModelNameDialog', mdl_name);
+                
+                return;
+                
+            end
+            
             
             disp(['(' blk_name ') Attempting to config block ', blk_type]);
             
@@ -803,15 +860,10 @@ classdef simple_generator < handle
             for i=found
                 disp(['Configuring ', i{1}.p()]);
                 set_param(h, i{1}.p(), i{1}.get());
-            end
-           
+            end           
             
         end
-        
-        
-        
-        
-        
+   
     end
     
 end
