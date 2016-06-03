@@ -1,4 +1,22 @@
-# SLSF Random Generation
+# Random Generation and Comparison of Simulink models
+
+## Code
+
+Development branch is `random-generation` where you can find latest code. Stable code can be found in `master`.
+
+## Structure
+
+ - All code is located under `slsf` directory. From now on, consider `slsf` as the root directory.
+ - After running the program, results can be found in `reports` directory.
+
+## How to run
+
+ - Add `slsf` directory in your Matlab path and run `sgtest.m`. This works in Windows and Linux and you can run it directly opening Matlab. For various configuration options open the file for editing, options are located at the very top of the script.
+
+ - To run the program without opening Matlab run `slsf.py`. You should have Python version >= 3.0 and currently this is only tested in Ubuntu Linux. Various configuration options can be found at the top of the script. Running this script is desired since Matlab can crash when running `sgtest.m` inside Matlab. Running this python script will automatically open Matlab and start the script if a crash had occurred.
+
+
+# Incorporating csmith
 
 ## Introduction
 

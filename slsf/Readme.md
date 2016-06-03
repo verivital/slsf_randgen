@@ -4,9 +4,12 @@
 Run sgtest.m file
 
 ## Issues
+
+Please note that this file is not updated, latest status can be found in our Github repo.
+
 General Issues
 
- - Algebraic Loop: not handled yet
+ - Algebraic Loop: mostly handled.
 
 ### Block connecting
 Connect ports randomly till all ports are connected
@@ -14,7 +17,7 @@ Connect ports randomly till all ports are connected
  - If number of output ports > number of input ports, then we can not 
 connect any more. Stopping there. Shall we choose blocks will more input 
 ports?
- - Block connection bug: Already used input port chosen (previous issue)
+ - Block connection bug: Already used input port chosen (previous issue) - fixed.
 
 ### Block Parameters
 Randomly choose parameter values. Using a database of chosen blocks,
