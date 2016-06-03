@@ -3,14 +3,14 @@
 % (options are always written using all upper-case letters).
 
 NUM_TESTS = 1;                          % Number of models to generate
-STOP_IF_ERROR = false;                   % Stop when meet the first simulation error
-STOP_IF_OTHER_ERROR = true;             % For errors not related to simulation e.g. unhandled exceptions or code bug. ALWAYS KEEP IT TRUE
+STOP_IF_ERROR = true;                   % Stop the script when meet the first simulation error
+STOP_IF_OTHER_ERROR = true;             % Stop the script for errors not related to simulation e.g. unhandled exceptions or code bug. ALWAYS KEEP IT TRUE
 CLOSE_MODEL = false;                    % Close models after simulation
 CLOSE_OK_MODELS = false;                % Close models for which simulation ran OK
 SIMULATE_MODELS = true;                 % Will simulate model if value is true
-NUM_BLOCKS = 5;                        % Number of blocks in each model (flat hierarchy)
+NUM_BLOCKS = [5 10];                    % Number of blocks in each model. Give single number or a matrix [minval maxval]. Example: "5" will create models with exactly 5 blocks. "[5 10]" will choose a value randomly between 5 and 10.
 
-MAX_HIERARCHY_LEVELS = 2;               % Minimum value is 1 indicating a flat model.
+MAX_HIERARCHY_LEVELS = 2;               % Minimum value is 1 indicating a flat model with no hierarchy.
 
 SAVE_ALL_ERR_MODELS = true;             % Save the models which we can not simulate 
 LOG_ERR_MODEL_NAMES = true;             % Log error model names keyed by their errors
@@ -20,7 +20,7 @@ LOG_SIGNALS = true;                     % If set to true, will log all output si
 SIMULATION_MODE = 'accelerator';        % See 'SimulationMode' parameter in http://bit.ly/1WjA4uE
 COMPARE_SIM_RESULTS = true;             % Compare simulation results.
 
-LOAD_RNG_STATE = true;                  % Load Random_Number_Generator state from Disc. Desired, if we want to create NEW models each time the script is run.
+LOAD_RNG_STATE = false;                  % Set this `true` if we want to create NEW models each time the script is run. Set to `false` if generating same models at each run of the script is desired. For first time running in a new computer set to false, as this will fail first time if set to true.
 BREAK_AFTER_COMPARE_ERR = true;
 
 SAVE_SIGLOG_IN_DISC = true;
@@ -271,6 +271,12 @@ for ind = 1:NUM_TESTS
         'num_compare_error', 'num_other_error', 'num_timedout_sim', 'e_map', ... 
         'err_model_names', 'compare_err_model_names', 'other_err_model_names', ...
         'e_later', 'log_len_mismatch_count', 'log_len_mismatch_names', 'all_siglog', 'all_models');
+    
+    % Delete sub-models
+    sg.my_result.hier_models.print_all('Printing sub models...');
+    for i = 1:sg.my_result.hier_models.len
+        delete([sg.my_result.hier_models.get(i) '.slx']);
+    end
     
     delete(sg);
 %     clear sg;

@@ -13,12 +13,16 @@ classdef blockchooser < handle
             struct('name', 'Sources', 'num', 2)
         };
     
-        allowlist = {struct('name', 'simulink/Ports & Subsystems/Model')};
+        allowlist = {
+            struct('name', 'simulink/Ports & Subsystems/Model')
+            struct('name', 'simulink/Ports & Subsystems/For Each Subsystem')
+        };
 %         allowlist = {};
     
         blocklist = struct;
         
         hierarchy_blocks = mymap();
+        submodel_blocks = mymap();
     end
     
     methods
@@ -40,12 +44,17 @@ classdef blockchooser < handle
             % List the hierarchy blocks
             obj.hierarchy_blocks.put('simulink/Ports & Subsystems/Model', 1);
 
-            
+            % List the submodel-blocks
+            obj.submodel_blocks.put('simulink/Ports & Subsystems/For Each Subsystem', 1);
         end
         
         
         function ret = is_hierarchy_block(obj, bname)
             ret = obj.hierarchy_blocks.contains(bname);
+        end
+        
+        function ret = is_submodel_block(obj, bname)
+            ret = obj.submodel_blocks.contains(bname);
         end
         
         
@@ -97,7 +106,9 @@ classdef blockchooser < handle
                 
                 cur = obj.allowlist{i}.name;
                 
-                if can_not_choose_hierarchy_blocks && obj.hierarchy_blocks.contains(cur)
+                fprintf('HIER BLOCK FROM ALLOWLIST: %s\n', cur);
+                
+                if can_not_choose_hierarchy_blocks && (obj.hierarchy_blocks.contains(cur) || obj.submodel_blocks.contains(cur))
                     fprintf('Can not add hierarchy block %s as max level reached.\n', cur);
                     continue;
                 end

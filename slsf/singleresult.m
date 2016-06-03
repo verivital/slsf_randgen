@@ -39,12 +39,14 @@ classdef singleresult < handle
         
         logdata = [];
         
+        hier_models = [];           % Names of the models generated as part of the hierarchy. Storing them here so that we can delete them later
+        
     end
     
     methods
          function obj = singleresult(model_name)
              obj.model_name = model_name;
-             
+             obj.hier_models = mycell(-1);
          end
          
          function obj = set_mode(obj, p, m)

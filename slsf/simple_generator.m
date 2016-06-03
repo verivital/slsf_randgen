@@ -138,6 +138,7 @@ classdef simple_generator < handle
             end
             
             disp('Returning abruptly');
+            ret = true;
             return;
             
             
@@ -219,6 +220,12 @@ classdef simple_generator < handle
 %             obj.simul = simulator(obj, obj.max_simul_attempt);
             obj.my_result = singleresult(obj.sys);
             
+            obj.create_and_open_system();
+        end
+        
+        
+        
+        function create_and_open_system(obj)
             new_system(obj.sys);
             open_system(obj.sys);
         end
@@ -801,28 +808,76 @@ classdef simple_generator < handle
             SIMULATION_MODE = [];
             COMPARE_SIM_RESULTS = false;
             
-            sg = simple_generator(obj.inner_model_num_blocks, model_name, SIMULATE_MODELS, CLOSE_MODEL, LOG_SIGNALS, SIMULATION_MODE, COMPARE_SIM_RESULTS);
-            sg.max_hierarchy_level = obj.max_hierarchy_level;
-            sg.current_hierarchy_level = obj.current_hierarchy_level + 1;
+            hg = hier_generator(obj.inner_model_num_blocks, model_name, SIMULATE_MODELS, CLOSE_MODEL, LOG_SIGNALS, SIMULATION_MODE, COMPARE_SIM_RESULTS);
+            hg.max_hierarchy_level = obj.max_hierarchy_level;
+            hg.current_hierarchy_level = obj.current_hierarchy_level + 1;
             
-            sg.blkchooser = innerblkchooser();
+            if obj.current_hierarchy_level == 1
+                disp('CURR HIER: 1');
+                hg.root_result = obj.my_result;
+            else
+                disp('CURR HIER: NOT 1');
+                hg.root_result = obj.root_result;
+            end
+            
+            hg.root_result.hier_models
+            
+            hg.blkchooser = innerblkchooser();
 
-            sg.init();
+            hg.init();
             
             try
-                sg.go();
+                hg.go();
             catch e
                 fprintf('Exception in Inner block simulation: \n' );
-                e
+                getReport(e)
             end
             
             % Save this model?
             
             save_system(model_name);
+            disp('SAVING SUB SYSTEM...');
+            hg.root_result.hier_models.add(model_name);
             
             ret = model_name;
         end
         
+        
+        function handle_submodel_creation(obj, blk_name, parent_model)
+            SIMULATE_MODELS = false;
+            CLOSE_MODEL = true;
+            LOG_SIGNALS = false;
+            SIMULATION_MODE = [];
+            COMPARE_SIM_RESULTS = false;
+            
+            full_model_name = [parent_model blk_name];
+            
+            hg = submodel_generator(obj.inner_model_num_blocks, full_model_name, SIMULATE_MODELS, CLOSE_MODEL, LOG_SIGNALS, SIMULATION_MODE, COMPARE_SIM_RESULTS);
+            hg.max_hierarchy_level = obj.max_hierarchy_level;
+            hg.current_hierarchy_level = obj.current_hierarchy_level + 1;
+            
+            if obj.current_hierarchy_level == 1
+                disp('CURR HIER: 1');
+                hg.root_result = obj.my_result;
+            else
+                disp('CURR HIER: NOT 1');
+                hg.root_result = obj.root_result;
+            end
+            
+            hg.root_result.hier_models
+            
+            hg.blkchooser = submodel_block_chooser();
+%             hg.blkchooser = innerblkchooser();
+
+            hg.init();
+            
+            try
+                hg.go();
+            catch e
+                fprintf('Exception in Sub-model creation: \n' );
+                getReport(e)
+            end
+        end
         
         
         
@@ -835,10 +890,20 @@ classdef simple_generator < handle
                 fprintf('Generated this hierarchy model: %s\n', mdl_name);
                 
                 set_param(h, 'ModelNameDialog', mdl_name);
+                return;
+            end
+            
+            if blockchooser().is_submodel_block(blk_type)
+                fprintf('Submodel block %s found.\n', blk_name);
+                
+                obj.handle_submodel_creation(blk_name, obj.sys);
+                
+%                 set_param(h, 'ModelNameDialog', mdl_name);
                 
                 return;
-                
             end
+            
+            
             
             
             disp(['(' blk_name ') Attempting to config block ', blk_type]);

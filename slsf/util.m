@@ -89,6 +89,11 @@ classdef util < handle
         end
         
         
+        function all_blocks = getBlocksOfLibrary(lib)
+            all_blocks = find_system(['Simulink/' lib])
+        end
+        
+        
     end
     
 end

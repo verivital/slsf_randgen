@@ -1,12 +1,13 @@
-classdef innerblkchooser < blockchooser
-    %INNERBLKCHOOSER Block Chooser for models which are children models
+classdef submodel_block_chooser < blockchooser
+    % Chooses blocks for submodels
     %   Detailed explanation goes here
     
     properties
     end
     
     methods
-        function obj = innerblkchooser()
+        
+        function obj = submodel_block_chooser()
             obj = obj@blockchooser();
             
             % Handle obj.categories property
@@ -27,13 +28,14 @@ classdef innerblkchooser < blockchooser
             
             obj.categories = new_cats;
             
-            % Handle obj.allowlist
-            
-            len_allowlist = numel(obj.allowlist);
-            
-            obj.allowlist{len_allowlist + 1} = struct('name', 'simulink/Sources/In1');
-            obj.allowlist{len_allowlist + 2} = struct('name', 'simulink/Sinks/Out1');
+%             % Handle obj.allowlist
+%             
+%             len_allowlist = numel(obj.allowlist);
+%             
+%             obj.allowlist{len_allowlist + 1} = struct('name', 'simulink/Sources/In1');
+%             obj.allowlist{len_allowlist + 2} = struct('name', 'simulink/Sinks/Out1');
         end
+        
     end
     
 end
