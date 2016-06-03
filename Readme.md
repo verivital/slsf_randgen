@@ -7,7 +7,7 @@ Development branch is `random-generation` where you can find latest code. Stable
 ## Structure
 
  - All code is located under `slsf` directory. From now on, consider `slsf` as the root directory.
- - After running the program, results can be found in `reports` directory.
+ - After running the program, results can be found in `reports` directory. For each run of the script, a single .mat file is created. This file can be open in Matlab to observe values of various variables which were set during the program runtime. Variable names are intuitive.
 
 ## How to run
 
@@ -18,9 +18,10 @@ Development branch is `random-generation` where you can find latest code. Stable
 
 # Incorporating csmith
 
-## Introduction
+## Code
 
- - TODO
+ - Code without "multiple main functions" feature can be found in `csmith-integration` branch
+ - Code with the feature of generating multiple `main` functions can be found in `multi-main` branch
 
 ## Current Work
 
