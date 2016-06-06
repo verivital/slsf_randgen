@@ -17,7 +17,7 @@ LOG_ERR_MODEL_NAMES = true;             % Log error model names keyed by their e
 SAVE_COMPARE_ERR_MODELS = true;         % Save models for which we got signal compare error after diff. testing
 
 LOG_SIGNALS = true;                     % If set to true, will log all output signals for later comparison
-SIMULATION_MODE = 'accelerator';        % See 'SimulationMode' parameter in http://bit.ly/1WjA4uE
+SIMULATION_MODE = 'rapid';              % See 'SimulationMode' parameter in http://bit.ly/1WjA4uE
 COMPARE_SIM_RESULTS = true;             % Compare simulation results.
 
 LOAD_RNG_STATE = false;                  % Set this `true` if we want to create NEW models each time the script is run. Set to `false` if generating same models at each run of the script is desired. For first time running in a new computer set to false, as this will fail first time if set to true.
@@ -26,6 +26,7 @@ BREAK_AFTER_COMPARE_ERR = true;
 SAVE_SIGLOG_IN_DISC = true;
 
 %%%%%%%%%%%%%%%%%%%% End of Options %%%%%%%%%%%%%%%%%%%%
+
 fprintf('\n =========== STARTING SGTEST ================\n');
 
 % addpath('slsf');
@@ -101,8 +102,16 @@ all_models = mycell(NUM_TESTS);             % Store some stats regarding all mod
 
 tic
 
+break_main_loop = false;
+
 for ind = 1:NUM_TESTS
-    % Store random number settings for future usate
+    
+    if break_main_loop
+        fprintf('---XXXX--- BREAKING MAIN SGTEST LOOP ---XXXX---\n');
+        break;
+    end
+    
+    % Store random number settings for future usage
     rng_state = rng;
     save(WS_FILE_NAME, 'rng_state', 'mdl_counter'); % Saving workspace variables (we're only interested in the variable rng_state)
     
@@ -146,16 +155,16 @@ for ind = 1:NUM_TESTS
                     num_timedout_sim = num_timedout_sim + 1;
                     disp('Timed Out Simulation. Proceeding to the next model...');
                     
-                    if CLOSE_MODEL sg.close(); end
-                    
-                    % Delete sub-models
-                    sg.my_result.hier_models.print_all('Printing sub models...');
-                    for i = 1:sg.my_result.hier_models.len
-                        close_system(sg.my_result.hier_models.get(i));  % TODO closing subsystem, so will not be visible for inspection if desired.
-                        delete([sg.my_result.hier_models.get(i) '.slx']);
-                    end
-           
-                    continue;
+%                     if CLOSE_MODEL sg.close(); end
+%                     
+%                     % Delete sub-models
+%                     sg.my_result.hier_models.print_all('Printing sub models...');
+%                     for i = 1:sg.my_result.hier_models.len
+%                         close_system(sg.my_result.hier_models.get(i));  % TODO closing subsystem, so will not be visible for inspection if desired.
+%                         delete([sg.my_result.hier_models.get(i) '.slx']);
+%                     end
+%                     
+%                     continue;
                     
                 case {'RandGen:SL:ErrAfterNormalSimulation'}
                     err_key = ['AfterError_' e.message];
@@ -175,7 +184,8 @@ for ind = 1:NUM_TESTS
                     
                     if BREAK_AFTER_COMPARE_ERR
                         fprintf('COMPARE ERROR... BREAKING');
-                        break;
+                        break_main_loop = true;
+%                         break;
                     end
                     
                 otherwise
@@ -196,14 +206,16 @@ for ind = 1:NUM_TESTS
 
             if STOP_IF_ERROR
                 disp('BREAKING FROM MAIN LOOP AS ERROR OCCURRED IN SIMULATION');
-                break;
+                break_main_loop = true;
+%                 break;
             end
             
             if CLOSE_MODEL
                 sg.close();
             end
 
-        else % Successful Simulation! %
+        else
+            % Successful Simulation! %
             num_suc_sim = num_suc_sim + 1;
             
             if sg.my_result.log_len_mismatch_count > 0
@@ -249,7 +261,12 @@ for ind = 1:NUM_TESTS
         
         if STOP_IF_OTHER_ERROR
             disp('Stopping: STOP_IF_OTHER_ERROR=True. WARNING: This will not be saved in reports.');
-            break;
+            break_main_loop = true;
+%             break;
+        end
+        
+        if CLOSE_MODEL
+            sg.close();
         end
     end
     
@@ -293,6 +310,7 @@ end
 % Clean-up
 delete('*.mat');
 delete('*_acc.mexa64');
+delete('*_msf.*');  % Files generated in Windows
 
 disp('----------- SGTEST END -------------');
 

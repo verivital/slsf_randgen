@@ -94,6 +94,11 @@ classdef util < handle
         end
         
         
+        function post_model_gen(sg)
+            disp(halum);
+        end
+        
+        
     end
     
 end

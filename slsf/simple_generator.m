@@ -44,7 +44,8 @@ classdef simple_generator < handle
         compare_results = true;
         
         
-        simulation_mode_values = {'off' 'on'};
+        simulation_mode_values = {'off'};
+%         simulation_mode_values = {'off' 'on'};
         
         is_simulation_successful = [];  % Boolean, whether the model can be simulated in Normal mode without any error.
         
@@ -168,8 +169,7 @@ classdef simple_generator < handle
 %                 disp('Returning abruptly');
 %                 return;
                 
-      
-                
+           
                 % Run simulation again for comparing results
                 max_try = 2;
                 
