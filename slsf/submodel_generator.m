@@ -18,7 +18,16 @@ classdef submodel_generator < hier_generator
             delete_line(obj.sys, 'In1/1', 'Out1/1')
         end
         
-        
+        function process_preadded_blocks(obj)
+            % Manually overload for the time being.
+            obj.num_preadded_blocks = 3;
+            
+            obj.candi_blocks = cell(1, obj.NUM_BLOCKS + obj.num_preadded_blocks);
+            
+            obj.candi_blocks{1} = 'In1';
+            obj.candi_blocks{2} = 'Out1';
+            obj.candi_blocks{3} = 'For Each'
+        end
         
         
     end

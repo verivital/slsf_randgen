@@ -5,7 +5,7 @@ classdef simple_generator < handle
     properties(Constant = true)
        DEBUG = true;
        LIST_BLOCK_PARAMS = true;    % Will list all dialog parameters of a block which is chosen for current chart
-       LIST_CONN = false;            % If true will print info when connecting blocks
+       LIST_CONN = true;            % If true will print info when connecting blocks
        
     end
     
@@ -17,6 +17,7 @@ classdef simple_generator < handle
         sys;                        % Name of the model
         
         candi_blocks;               % Will choose from these blocks
+        num_preadded_blocks = 0;    % Blocks which are already added in the model. E.g. in a For-each block some blocks are already given
         
 %         diff_tester;                % Instance of comparator class
                 
@@ -137,9 +138,9 @@ classdef simple_generator < handle
                 return;
             end
             
-            disp('Returning abruptly');
-            ret = true;
-            return;
+%             disp('Returning abruptly');
+%             ret = true;
+%             return;
             
             
             obj.is_simulation_successful = obj.simulate();
@@ -438,18 +439,30 @@ classdef simple_generator < handle
             end
         end
         
+        function process_preadded_blocks(obj)
+            % Manually overload for the time being.
+        end
+        
         
         
         function obj = get_candidate_blocks(obj)
             % Randomly choose which blocks will be used to populate the
             % chart
             all = obj.get_all_simulink_blocks();  
-            obj.candi_blocks = cell(1, obj.NUM_BLOCKS);
+            
+            obj.process_preadded_blocks();
+            
+            if obj.num_preadded_blocks == 0
+                obj.candi_blocks = cell(1, obj.NUM_BLOCKS);
+            end
+            
             rand_vals = randi([1, numel(all)], 1, obj.NUM_BLOCKS);
             
             for index = 1:obj.NUM_BLOCKS
-                obj.candi_blocks{index} = all{rand_vals(index)};
+                obj.candi_blocks{index + obj.num_preadded_blocks} = all{rand_vals(index)};
             end
+            
+            obj.NUM_BLOCKS = obj.NUM_BLOCKS + obj.num_preadded_blocks;
         end
         
         
@@ -718,11 +731,18 @@ classdef simple_generator < handle
             for block_name = obj.candi_blocks
                 cur_blk = cur_blk + 1;          % Create block name
                 
+                is_preadded_block = cur_blk <= obj.num_preadded_blocks;
+                
                 h_len = x + obj.width;
 
                 pos = [x, y, h_len, y + obj.height];
+                
+                if is_preadded_block
+                    this_blk_name = block_name{1};
+                else
+                    this_blk_name = obj.create_blk_name(cur_blk);
+                end
 
-                this_blk_name = obj.create_blk_name(cur_blk);
 
                 % Add this block name to list of all added blocks
                 obj.slb.all{cur_blk} = this_blk_name;
@@ -730,12 +750,39 @@ classdef simple_generator < handle
                 this_blk_name = strcat('/', this_blk_name);
 %                 disp('Pos array is:');
 %                 disp(pos);
-                h = add_block(block_name{1}, [obj.sys, this_blk_name], 'Position', pos);
+                if is_preadded_block
+                    h = get_param([obj.sys this_blk_name], 'handle');
+                    set_param(h,'Position',pos);
+                else
+                    h = add_block(block_name{1}, [obj.sys, this_blk_name], 'Position', pos);
+                end
                 
                 % Save the handle of this new block. Accessing a block by
                 % its handle is faster than accessing by its name
                 
                 obj.slb.handles{cur_blk} = h;
+                
+                % Generate hierarchy and subsystem blocks
+                
+                if is_preadded_block
+                    blk_type = get_param(h, 'blocktype');
+                else
+                    blk_type = block_name{1};
+                end
+                
+                if blockchooser().is_hierarchy_block(blk_type)
+                    fprintf('Hierarchy block %s found.\n', this_blk_name);
+
+                    mdl_name = obj.handle_hierarchy_blocks();
+                    fprintf('Generated this hierarchy model: %s\n', mdl_name);
+
+                    set_param(h, 'ModelNameDialog', mdl_name);
+                end
+
+                if blockchooser().is_submodel_block(blk_type)
+                    fprintf('Submodel block %s found.\n', this_blk_name);
+                    obj.handle_submodel_creation(this_blk_name, obj.sys);
+                end
                 
 
                 % Get its inputs and outputs
@@ -745,7 +792,11 @@ classdef simple_generator < handle
                 
                 % Configure block parameters
                 
-                obj.config_block(h, block_name{1}, this_blk_name);
+                if is_preadded_block
+                    obj.config_block(h, get_param(h, 'blocktype'), this_blk_name);
+                else
+                    obj.config_block(h, block_name{1}, this_blk_name);
+                end
                 
                 %%%%%%% Done configuring block %%%%%%%%%
 
@@ -844,7 +895,7 @@ classdef simple_generator < handle
         
         
         function handle_submodel_creation(obj, blk_name, parent_model)
-            SIMULATE_MODELS = false;
+            SIMULATE_MODELS = true;
             CLOSE_MODEL = true;
             LOG_SIGNALS = false;
             SIMULATION_MODE = [];
@@ -882,28 +933,6 @@ classdef simple_generator < handle
         
         
         function obj=config_block(obj, h, blk_type, blk_name)
-            
-            if blockchooser().is_hierarchy_block(blk_type)
-                fprintf('Hierarchy block %s found.\n', blk_name);
-                
-                mdl_name = obj.handle_hierarchy_blocks();
-                fprintf('Generated this hierarchy model: %s\n', mdl_name);
-                
-                set_param(h, 'ModelNameDialog', mdl_name);
-                return;
-            end
-            
-            if blockchooser().is_submodel_block(blk_type)
-                fprintf('Submodel block %s found.\n', blk_name);
-                
-                obj.handle_submodel_creation(blk_name, obj.sys);
-                
-%                 set_param(h, 'ModelNameDialog', mdl_name);
-                
-                return;
-            end
-            
-            
             
             
             disp(['(' blk_name ') Attempting to config block ', blk_type]);

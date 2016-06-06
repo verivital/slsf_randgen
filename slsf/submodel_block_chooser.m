@@ -34,6 +34,13 @@ classdef submodel_block_chooser < blockchooser
 %             
 %             obj.allowlist{len_allowlist + 1} = struct('name', 'simulink/Sources/In1');
 %             obj.allowlist{len_allowlist + 2} = struct('name', 'simulink/Sinks/Out1');
+
+            % Black List
+            obj.blocklist.(util.mvn('simulink/Sinks/XY Graph')) = 1;
+            obj.blocklist.(util.mvn('simulink/Sinks/To Workspace')) = 1;
+            obj.blocklist.(util.mvn('simulink/Sinks/To File')) = 1;
+            obj.blocklist.(util.mvn('simulink/Sinks/Scope')) = 1;
+            obj.blocklist.(util.mvn('simulink/Sinks/FloatingScope')) = 1;
         end
         
     end

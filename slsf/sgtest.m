@@ -8,9 +8,9 @@ STOP_IF_OTHER_ERROR = true;             % Stop the script for errors not related
 CLOSE_MODEL = false;                    % Close models after simulation
 CLOSE_OK_MODELS = false;                % Close models for which simulation ran OK
 SIMULATE_MODELS = true;                 % Will simulate model if value is true
-NUM_BLOCKS = [5 10];                    % Number of blocks in each model. Give single number or a matrix [minval maxval]. Example: "5" will create models with exactly 5 blocks. "[5 10]" will choose a value randomly between 5 and 10.
+NUM_BLOCKS = 5;                    % Number of blocks in each model. Give single number or a matrix [minval maxval]. Example: "5" will create models with exactly 5 blocks. "[5 10]" will choose a value randomly between 5 and 10.
 
-MAX_HIERARCHY_LEVELS = 2;               % Minimum value is 1 indicating a flat model with no hierarchy.
+MAX_HIERARCHY_LEVELS = 3;               % Minimum value is 1 indicating a flat model with no hierarchy.
 
 SAVE_ALL_ERR_MODELS = true;             % Save the models which we can not simulate 
 LOG_ERR_MODEL_NAMES = true;             % Log error model names keyed by their errors
@@ -147,6 +147,13 @@ for ind = 1:NUM_TESTS
                     disp('Timed Out Simulation. Proceeding to the next model...');
                     
                     if CLOSE_MODEL sg.close(); end
+                    
+                    % Delete sub-models
+                    sg.my_result.hier_models.print_all('Printing sub models...');
+                    for i = 1:sg.my_result.hier_models.len
+                        close_system(sg.my_result.hier_models.get(i));  % TODO closing subsystem, so will not be visible for inspection if desired.
+                        delete([sg.my_result.hier_models.get(i) '.slx']);
+                    end
            
                     continue;
                     
@@ -275,6 +282,7 @@ for ind = 1:NUM_TESTS
     % Delete sub-models
     sg.my_result.hier_models.print_all('Printing sub models...');
     for i = 1:sg.my_result.hier_models.len
+        close_system(sg.my_result.hier_models.get(i));  % TODO closing subsystem, so will not be visible for inspection if desired.
         delete([sg.my_result.hier_models.get(i) '.slx']);
     end
     

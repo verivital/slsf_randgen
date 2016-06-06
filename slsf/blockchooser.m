@@ -5,7 +5,7 @@ classdef blockchooser < handle
     
     properties
         categories = {
-%             struct('name', 'Discrete', 'num', 10)
+            struct('name', 'Discrete', 'num', 5)
 %             struct('name', 'Continuous', 'num', 10)
 %             struct('name', 'Math Operations', 'num', 10)
 %             struct('name', 'Logic and Bit Operations', 'num', 10)

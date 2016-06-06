@@ -6,7 +6,7 @@ classdef simulator < handle
         generator;
         max_try;
         
-        simulation_timeout = 12;        % After this many seconds simulation will be killed. 
+        simulation_timeout = 18;        % After this many seconds simulation will be killed. 
         sim_status = [];
         
         
@@ -161,6 +161,10 @@ classdef simulator < handle
                             done = obj.fix_data_type_mismatch(e, false, false);
                             found = true;
                             
+                        case {'Simulink:blocks:NormModelRefBlkNotSupported'}
+                            done = obj.fix_normal_mode_ref_block(e);
+                            found = true;
+                            
                         otherwise
                             done = true;
                     end
@@ -172,7 +176,16 @@ classdef simulator < handle
         end  
         
         
-        
+        function done = fix_normal_mode_ref_block(obj, e)
+            done = false;
+            for j = 1:numel(e.handles)
+%                 fprintf('XXXXXXXXXXXXXXXX \n' );
+                handles = e.handles{j};
+%                 get_param(handles, 'Name')
+                set_param(handles, 'SimulationMode', 'Accelerator');
+            end
+            
+        end
         
         
         function done = fix_inv_comp_disc_sample_time(obj, e, do_parent)
