@@ -2,28 +2,45 @@
 % Run this script from the command line. You can edit following options
 % (options are always written using all upper-case letters).
 
-NUM_TESTS = 1;                          % Number of models to generate
+NUM_TESTS = 100;                          % Number of models to generate
+
+SIMULATE_MODELS = true;                 % Will simulate model if value is true
+
+LOG_SIGNALS = true;                     % If set to true, will log all output signals for later comparison
+
+COMPARE_SIM_RESULTS = true;             % Compare simulation results.
+
+USE_PRE_GENERATED_MODEL = [];
+% USE_PRE_GENERATED_MODEL = 'sampleModel42';                % If you want to skip generation then put name of the model here. Otherwise put empty 
+
+
 STOP_IF_ERROR = true;                   % Stop the script when meet the first simulation error
 STOP_IF_OTHER_ERROR = true;             % Stop the script for errors not related to simulation e.g. unhandled exceptions or code bug. ALWAYS KEEP IT TRUE
+
 CLOSE_MODEL = false;                    % Close models after simulation
 CLOSE_OK_MODELS = false;                % Close models for which simulation ran OK
-SIMULATE_MODELS = true;                 % Will simulate model if value is true
-NUM_BLOCKS = 5;                    % Number of blocks in each model. Give single number or a matrix [minval maxval]. Example: "5" will create models with exactly 5 blocks. "[5 10]" will choose a value randomly between 5 and 10.
 
-MAX_HIERARCHY_LEVELS = 3;               % Minimum value is 1 indicating a flat model with no hierarchy.
+NUM_BLOCKS = 30;                    % Number of blocks in each model. Give single number or a matrix [minval maxval]. Example: "5" will create models with exactly 5 blocks. "[5 10]" will choose a value randomly between 5 and 10.
+
+MAX_HIERARCHY_LEVELS = 1;               % Minimum value is 1 indicating a flat model with no hierarchy.
 
 SAVE_ALL_ERR_MODELS = true;             % Save the models which we can not simulate 
 LOG_ERR_MODEL_NAMES = true;             % Log error model names keyed by their errors
 SAVE_COMPARE_ERR_MODELS = true;         % Save models for which we got signal compare error after diff. testing
 
-LOG_SIGNALS = true;                     % If set to true, will log all output signals for later comparison
-SIMULATION_MODE = 'rapid';              % See 'SimulationMode' parameter in http://bit.ly/1WjA4uE
-COMPARE_SIM_RESULTS = true;             % Compare simulation results.
+
+
+USE_SIGNAL_LOGGING_API = true;          % If true, will use Signal Logging API, otherwise adds Outport blocks to each block of the top level model
+SIMULATION_MODE = {'accelerator'};      % See 'SimulationMode' parameter in http://bit.ly/1WjA4uE
+COMPILER_OPT_VALUES = {'off'};          % Compiler opt. values of Accelerator and Rapid Accelerator modes
+
 
 LOAD_RNG_STATE = false;                  % Set this `true` if we want to create NEW models each time the script is run. Set to `false` if generating same models at each run of the script is desired. For first time running in a new computer set to false, as this will fail first time if set to true.
 BREAK_AFTER_COMPARE_ERR = true;
 
 SAVE_SIGLOG_IN_DISC = true;
+
+
 
 %%%%%%%%%%%%%%%%%%%% End of Options %%%%%%%%%%%%%%%%%%%%
 
@@ -122,6 +139,12 @@ for ind = 1:NUM_TESTS
     sg.max_hierarchy_level = MAX_HIERARCHY_LEVELS;
     sg.current_hierarchy_level = 1;
     
+    sg.use_pre_generated_model = USE_PRE_GENERATED_MODEL;
+    
+    sg.simulation_mode_values = COMPILER_OPT_VALUES;
+    sg.use_signal_logging_api = USE_SIGNAL_LOGGING_API;
+%     sg.log_signal_adding_outport = true;    % TODO: Manual INVALID NOW?
+    
     num_total_sim = num_total_sim + 1;
     
     sg.init();
@@ -174,13 +197,13 @@ for ind = 1:NUM_TESTS
                         err_model_names = util.map_append(err_model_names, err_key, model_name);
                     end
                     
-                    util.cond_save_model(SAVE_ALL_ERR_MODELS, model_name, ERR_MODEL_STORAGE);
+                    util.cond_save_model(SAVE_ALL_ERR_MODELS, model_name, ERR_MODEL_STORAGE, sg.my_result);
                     
                 case {'RandGen:SL:CompareError'}
                     fprintf('Compare Error occurred...\n');
                     num_compare_error = num_compare_error + 1;
                     compare_err_model_names.add(model_name);
-                    util.cond_save_model(SAVE_COMPARE_ERR_MODELS, model_name, COMPARE_ERR_MODEL_STORAGE);
+                    util.cond_save_model(SAVE_COMPARE_ERR_MODELS, model_name, COMPARE_ERR_MODEL_STORAGE, sg.my_result);
                     
                     if BREAK_AFTER_COMPARE_ERR
                         fprintf('COMPARE ERROR... BREAKING');
@@ -194,7 +217,7 @@ for ind = 1:NUM_TESTS
                         err_model_names = util.map_append(err_model_names, e.identifier, model_name);
                     end
                     
-                    util.cond_save_model(SAVE_ALL_ERR_MODELS, model_name, ERR_MODEL_STORAGE);
+                    util.cond_save_model(SAVE_ALL_ERR_MODELS, model_name, ERR_MODEL_STORAGE, sg.my_result);
                 
             end
 
@@ -222,7 +245,7 @@ for ind = 1:NUM_TESTS
             	log_len_mismatch_count = log_len_mismatch_count + 1;
                 log_len_mismatch_names.add(model_name);
                 
-                util.cond_save_model(true, model_name, LOG_LEN_MISMATCH_STORAGE);
+                util.cond_save_model(true, model_name, LOG_LEN_MISMATCH_STORAGE, sg.my_result);
                 
 %                 fprintf('BREAKING DUE TO MISMATCH...\n');
 %                 break;
@@ -257,7 +280,7 @@ for ind = 1:NUM_TESTS
         num_other_error = num_other_error + 1;
         
         other_err_model_names = util.map_append(other_err_model_names, e.identifier, model_name);
-        util.cond_save_model(true, model_name, OTHER_ERR_MODEL_STORAGE);
+        util.cond_save_model(true, model_name, OTHER_ERR_MODEL_STORAGE, sg.my_result);
         
         if STOP_IF_OTHER_ERROR
             disp('Stopping: STOP_IF_OTHER_ERROR=True. WARNING: This will not be saved in reports.');

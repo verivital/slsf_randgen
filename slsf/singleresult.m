@@ -5,9 +5,10 @@ classdef singleresult < handle
      properties(Constant = true)
        % Phases
          
-       NORMAL = 1;
-       NORMAL_SIGLOG = 2;
-       ACC = 3;
+       NORMAL = 1;              % Normal mode
+       NORMAL_SIGLOG = 2;       % Normal mode with signal logging
+       ACC = 3;                 % Accelerator
+       RACC = 4;                % Rapid Accelerator
        
        % States in various phases
        NA = 0;
@@ -80,6 +81,22 @@ classdef singleresult < handle
          end
          
          function ret = is_ok(obj, p)
+             % Will return false if data is not available.
+             if p > numel(obj.phases) || isempty(obj.phases{p})
+                 ret = false;
+                 return
+             end
+             ret = (obj.phases{p} == obj.OK);
+         end
+         
+         function ret = is_valid_and_ok(obj, p)
+             % Will not return false if data is not available.
+%              fprintf('array index: %d\n', p);
+%              disp(obj.phases);
+             if p > numel(obj.phases) || isempty(obj.phases{p})
+                 ret = true;
+                 return
+             end
              ret = (obj.phases{p} == obj.OK);
          end
          

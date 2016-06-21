@@ -448,6 +448,46 @@ classdef simulator < handle
         end
         
         
+        function obj = alg_loop_eliminator(obj)
+      
+            num_max_attempts = 3;
+            
+            for gc = 1:num_max_attempts
+                
+                fprintf('Starting alg. loop eliminator... attempt %d\n', gc);
+                
+                aloops = Simulink.BlockDiagram.getAlgebraicLoops(obj.generator.sys);
+            
+                if numel(aloops) == 0
+                    fprintf('No Algebraic loop. Returning...\n');
+                    return;
+                end
+
+                for i = 1:numel(aloops)
+                    cur_loop = aloops(i);
+
+                    visited_handles = mycell(-1);
+
+                    for j = 1:numel(cur_loop.VariableBlockHandles)
+                        j_block = cur_loop.VariableBlockHandles(1);
+                        effective_j_blk = util.select_me_or_parent(j_block);
+
+                        fprintf('j blk: %s \t effective blk: %s\n',get_param(j_block, 'name'), get_param(effective_j_blk, 'name'));
+
+                        if util.cell_in(visited_handles.data, effective_j_blk)
+                            fprintf('Blk already visited\n');
+                        else
+
+                            visited_handles.add(effective_j_blk);
+                            new_delay_block = obj.add_block_in_the_middle(effective_j_blk, 'Simulink/Discrete/Delay', false, true);
+                            set_param(new_delay_block, 'SampleTime', '1'); 
+                        end
+                    end
+                end
+            end
+        end
+        
+        
         
     end
     

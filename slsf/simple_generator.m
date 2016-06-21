@@ -42,20 +42,22 @@ classdef simple_generator < handle
         log_signals = true;
         simulation_mode = [];
         compare_results = true;
+                
         
-        
-        simulation_mode_values = {'off'};
-%         simulation_mode_values = {'off' 'on'};
+        simulation_mode_values = [];    % Actually these are compiler optimization on/off values
+        use_signal_logging_api = true;
         
         is_simulation_successful = [];  % Boolean, whether the model can be simulated in Normal mode without any error.
         
         simulation_data = [];
         my_result = [];                 % Instance of Single result
         
+        use_pre_generated_model = [];   % Instead of generating ranodm model use this pre-generated model
+        
         % Drawing related
-        d_x;
-        d_y;
-        c_block;
+        d_x = 0;
+        d_y = 0;
+        c_block = 0;
         
         width = 60;
         height = 60;
@@ -93,63 +95,35 @@ classdef simple_generator < handle
             
 %             obj.init(); % NOTE: Client has to call init() explicityly!
                         
+            if isempty(obj.use_pre_generated_model)
             
-            
-            obj.get_candidate_blocks();
-            
-            
-            
-            if obj.stop
-                return;
+                obj.get_candidate_blocks();
+
+                obj.draw_blocks();
+
+                obj.chk_compatibility();
+
+                obj.connect_blocks();
+
+                fprintf('--Done Connecting!--\n');
+
+    %             disp('Returning abruptly');
+    %             ret = true;
+    %             return;
+
+            else
+                % Use pre-generated model
+                obj.sys = obj.use_pre_generated_model;
+                open_system(obj.sys);
             end
-            
-            
-            
-            obj.draw_blocks();
-            
-            
-            
-            if obj.stop
-                return;
-            end
-            
-            
-            
-            
-            
-            obj.chk_compatibility();
-            
-            
-            
-            if obj.stop
-                return;
-            end
-            
-            
-            
-            
-            obj.connect_blocks();
-            
-            
-            
-            
-            fprintf('--Done Connecting!--\n');
-            
-            if obj.stop
-                return;
-            end
-            
-%             disp('Returning abruptly');
-%             ret = true;
-%             return;
             
             
             obj.is_simulation_successful = obj.simulate();
             ret = obj.is_simulation_successful;
             
             
-%             fprintf('Done Simulating\n');
-%             
+            fprintf('Done Simulating\n');
+            
 %             disp('Returning abruptly');
 %             return;
             
@@ -163,17 +137,39 @@ classdef simple_generator < handle
                 
                 fprintf('[SIGNAL LOGGING] Now setting up...\n');
                 
-                obj.signal_logging_setup();
+                if obj.log_signals
+                    if obj.use_signal_logging_api
+                        obj.signal_logging_setup();
+                    else
+                        obj.logging_using_outport_setup();
+                    end
+                else
+                    fprintf('Skipping signal logging...\n');
+                end
+                
                 
 %                 save_system(obj.sys);
 %                 disp('Returning abruptly');
 %                 return;
+
+                % Eliminate new algebraic loops (e.g. due to signal logging)
+                simul = simulator(obj, obj.max_simul_attempt);
+                simul.alg_loop_eliminator();
                 
            
                 % Run simulation again for comparing results
+                
+                
+                if ~ obj.compare_results
+                    fprintf('Comparing results is turned off. Returning...\n');
+                    return;
+                end
+                
                 max_try = 2;
                 
                 diff_tester = difftester(obj.sys, obj.my_result, max_try, obj.simulation_mode, obj.simulation_mode_values, obj.compare_results);
+                diff_tester.logging_method_siglog = obj.use_signal_logging_api;
+                
                 ret = diff_tester.go();
 %                 for i=1:max_try
 %                     
@@ -227,8 +223,10 @@ classdef simple_generator < handle
         
         
         function create_and_open_system(obj)
-            new_system(obj.sys);
-            open_system(obj.sys);
+            if isempty(obj.use_pre_generated_model)
+                new_system(obj.sys);
+                open_system(obj.sys);
+            end
         end
         
         
@@ -244,24 +242,68 @@ classdef simple_generator < handle
 %         end
         
         
-        
+        function logging_using_outport_setup(obj)
+            
+            all_blocks = util.get_all_top_level_blocks(obj.sys);
+            
+            for i = 1:numel(all_blocks)
+                cur_blk = all_blocks(i);
+                [out_ports, other_end_ports] = util.get_other_blocks(cur_blk, true);
+                
+                for j = 1:numel(out_ports)
+                    other_ports = other_end_ports{j};
+                    
+                    % Check if the port is already connected to an Outport
+                    
+                    already_outport_connected = false;
+                    
+                    for k = 1:numel(other_ports)
+                        block_name = other_ports(k).Parent; % This gives the name of the block which contains the port
+                        block_type = get_param(block_name, 'BlockType');
+                        
+                        if strcmpi(block_type, 'Outport')
+                            % Do not need to connect an Output block here
+                        	% because we already have one Outport connected.
+                            already_outport_connected = true;
+                            break;
+                        end
+                    end
+                    
+                    if already_outport_connected
+                        fprintf('Already an outport connected, skipping this itereation\n');
+                        continue;
+                    end
+                    
+                    
+                    % Connect an Outport block here
+                    [d_name, d_h] = obj.add_new_block('simulink/Sinks/Out1');
+                    
+                    add_line(obj.sys, [get_param(cur_blk, 'Name') '/' int2str(j)], [d_name '/1'], 'autorouting', 'on');
+                end
+            end
+        end
         
         
         function obj = signal_logging_setup(obj)
-            if ~ obj.log_signals
-                fprintf('Returning from signal logging setup');
-                return;
-            end
             
-            for i = obj.slb.handles
-                port_handles = get_param(i{1}, 'PortHandles');
+            all_blocks = util.get_all_top_level_blocks(obj.sys);
+            
+            for i = 1:numel(all_blocks)
+                port_handles = get_param(all_blocks(i), 'PortHandles');
                 out_ports = port_handles.Outport;
                 
                 for j = 1: numel(out_ports)
                     set_param(out_ports(j), 'DataLogging', 'On');
                 end
-                
             end
+            
+            % Following code uses our data structure. Cons: Can not work
+            % with pre-generated models
+            
+%             for i = obj.slb.handles
+%                 port_handles = get_param(i{1}, 'PortHandles');
+%                 ... rest is same as upper code ...
+%             end
             
         end
         
@@ -419,7 +461,8 @@ classdef simple_generator < handle
             fprintf('[~] Simulating...\n');
             simul = simulator(obj, obj.max_simul_attempt);
             ret =  simul.simulate();
-                
+            
+%             simul.alg_loop_eliminator();
         end
         
         
@@ -825,6 +868,11 @@ classdef simple_generator < handle
         
         function [this_blk_name, h] = add_new_block(obj, block_type)
             
+            if obj.c_block == 0
+                fprintf('Resetting block count!\n');
+                obj.c_block =   numel(util.get_all_top_level_blocks(obj.sys));
+            end
+            
             obj.c_block = obj.c_block + 1;
             
             h_len = obj.d_x + obj.width;
@@ -832,6 +880,9 @@ classdef simple_generator < handle
             pos = [obj.d_x, obj.d_y, h_len, obj.d_y + obj.height];
             
             this_blk_name = obj.create_blk_name(obj.c_block);
+            
+%             fprintf('Calculated this position array:\n');
+%             disp(pos);
             
             h = add_block(block_type, [obj.sys '/' this_blk_name], 'Position', pos);
             

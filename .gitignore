@@ -26,4 +26,6 @@ current.c
 slprj
 slsf/reports/errors/*.slx
 slsf/reports/othererrors/*.slx
+slsf/reports/comperrors/*.slx
 *.asv
+
