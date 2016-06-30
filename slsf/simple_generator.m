@@ -117,11 +117,23 @@ classdef simple_generator < handle
                 open_system(obj.sys);
             end
             
+            % Set up signal logging even before the simulation
+            
+            fprintf('[SIGNAL LOGGING] PRE-simulation setting up...\n');
+            if obj.log_signals
+                if obj.use_signal_logging_api
+                    obj.signal_logging_setup();
+                else
+                    obj.logging_using_outport_setup();
+                end
+            else
+                fprintf('Skipping signal logging...\n');
+            end
+            
+            % Simulation %
             
             obj.is_simulation_successful = obj.simulate();
             ret = obj.is_simulation_successful;
-            
-            
             fprintf('Done Simulating\n');
             
 %             disp('Returning abruptly');
@@ -135,17 +147,16 @@ classdef simple_generator < handle
 %                 obj.my_result.set_ok_normal_mode();
                 obj.my_result.set_ok(singleresult.NORMAL)
                 
-                fprintf('[SIGNAL LOGGING] Now setting up...\n');
-                
-                if obj.log_signals
-                    if obj.use_signal_logging_api
-                        obj.signal_logging_setup();
-                    else
-                        obj.logging_using_outport_setup();
-                    end
-                else
-                    fprintf('Skipping signal logging...\n');
-                end
+%                 fprintf('[SIGNAL LOGGING] Now setting up...\n');
+%                 if obj.log_signals
+%                     if obj.use_signal_logging_api
+%                         obj.signal_logging_setup();
+%                     else
+%                         obj.logging_using_outport_setup();
+%                     end
+%                 else
+%                     fprintf('Skipping signal logging...\n');
+%                 end
                 
                 
 %                 save_system(obj.sys);
@@ -165,7 +176,7 @@ classdef simple_generator < handle
                     return;
                 end
                 
-                max_try = 2;
+                max_try = 5;
                 
                 diff_tester = difftester(obj.sys, obj.my_result, max_try, obj.simulation_mode, obj.simulation_mode_values, obj.compare_results);
                 diff_tester.logging_method_siglog = obj.use_signal_logging_api;

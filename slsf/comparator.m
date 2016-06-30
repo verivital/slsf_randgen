@@ -8,6 +8,7 @@ classdef comparator < handle
         refined_data;               % After we process the `data`;
         try_count;
         my = [];  
+        max_log_len_mismatch_allowed; % How many log len mismatches are allowed?
         
     end
     
@@ -70,7 +71,7 @@ classdef comparator < handle
                     num_time_1 = numel(data_1.Time);
                     num_time_2 = numel(data_2.Time);
                     
-                    if obj.try_count == 1
+                    if obj.try_count < obj.max_log_len_mismatch_allowed
                         if num_data_1 ~= num_data_2 || num_time_1 ~= num_time_2
                             fprintf('[!E!] Length mismatch. Will try again\n');
                             obj.my.is_log_len_mismatch = true;

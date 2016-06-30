@@ -140,7 +140,7 @@ classdef simulator < handle
                 else
 
                     switch e.identifier
-                        case {'Simulink:Engine:AlgStateNotFinite'}
+                        case {'Simulink:Engine:AlgStateNotFinite', 'Simulink:Engine:UnableToSolveAlgLoop', 'Simulink:Engine:BlkInAlgLoopErr'}
                             obj.fix_alg_loop(e);
                             found = true;
                         case {'Simulink:Parameters:InvParamSetting'}
@@ -279,9 +279,11 @@ classdef simulator < handle
                         continue;
                     end
                     h = util.select_me_or_parent(current(i));
-                    new_delay_block = obj.add_block_in_the_middle(h, 'Simulink/Discrete/Delay', false, true);
-                    set_param(new_delay_block, 'SampleTime', '1');                  %       TODO sample time
-%                     disp(h);
+                    new_delay_blocks = obj.add_block_in_the_middle(h, 'Simulink/Discrete/Delay', false, true);
+                    for xc = 1:new_delay_blocks.len
+                        set_param(new_delay_blocks.get(xc), 'SampleTime', '1');                  %       TODO sample time
+    %                     disp(h);
+                    end
                     
                     
                     
@@ -297,7 +299,9 @@ classdef simulator < handle
         
         
         
-        function d_h = add_block_in_the_middle(obj, h, replacement, ignore_in, ignore_out)
+        function ret = add_block_in_the_middle(obj, h, replacement, ignore_in, ignore_out)
+            
+            ret = mycell(-1);
             
             my_name = get_param(h, 'Name');
 
@@ -374,6 +378,7 @@ classdef simulator < handle
                     other_name
                     other_port
                     d_h = obj.add_block_in_middle_multi(my_b_p, other_name, other_port, replacement);
+                    ret.add(d_h);
                     return;
                 end
 
@@ -385,6 +390,7 @@ classdef simulator < handle
                 % get a new block
 
                 [d_name, d_h] = obj.generator.add_new_block(replacement);
+                ret.add(d_h);
 
                 %  delete and Connect
 
@@ -479,8 +485,15 @@ classdef simulator < handle
                         else
 
                             visited_handles.add(effective_j_blk);
-                            new_delay_block = obj.add_block_in_the_middle(effective_j_blk, 'Simulink/Discrete/Delay', false, true);
-                            set_param(new_delay_block, 'SampleTime', '1'); 
+                            
+                            fprintf('[AlgLoopEliminator] Adding new block....\n');
+                            new_delay_blocks = obj.add_block_in_the_middle(effective_j_blk, 'Simulink/Discrete/Delay', false, true);
+                            for xc = 1:new_delay_blocks.len
+                                new_delay_block = new_delay_blocks.get(xc);
+                                fprintf('[AlgLoopEliminator] Done adding block %s\n', get_param(new_delay_block, 'Name'));
+                                set_param(new_delay_block, 'SampleTime', '1'); 
+                                fprintf('[AlgLoopEliminator] Handled sample time.\n');
+                            end
                         end
                     end
                 end

@@ -61,11 +61,9 @@ classdef difftester < handle
                 end
 
                 ret = obj.compare_sim_results(i);
-%                 ret = true;
-%                 obj.my_result.is_log_len_mismatch = false;
-%                 % end of hard coding
 
-                if ~ obj.my_result.is_log_len_mismatch
+%                 if ~ obj.my_result.is_log_len_mismatch
+                if ret
                     break; % No need to run again, since we are successful in the first attempt.
                 end
 
@@ -75,13 +73,20 @@ classdef difftester < handle
         
         
         function ret = compare_sim_results(obj, try_count)
+            ret = false;
+            
             if ~ obj.compare_results
                 fprintf('Will not compare simulation results, returning...');
+                return;
             end
             
             % TODO manually choosing which comparator to use
-%             obj.comp_tester = outport_comparator(obj.my_result, obj.simulation_data, try_count);
-            obj.comp_tester = comparator(obj.my_result, obj.simulation_data, try_count);
+            if obj.logging_method_siglog
+                obj.comp_tester = comparator(obj.my_result, obj.simulation_data, try_count);
+                obj.comp_tester.max_log_len_mismatch_allowed = obj.num_log_len_mismatch;
+            else
+                obj.comp_tester = outport_comparator(obj.my_result, obj.simulation_data, try_count);
+            end
             
             ret = obj.comp_tester.compare();
         end
@@ -136,17 +141,18 @@ classdef difftester < handle
                 return
             end
             
-            % Accelerated Modes
+            % Simulation Modes
             for ti = 1:numel(obj.simulation_mode)
                 for i = 1:numel(obj.simulation_mode_values)
                     inc_i = i + 1;
                     simu_mode = obj.simulation_mode{ti};
 
-    %                 % Open the model first
-    %                 if i > 1
-    %                     fprintf('Opening Model...\n');
-    %                     open_system(obj.sys);
-    %                 end
+                    % Open the model first
+%                     if i > 1  % Logic got flawed after introducing outer
+%                     loop
+                        fprintf('Opening Model...\n');
+                        open_system(obj.sys);
+%                     end
 
                     mode_val = obj.simulation_mode_values{i};
                     fprintf('[!] Simulating in mode %s for value %s...\n', obj.simulation_mode{ti}, mode_val);
@@ -169,20 +175,29 @@ classdef difftester < handle
                     % Delete generated stuffs
                     fprintf('Deleting generated stuffs...\n');
                     delete([obj.sys '_acc*']);
-                    rmdir('slprj', 's');
+                    
+                    try
+                        rmdir('slprj', 's');
+                    catch me
+                        fpritnf('rmdir failure: directory not removed: %s\n', me.identifier);
+                    end
 
                     % Save and close the system
                     
-                    fprintf('Saving Model...\n');
-                    save_system(obj.sys);
-                    obj.close();
+                    if ti ~= numel(obj.simulation_mode) || i ~= numel(obj.simulation_mode_values)
+                        fprintf('Saving and closing Model...\n');
+                        save_system(obj.sys);
+                        obj.close();
+                    else
+                        fprintf('Will NOT save or close model\n');
+                    end
    
                 end
             end
             
             % Delete the saved model
-            fprintf('Deleting model...\n');
-            delete([obj.sys '.slx']);  % TODO Warning: when running a pre-generated model this will delete it! So keep the model in a different directory and add that directory in Matlab path.
+%             fprintf('Deleting model...\n');
+%             delete([obj.sys '.slx']);  % TODO Warning: when running a pre-generated model this will delete it! So keep the model in a different directory and add that directory in Matlab path.
             
             
         end

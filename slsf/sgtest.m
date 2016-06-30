@@ -2,7 +2,7 @@
 % Run this script from the command line. You can edit following options
 % (options are always written using all upper-case letters).
 
-NUM_TESTS = 100;                          % Number of models to generate
+NUM_TESTS = 50;                          % Number of models to generate
 
 SIMULATE_MODELS = true;                 % Will simulate model if value is true
 
@@ -11,16 +11,16 @@ LOG_SIGNALS = true;                     % If set to true, will log all output si
 COMPARE_SIM_RESULTS = true;             % Compare simulation results.
 
 USE_PRE_GENERATED_MODEL = [];
-% USE_PRE_GENERATED_MODEL = 'sampleModel42';                % If you want to skip generation then put name of the model here. Otherwise put empty 
+% USE_PRE_GENERATED_MODEL = 'sampleModel2';                % If you want to skip generation then put name of the model here. Otherwise put empty 
 
 
-STOP_IF_ERROR = true;                   % Stop the script when meet the first simulation error
+STOP_IF_ERROR = false;                   % Stop the script when meet the first simulation error
 STOP_IF_OTHER_ERROR = true;             % Stop the script for errors not related to simulation e.g. unhandled exceptions or code bug. ALWAYS KEEP IT TRUE
 
-CLOSE_MODEL = false;                    % Close models after simulation
+CLOSE_MODEL = true;                    % Close models after simulation
 CLOSE_OK_MODELS = false;                % Close models for which simulation ran OK
 
-NUM_BLOCKS = 30;                    % Number of blocks in each model. Give single number or a matrix [minval maxval]. Example: "5" will create models with exactly 5 blocks. "[5 10]" will choose a value randomly between 5 and 10.
+NUM_BLOCKS = [20 40];                    % Number of blocks in each model. Give single number or a matrix [minval maxval]. Example: "5" will create models with exactly 5 blocks. "[5 10]" will choose a value randomly between 5 and 10.
 
 MAX_HIERARCHY_LEVELS = 1;               % Minimum value is 1 indicating a flat model with no hierarchy.
 
@@ -32,15 +32,15 @@ SAVE_COMPARE_ERR_MODELS = true;         % Save models for which we got signal co
 
 USE_SIGNAL_LOGGING_API = true;          % If true, will use Signal Logging API, otherwise adds Outport blocks to each block of the top level model
 SIMULATION_MODE = {'accelerator'};      % See 'SimulationMode' parameter in http://bit.ly/1WjA4uE
-COMPILER_OPT_VALUES = {'off'};          % Compiler opt. values of Accelerator and Rapid Accelerator modes
+COMPILER_OPT_VALUES = {'off', 'on'};          % Compiler opt. values of Accelerator and Rapid Accelerator modes
 
 
-LOAD_RNG_STATE = false;                  % Set this `true` if we want to create NEW models each time the script is run. Set to `false` if generating same models at each run of the script is desired. For first time running in a new computer set to false, as this will fail first time if set to true.
+LOAD_RNG_STATE = true;                  % Set this `true` if we want to create NEW models each time the script is run. Set to `false` if generating same models at each run of the script is desired. For first time running in a new computer set to false, as this will fail first time if set to true.
 BREAK_AFTER_COMPARE_ERR = true;
 
 SAVE_SIGLOG_IN_DISC = true;
 
-
+DELETE_MODEL = true;
 
 %%%%%%%%%%%%%%%%%%%% End of Options %%%%%%%%%%%%%%%%%%%%
 
@@ -318,6 +318,12 @@ for ind = 1:NUM_TESTS
         'num_compare_error', 'num_other_error', 'num_timedout_sim', 'e_map', ... 
         'err_model_names', 'compare_err_model_names', 'other_err_model_names', ...
         'e_later', 'log_len_mismatch_count', 'log_len_mismatch_names', 'all_siglog', 'all_models');
+    
+    
+    if DELETE_MODEL && isempty(USE_PRE_GENERATED_MODEL)
+        fprintf('Deleting model...\n');
+        delete([sg.sys '.slx']);  % TODO Warning: when running a pre-generated model this will delete it! So keep the model in a different directory and add that directory in Matlab path.
+    end
     
     % Delete sub-models
     sg.my_result.hier_models.print_all('Printing sub models...');
