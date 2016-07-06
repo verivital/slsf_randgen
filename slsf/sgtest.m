@@ -2,7 +2,7 @@
 % Run this script from the command line. You can edit following options
 % (options are always written using all upper-case letters).
 
-NUM_TESTS = 50;                          % Number of models to generate
+NUM_TESTS = 100;                          % Number of models to generate
 
 SIMULATE_MODELS = true;                 % Will simulate model if value is true
 
@@ -117,6 +117,8 @@ l_logged = [];
 all_siglog = mycell(NUM_TESTS);
 all_models = mycell(NUM_TESTS);             % Store some stats regarding all models e.g. number of blocks in the model
 
+block_selection = mymap();                  % Stats on library selection
+
 tic
 
 break_main_loop = false;
@@ -159,6 +161,20 @@ for ind = 1:NUM_TESTS
     try
         sim_res = sg.go();
 %         l_logged = sg.my_result.logdata;
+
+        % Statistics on block selection
+        lib_stats = sg.my_result.block_sel_stat;
+        lib_stats_keys = lib_stats.keys();
+        for i = 1:numel(lib_stats_keys)
+            k = lib_stats_keys{i};
+            
+            prev_val = block_selection.get(k);
+            if isempty(prev_val)
+                prev_val = 0;
+            end
+            
+            block_selection.put(k, (prev_val + lib_stats.get(k)));
+        end
         
         if ~ sim_res
 
@@ -360,6 +376,14 @@ log_len_mismatch_count
 
 compare_err_model_names.print_all('-- printing COMPARE ERR model names --');
 log_len_mismatch_names.print_all('-- printing log_length mismatch model names --');
+
+
+%%% Block Library Selection Stats %%%
+fprintf('==== block selection stats ====\n');
+for i = 1:numel(block_selection.keys())
+    k = block_selection.key(i);
+    fprintf('%s\t\t\t\t%.2f\n', k, block_selection.get(k) / num_total_sim);
+end
 
 
 fprintf('------ BYE from SGTEST. Report saved in %s.mat -------\n', nowtime_str);

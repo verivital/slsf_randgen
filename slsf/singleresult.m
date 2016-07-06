@@ -42,6 +42,8 @@ classdef singleresult < handle
         
         hier_models = [];           % Names of the models generated as part of the hierarchy. Storing them here so that we can delete them later
         
+        block_sel_stat = [];        % Count which library got selected how many times for statistics
+        
     end
     
     methods

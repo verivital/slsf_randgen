@@ -69,6 +69,11 @@ classdef util < handle
         end
         
         
+        function ret=rand_float(num_numbers_to_generate)
+            % Get random floating point value.
+            ret  = rand(1, num_numbers_to_generate);
+        end
+        
         function cond_save_model(cond, mdl_name, store_dir, my_result)
             % Conditionally save `mdl_name` only when `cond` is true
             if cond
@@ -186,6 +191,94 @@ classdef util < handle
             end
             
             ret = true;
+        end
+        
+        function counter = roulette_wheel(candidates, num_choose)
+            % WARNING: ASSUMES MAX_WEIGHT 1.0   
+            weight_sum = 0;
+            candidates_len = numel(candidates);
+            
+            counter = zeros(candidates_len, 1);
+            
+            for i = 1:candidates_len
+                weight_sum = weight_sum + candidates{i}.num;
+            end
+            
+%             weight_sum
+            
+            for i = 1:num_choose
+                
+                r = util.rand_float(1) * weight_sum;
+                
+                found = false;
+                
+                for j=1:candidates_len
+                    r = r - candidates{j}.num;
+                    if r <= 0
+                        counter(j) = counter(j) + 1;
+                        found = true;
+                        break;
+                    end
+                end
+                
+                if ~ found
+                    % Only when rounding error occurs
+                    fprintf('ROUNDING ERROR \n');
+                    counter(candidates_len) = counter(candidates_len) + 1;
+                end
+                
+            end
+            
+            % Print counter for debugging
+            fprintf('===================\n');
+            for i=1:candidates_len
+                fprintf('%d:%d\t',i, counter(i));
+            end
+            fprintf('\n===================\n');
+        end
+        
+        function counter = roulette_wheel_stoch_acceptance(candidates, num_choose)
+            % WARNING: ASSUMES MAX_WEIGHT 1.0   
+            MAX_WEIGHT = 1.0;
+            candidates_len = numel(candidates)
+            
+            counter = zeros(candidates_len, 1);
+            
+            for i = 1:num_choose
+                
+                not_accepted = true;
+                
+                while not_accepted
+                    r = util.rand_float(1);
+                    pos = int32(r * candidates_len);
+                    
+                    if pos == 0
+                        pos = 1;
+                    end
+                    
+                    
+                    r = util.rand_float(1);
+                    c = candidates{pos};
+                    
+                    fprintf('Got this pos: %d\t%.2f\n', pos, r);
+                    
+                    if r < c.num/MAX_WEIGHT
+                        counter(pos) = counter(pos) + 1;
+                        not_accepted = false;
+                        fprintf('ACC\n');
+                    else
+                        fprintf('Not ACC\n');
+                    end
+                    
+                end
+            end
+            
+            % Print counter for debugging
+            fprintf('===================\n');
+            for i=1:candidates_len
+                fprintf('%d:%d\t',i, counter(i));
+            end
+            fprintf('\n===================\n');
         end
         
     end

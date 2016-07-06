@@ -4,8 +4,8 @@ classdef simple_generator < handle
     
     properties(Constant = true)
        DEBUG = true;
-       LIST_BLOCK_PARAMS = true;    % Will list all dialog parameters of a block which is chosen for current chart
-       LIST_CONN = true;            % If true will print info when connecting blocks
+       LIST_BLOCK_PARAMS = false;    % Will list all dialog parameters of a block which is chosen for current chart
+       LIST_CONN = false;            % If true will print info when connecting blocks
        
     end
     
@@ -98,6 +98,9 @@ classdef simple_generator < handle
             if isempty(obj.use_pre_generated_model)
             
                 obj.get_candidate_blocks();
+                
+%                 ret = true;
+%                 return;
 
                 obj.draw_blocks();
 
@@ -501,7 +504,7 @@ classdef simple_generator < handle
         
         function obj = get_candidate_blocks(obj)
             % Randomly choose which blocks will be used to populate the
-            % chart
+            % model
             all = obj.get_all_simulink_blocks();  
             
             obj.process_preadded_blocks();
@@ -510,15 +513,15 @@ classdef simple_generator < handle
                 obj.candi_blocks = cell(1, obj.NUM_BLOCKS);
             end
             
-            rand_vals = randi([1, numel(all)], 1, obj.NUM_BLOCKS);
+%             rand_vals = randi([1, numel(all)], 1, obj.NUM_BLOCKS);
             
             for index = 1:obj.NUM_BLOCKS
-                obj.candi_blocks{index + obj.num_preadded_blocks} = all{rand_vals(index)};
+                obj.candi_blocks{index + obj.num_preadded_blocks} = all.get(index);
+%                 obj.candi_blocks{index + obj.num_preadded_blocks} = all{rand_vals(index)};
             end
             
             obj.NUM_BLOCKS = obj.NUM_BLOCKS + obj.num_preadded_blocks;
         end
-        
         
         
         function ret = get_all_simulink_blocks(obj)
@@ -529,7 +532,8 @@ classdef simple_generator < handle
                 bc = blockchooser();
             end
             
-            ret = bc.get(obj.current_hierarchy_level, obj.max_hierarchy_level);
+            ret = bc.get(obj.current_hierarchy_level, obj.max_hierarchy_level, obj.NUM_BLOCKS);
+            obj.my_result.block_sel_stat = bc.selection_stat;
         end
         
         
