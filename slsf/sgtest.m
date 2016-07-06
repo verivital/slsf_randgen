@@ -2,7 +2,7 @@
 % Run this script from the command line. You can edit following options
 % (options are always written using all upper-case letters).
 
-NUM_TESTS = 100;                          % Number of models to generate
+NUM_TESTS = 1;                          % Number of models to generate
 
 SIMULATE_MODELS = true;                 % Will simulate model if value is true
 
@@ -20,7 +20,7 @@ STOP_IF_OTHER_ERROR = true;             % Stop the script for errors not related
 CLOSE_MODEL = true;                    % Close models after simulation
 CLOSE_OK_MODELS = false;                % Close models for which simulation ran OK
 
-NUM_BLOCKS = [20 40];                    % Number of blocks in each model. Give single number or a matrix [minval maxval]. Example: "5" will create models with exactly 5 blocks. "[5 10]" will choose a value randomly between 5 and 10.
+NUM_BLOCKS = [30 40];                    % Number of blocks in each model. Give single number or a matrix [minval maxval]. Example: "5" will create models with exactly 5 blocks. "[5 10]" will choose a value randomly between 5 and 10.
 
 MAX_HIERARCHY_LEVELS = 1;               % Minimum value is 1 indicating a flat model with no hierarchy.
 
@@ -118,6 +118,7 @@ all_siglog = mycell(NUM_TESTS);
 all_models = mycell(NUM_TESTS);             % Store some stats regarding all models e.g. number of blocks in the model
 
 block_selection = mymap();                  % Stats on library selection
+total_time = [];                            % Time elapsed so far since the start of the experiment
 
 tic
 
@@ -161,6 +162,8 @@ for ind = 1:NUM_TESTS
     try
         sim_res = sg.go();
 %         l_logged = sg.my_result.logdata;
+
+        total_time = toc();
 
         % Statistics on block selection
         lib_stats = sg.my_result.block_sel_stat;
@@ -333,7 +336,7 @@ for ind = 1:NUM_TESTS
     save(REPORT_FILE, 'mdl_counter', 'num_total_sim', 'num_suc_sim', 'num_err_sim', ...
         'num_compare_error', 'num_other_error', 'num_timedout_sim', 'e_map', ... 
         'err_model_names', 'compare_err_model_names', 'other_err_model_names', ...
-        'e_later', 'log_len_mismatch_count', 'log_len_mismatch_names', 'all_siglog', 'all_models');
+        'e_later', 'log_len_mismatch_count', 'log_len_mismatch_names', 'all_siglog', 'all_models', 'block_selection', 'total_time');
     
     
     if DELETE_MODEL && isempty(USE_PRE_GENERATED_MODEL)
