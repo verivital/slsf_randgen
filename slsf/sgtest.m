@@ -36,7 +36,7 @@ COMPILER_OPT_VALUES = {'off', 'on'};          % Compiler opt. values of Accelera
 
 
 LOAD_RNG_STATE = true;                  % Set this `true` if we want to create NEW models each time the script is run. Set to `false` if generating same models at each run of the script is desired. For first time running in a new computer set to false, as this will fail first time if set to true.
-BREAK_AFTER_COMPARE_ERR = true;
+BREAK_AFTER_COMPARE_ERR = false;
 
 SAVE_SIGLOG_IN_DISC = true;
 
