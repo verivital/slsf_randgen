@@ -167,8 +167,8 @@ classdef simple_generator < handle
 %                 return;
 
                 % Eliminate new algebraic loops (e.g. due to signal logging)
-                simul = simulator(obj, obj.max_simul_attempt);
-                simul.alg_loop_eliminator();
+%                 simul = simulator(obj, obj.max_simul_attempt);
+%                 simul.alg_loop_eliminator();
                 
            
                 % Run simulation again for comparing results

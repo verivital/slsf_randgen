@@ -2,7 +2,7 @@
 % Run this script from the command line. You can edit following options
 % (options are always written using all upper-case letters).
 
-NUM_TESTS = 1;                          % Number of models to generate
+NUM_TESTS = 50;                          % Number of models to generate
 
 SIMULATE_MODELS = true;                 % Will simulate model if value is true
 
@@ -11,7 +11,7 @@ LOG_SIGNALS = true;                     % If set to true, will log all output si
 COMPARE_SIM_RESULTS = true;             % Compare simulation results.
 
 USE_PRE_GENERATED_MODEL = [];
-% USE_PRE_GENERATED_MODEL = 'sampleModel2';                % If you want to skip generation then put name of the model here. Otherwise put empty 
+% USE_PRE_GENERATED_MODEL = 'sampleModel7065';                % If you want to skip generation then put name of the model here. Otherwise put empty 
 
 
 STOP_IF_ERROR = false;                   % Stop the script when meet the first simulation error

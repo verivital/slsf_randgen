@@ -8,7 +8,7 @@ import time
 
 # Options
 
-OPT_NUM_RUN = 1
+OPT_NUM_RUN = 100
 
 # You can configure more options in slsf/sgtest.m file.
 

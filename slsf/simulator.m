@@ -67,7 +67,7 @@ classdef simulator < handle
                 try
                     obj.sim();
 %                     sim(obj.generator.sys);  
-                    disp('Success simulating in NORMAL mode!');
+                    disp('Success simulating in SIMULATOR.M module!');
                     done = true;
                     ret = true;
                 catch e
@@ -116,13 +116,23 @@ classdef simulator < handle
 
                 end
                 
+                if done % Don't waste executing below block if simulation fixer was not done.
+                    try
+                        obj.alg_loop_eliminator();
+                    catch e
+                        done = false;
+                        ret = false;
+                        fprintf('Error in algebraic loop elimination: %s. Will try simulating again. \n', e.identifier);
+                    end
+                end
+                
                 if done
                     disp('(s) Exiting from simulation attempt loop');
                     break;
                 end
                 
                 
-            end
+            end         %       fix-and-simulate loop
 
                     
         end
@@ -143,6 +153,14 @@ classdef simulator < handle
                         case {'Simulink:Engine:AlgStateNotFinite', 'Simulink:Engine:UnableToSolveAlgLoop', 'Simulink:Engine:BlkInAlgLoopErr'}
                             obj.fix_alg_loop(e);
                             found = true;
+%                         case {'Simulink:utility:GetAlgebraicLoopFailed'}
+%                             % Will fix in next FAS attempt. This is the
+%                             % case when sim() is successful, but algebraic
+%                             % loop eliminator introduced a new problem and 
+%                             % failed to simulate. In this case another
+%                             % round of simulation is needed to fix the new
+%                             % problem
+%                             found = true;
                         case {'Simulink:Parameters:InvParamSetting'}
                             obj.fix_invParamSetting(e);
                             done = true;                                    % TODO
