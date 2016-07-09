@@ -11,6 +11,7 @@ classdef simple_generator < handle
     
     properties
         NUM_BLOCKS;                 % These many blocks will be placed in chart
+        record_runtime = true;
         
         slb;                        % Object of class slblocks
         
@@ -86,7 +87,6 @@ classdef simple_generator < handle
         end
         
         
-        
         function ret = go(obj)
             % Call this function to start
             obj.p('--- Starting ---');
@@ -105,9 +105,12 @@ classdef simple_generator < handle
                 obj.draw_blocks();
 
                 obj.chk_compatibility();
+                
+                obj.my_result.store_runtime(singleresult.BLOCK_SEL);
 
                 obj.connect_blocks();
-
+                obj.my_result.store_runtime(singleresult.PORT_CONN);
+                
                 fprintf('--Done Connecting!--\n');
 
     %             disp('Returning abruptly');
@@ -129,6 +132,8 @@ classdef simple_generator < handle
                 else
                     obj.logging_using_outport_setup();
                 end
+                
+                obj.my_result.store_runtime(singleresult.SIGNAL_LOGGING);
             else
                 fprintf('Skipping signal logging...\n');
             end
@@ -136,6 +141,9 @@ classdef simple_generator < handle
             % Simulation %
             
             obj.is_simulation_successful = obj.simulate();
+            
+            obj.my_result.store_runtime(singleresult.FAS);
+            
             ret = obj.is_simulation_successful;
             fprintf('Done Simulating\n');
             
@@ -229,11 +237,12 @@ classdef simple_generator < handle
             obj.slb = slblocks(obj.NUM_BLOCKS);
             obj.blkcfg = blockconfigure();
 %             obj.simul = simulator(obj, obj.max_simul_attempt);
-            obj.my_result = singleresult(obj.sys);
+            obj.my_result = singleresult(obj.sys, obj.record_runtime);
+            
+            obj.my_result.init_runtime_recording();
             
             obj.create_and_open_system();
         end
-        
         
         
         function create_and_open_system(obj)

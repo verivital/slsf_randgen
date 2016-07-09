@@ -59,6 +59,8 @@ classdef difftester < handle
                     ret = false;
                     return;
                 end
+                
+                obj.my_result.store_runtime(singleresult.SIGNAL_LOGGING);
 
                 ret = obj.compare_sim_results(i);
 
@@ -89,6 +91,8 @@ classdef difftester < handle
             end
             
             ret = obj.comp_tester.compare();
+            
+            obj.my_result.store_runtime(singleresult.COMPARISON);
         end
         
         

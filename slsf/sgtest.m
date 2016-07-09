@@ -119,8 +119,9 @@ all_models = mycell(NUM_TESTS);             % Store some stats regarding all mod
 
 block_selection = mymap();                  % Stats on library selection
 total_time = [];                            % Time elapsed so far since the start of the experiment
+runtime = mycell(-1);
 
-tic
+% tic
 
 break_main_loop = false;
 
@@ -163,7 +164,7 @@ for ind = 1:NUM_TESTS
         sim_res = sg.go();
 %         l_logged = sg.my_result.logdata;
 
-        total_time = toc();
+%         total_time = toc();
 
         % Statistics on block selection
         lib_stats = sg.my_result.block_sel_stat;
@@ -178,6 +179,10 @@ for ind = 1:NUM_TESTS
             
             block_selection.put(k, (prev_val + lib_stats.get(k)));
         end
+        
+        % Runtime
+        
+        runtime.add(sg.my_result.runtime);
         
         if ~ sim_res
 
@@ -336,7 +341,7 @@ for ind = 1:NUM_TESTS
     save(REPORT_FILE, 'mdl_counter', 'num_total_sim', 'num_suc_sim', 'num_err_sim', ...
         'num_compare_error', 'num_other_error', 'num_timedout_sim', 'e_map', ... 
         'err_model_names', 'compare_err_model_names', 'other_err_model_names', ...
-        'e_later', 'log_len_mismatch_count', 'log_len_mismatch_names', 'all_siglog', 'all_models', 'block_selection', 'total_time');
+        'e_later', 'log_len_mismatch_count', 'log_len_mismatch_names', 'all_siglog', 'all_models', 'block_selection', 'runtime');
     
     
     if DELETE_MODEL && isempty(USE_PRE_GENERATED_MODEL)
@@ -363,7 +368,7 @@ delete('*_msf.*');  % Files generated in Windows
 disp('----------- SGTEST END -------------');
 
 disp(['%%% %%%% %%%% %%%% %%%% Final Statistics %%% %%%% %%%% %%%% %%%%']);
-toc
+% toc
 
 mdl_counter
 num_total_sim
