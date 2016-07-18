@@ -10,12 +10,12 @@ classdef blockchooser < handle
         % `num`.  NOTE THAT MAXIMUM VALUE OF num CAN BE 1.0
         
         categories = {
-            struct('name', 'Discrete', 'num', 0.4)
-            struct('name', 'Continuous', 'num', 0.3)
+            struct('name', 'Discrete', 'num', 0.1)
+%             struct('name', 'Continuous', 'num', 0.3)
 %             struct('name', 'Math Operations', 'num', 10)
 %             struct('name', 'Logic and Bit Operations', 'num', 10)
-            struct('name', 'Sinks', 'num', 0.15)
-            struct('name', 'Sources', 'num', 0.15)
+            struct('name', 'Sinks', 'num', 0.1)
+            struct('name', 'Sources', 'num', 0.1)
         };
     
         

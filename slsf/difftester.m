@@ -183,7 +183,7 @@ classdef difftester < handle
                     try
                         rmdir('slprj', 's');
                     catch me
-                        fpritnf('rmdir failure: directory not removed: %s\n', me.identifier);
+                        fprintf('rmdir failure: directory not removed: %s\n', me.identifier);
                     end
 
                     % Save and close the system

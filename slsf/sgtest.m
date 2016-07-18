@@ -2,7 +2,7 @@
 % Run this script from the command line. You can edit following options
 % (options are always written using all upper-case letters).
 
-NUM_TESTS = 50;                          % Number of models to generate
+NUM_TESTS = 1;                          % Number of models to generate
 
 SIMULATE_MODELS = true;                 % Will simulate model if value is true
 
@@ -10,19 +10,19 @@ LOG_SIGNALS = true;                     % If set to true, will log all output si
 
 COMPARE_SIM_RESULTS = true;             % Compare simulation results.
 
-USE_PRE_GENERATED_MODEL = [];
-% USE_PRE_GENERATED_MODEL = 'sampleModel7065';                % If you want to skip generation then put name of the model here. Otherwise put empty 
+% USE_PRE_GENERATED_MODEL = [];
+USE_PRE_GENERATED_MODEL = 'potential';                % If you want to skip generation then put name of the model here. Otherwise put empty 
 
 
 STOP_IF_ERROR = false;                   % Stop the script when meet the first simulation error
 STOP_IF_OTHER_ERROR = true;             % Stop the script for errors not related to simulation e.g. unhandled exceptions or code bug. ALWAYS KEEP IT TRUE
 
-CLOSE_MODEL = true;                    % Close models after simulation
+CLOSE_MODEL = false;                    % Close models after simulation
 CLOSE_OK_MODELS = false;                % Close models for which simulation ran OK
 
-NUM_BLOCKS = [30 40];                    % Number of blocks in each model. Give single number or a matrix [minval maxval]. Example: "5" will create models with exactly 5 blocks. "[5 10]" will choose a value randomly between 5 and 10.
+NUM_BLOCKS = [3 5];                    % Number of blocks in each model. Give single number or a matrix [minval maxval]. Example: "5" will create models with exactly 5 blocks. "[5 10]" will choose a value randomly between 5 and 10.
 
-MAX_HIERARCHY_LEVELS = 1;               % Minimum value is 1 indicating a flat model with no hierarchy.
+MAX_HIERARCHY_LEVELS = 3;               % Minimum value is 1 indicating a flat model with no hierarchy.
 
 SAVE_ALL_ERR_MODELS = true;             % Save the models which we can not simulate 
 LOG_ERR_MODEL_NAMES = true;             % Log error model names keyed by their errors
@@ -30,13 +30,13 @@ SAVE_COMPARE_ERR_MODELS = true;         % Save models for which we got signal co
 
 
 
-USE_SIGNAL_LOGGING_API = true;          % If true, will use Signal Logging API, otherwise adds Outport blocks to each block of the top level model
-SIMULATION_MODE = {'accelerator'};      % See 'SimulationMode' parameter in http://bit.ly/1WjA4uE
-COMPILER_OPT_VALUES = {'off', 'on'};          % Compiler opt. values of Accelerator and Rapid Accelerator modes
+USE_SIGNAL_LOGGING_API = false;          % If true, will use Signal Logging API, otherwise adds Outport blocks to each block of the top level model
+SIMULATION_MODE = {'rapid'};      % See 'SimulationMode' parameter in http://bit.ly/1WjA4uE
+COMPILER_OPT_VALUES = {'off'};          % Compiler opt. values of Accelerator and Rapid Accelerator modes
 
 
 LOAD_RNG_STATE = true;                  % Set this `true` if we want to create NEW models each time the script is run. Set to `false` if generating same models at each run of the script is desired. For first time running in a new computer set to false, as this will fail first time if set to true.
-BREAK_AFTER_COMPARE_ERR = false;
+BREAK_AFTER_COMPARE_ERR = true;
 
 SAVE_SIGLOG_IN_DISC = true;
 

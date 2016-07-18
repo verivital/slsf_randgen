@@ -12,6 +12,7 @@ classdef simple_generator < handle
     properties
         NUM_BLOCKS;                 % These many blocks will be placed in chart
         record_runtime = true;
+        num_log_len_mismatch_attempt = 5;
         
         slb;                        % Object of class slblocks
         
@@ -119,6 +120,9 @@ classdef simple_generator < handle
 
             else
                 % Use pre-generated model
+%                 obj.my_result.store_runtime(singleresult.BLOCK_SEL);
+%                 obj.my_result.store_runtime(singleresult.PORT_CONN);
+                
                 obj.sys = obj.use_pre_generated_model;
                 open_system(obj.sys);
             end
@@ -186,10 +190,8 @@ classdef simple_generator < handle
                     fprintf('Comparing results is turned off. Returning...\n');
                     return;
                 end
-                
-                max_try = 5;
-                
-                diff_tester = difftester(obj.sys, obj.my_result, max_try, obj.simulation_mode, obj.simulation_mode_values, obj.compare_results);
+                                
+                diff_tester = difftester(obj.sys, obj.my_result, obj.num_log_len_mismatch_attempt, obj.simulation_mode, obj.simulation_mode_values, obj.compare_results);
                 diff_tester.logging_method_siglog = obj.use_signal_logging_api;
                 
                 ret = diff_tester.go();
@@ -266,6 +268,13 @@ classdef simple_generator < handle
         
         
         function logging_using_outport_setup(obj)
+            
+            set_param(obj.sys, 'SaveFormat', 'StructureWithTime');
+            
+            % Configure Model
+%             set_param(obj.sys, 'EnhancedBackFolding', 'on');
+            
+%             return;                                                                 % TODO
             
             all_blocks = util.get_all_top_level_blocks(obj.sys);
             
@@ -738,6 +747,7 @@ classdef simple_generator < handle
             % Choose a block and pointer
             
             % choose a block
+           num_blocks
            rand_num = randi([1, num_blocks], 1, 1);
            r_blk = blocks{rand_num(1)};
 
@@ -926,9 +936,11 @@ classdef simple_generator < handle
         
         
         function ret=handle_hierarchy_blocks(obj)
+            ret = 'nil';
+            return;                                                             % TODO
             model_name = ['hier' int2str(util.rand_int(1, 10000, 1))]; % TODO fix Max number
             
-            SIMULATE_MODELS = true;
+            SIMULATE_MODELS = false;
             CLOSE_MODEL = true;
             LOG_SIGNALS = false;
             SIMULATION_MODE = [];
@@ -970,7 +982,7 @@ classdef simple_generator < handle
         
         
         function handle_submodel_creation(obj, blk_name, parent_model)
-            SIMULATE_MODELS = true;
+            SIMULATE_MODELS = false;
             CLOSE_MODEL = true;
             LOG_SIGNALS = false;
             SIMULATION_MODE = [];
@@ -978,7 +990,9 @@ classdef simple_generator < handle
             
             full_model_name = [parent_model blk_name];
             
-            hg = submodel_generator(obj.inner_model_num_blocks, full_model_name, SIMULATE_MODELS, CLOSE_MODEL, LOG_SIGNALS, SIMULATION_MODE, COMPARE_SIM_RESULTS);
+            hg = submodel_generator(1, full_model_name, SIMULATE_MODELS, CLOSE_MODEL, LOG_SIGNALS, SIMULATION_MODE, COMPARE_SIM_RESULTS);                      
+%             hg = submodel_generator(obj.inner_model_num_blocks, full_model_name, SIMULATE_MODELS, CLOSE_MODEL, LOG_SIGNALS, SIMULATION_MODE, COMPARE_SIM_RESULTS);
+
             hg.max_hierarchy_level = obj.max_hierarchy_level;
             hg.current_hierarchy_level = obj.current_hierarchy_level + 1;
             

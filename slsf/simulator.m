@@ -64,6 +64,8 @@ classdef simulator < handle
             for i=1:obj.max_try
                 disp(['(s) Simulation attempt ' int2str(i)]);
                 
+                found = false;
+                
                 try
                     obj.sim();
 %                     sim(obj.generator.sys);  
@@ -116,7 +118,7 @@ classdef simulator < handle
 
                 end
                 
-                if done % Don't waste executing below block if simulation fixer was not done.
+                if done && found % Don't waste executing below block if simulation fixer was not done.
                     try
                         obj.alg_loop_eliminator();
                     catch e
