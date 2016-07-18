@@ -1,8 +1,13 @@
-# SLSF Random Generation
+# Simulink Random Generator and Comparison 
 
-## Introduction
+This directory contains scripts regarding `csmith` integration. The 
+actual Simulink random generator (aka ``CyFuzz'') is located under `slsf` 
+folder. Check out the [slsf/Readme.md](slsf/Readme.md) file to learn how to 
+run the tool.
 
- - TODO
+Rest of the contents in this file is related to `csmith` integration
+
+# Experiments with Csmith
 
 ## Current Work
 
@@ -74,16 +79,4 @@ In linux, we can set up this way. Please note that we need both `csmith` and `ma
     export C_INCLUDE_PATH=$CSMITH_PATH/runtime
     export CSMITH_HOME=$CSMITH_PATH # Needed for running csmith test driver
 
-## Fixed Issues
-
- - Unsafe math operation at runtime: For some reason, I can not build the 
-file `runtime/safe_math.h` with `mex` command. I've put a log in the logs 
-folder. To get around this, I commented out line 100 of 
-`csmith/runtime/random_inc.h`. So, run-time unsafe math operation (i.e. 
-division by 0) leads to crash. Also "tuned" csmith to NOT include the safe
-math operation wrappers (passing --no-safe-math argument). (FIXED)
-
-- Handle aparantly non-terminating code (csmith uses timeout in their 
-test suit). This is fixed, but killed processes are somehow leaking and 
-processor usage is very high. Need to fix this. (FIXED)
-
+Thank You

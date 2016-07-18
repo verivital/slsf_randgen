@@ -2,20 +2,20 @@
 % Run this script from the command line. You can edit following options
 % (options are always written using all upper-case letters).
 
-NUM_TESTS = 100;                          % Number of models to generate
+NUM_TESTS = 100;                        % Number of models to generate
 
-SIMULATE_MODELS = true;                 % Will simulate model if value is true
+SIMULATE_MODELS = true;                 % To simulate generated model
 
-LOG_SIGNALS = true;                     % If set to true, will log all output signals for later comparison
+LOG_SIGNALS = true;                     % To log all output signals for comparison
 
-COMPARE_SIM_RESULTS = true;             % Compare simulation results.
+COMPARE_SIM_RESULTS = true;             % To compare simulation results obtained by logging signals.
 
-USE_PRE_GENERATED_MODEL = [];
-% USE_PRE_GENERATED_MODEL = 'sampleModel7189';                % If you want to skip generation then put name of the model here. Otherwise put empty 
+USE_PRE_GENERATED_MODEL = [];           % If this is non-empty and a string, then instead of generating a model, will use value of this variable as an already generated model. Put empty ``[]'' to randomly generate models.
+% USE_PRE_GENERATED_MODEL = 'sampleModel7189';  % If uncommented, instead of randomly generating model will simply use this model in the comparison framework. 
 
 
-STOP_IF_ERROR = false;                   % Stop the script when meet the first simulation error
-STOP_IF_OTHER_ERROR = true;             % Stop the script for errors not related to simulation e.g. unhandled exceptions or code bug. ALWAYS KEEP IT TRUE
+STOP_IF_ERROR = false;                  % Stop the script when meet the first simulation error
+STOP_IF_OTHER_ERROR = true;             % Stop the script for errors not related to simulation e.g. unhandled exceptions or code bug. ALWAYS KEEP IT TRUE to detect my own bugs.
 
 CLOSE_MODEL = true;                    % Close models after simulation
 CLOSE_OK_MODELS = false;                % Close models for which simulation ran OK
@@ -27,16 +27,16 @@ MAX_HIERARCHY_LEVELS = 1;               % Minimum value is 1 indicating a flat m
 SAVE_ALL_ERR_MODELS = true;             % Save the models which we can not simulate 
 LOG_ERR_MODEL_NAMES = true;             % Log error model names keyed by their errors
 SAVE_COMPARE_ERR_MODELS = true;         % Save models for which we got signal compare error after diff. testing
-SAVE_SUCC_MODELS = true;                % Save successful simulation models
+SAVE_SUCC_MODELS = true;                % Save successful simulation models in a folder
 
 
 
-USE_SIGNAL_LOGGING_API = true;          % If true, will use Signal Logging API, otherwise adds Outport blocks to each block of the top level model
+USE_SIGNAL_LOGGING_API = true;          % If true, will use Simulink's Signal Logging API, otherwise adds Outport blocks to each block of the top level model
 SIMULATION_MODE = {'accelerator'};      % See 'SimulationMode' parameter in http://bit.ly/1WjA4uE
 COMPILER_OPT_VALUES = {'off'};          % Compiler opt. values of Accelerator and Rapid Accelerator modes
 
 
-LOAD_RNG_STATE = true;                  % Set this `true` if we want to create NEW models each time the script is run. Set to `false` if generating same models at each run of the script is desired. For first time running in a new computer set to false, as this will fail first time if set to true.
+LOAD_RNG_STATE = false;                  % Set this `true` if we want to create NEW models each time the script is run. Set to `false` if generating same models at each run of the script is desired. For first time running in a new computer set to false, as this will fail first time if set to true.
 BREAK_AFTER_COMPARE_ERR = true;
 
 SAVE_SIGLOG_IN_DISC = true;
