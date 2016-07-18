@@ -33,6 +33,15 @@ classdef innerblkchooser < blockchooser
             
             obj.allowlist{len_allowlist + 1} = struct('name', 'simulink/Sources/In1');
             obj.allowlist{len_allowlist + 2} = struct('name', 'simulink/Sinks/Out1');
+            
+            % Blacklist
+            
+            % Mainly because of a For Each block appearing at parent level
+            obj.blocklist.(util.mvn('simulink/Sinks/XY Graph')) = 1;
+            obj.blocklist.(util.mvn('simulink/Sinks/To Workspace')) = 1;
+            obj.blocklist.(util.mvn('simulink/Sinks/To File')) = 1;
+            obj.blocklist.(util.mvn('simulink/Sinks/Scope')) = 1;
+            obj.blocklist.(util.mvn('simulink/Sinks/FloatingScope')) = 1;
         end
     end
     

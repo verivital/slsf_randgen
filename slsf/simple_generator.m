@@ -4,19 +4,22 @@ classdef simple_generator < handle
     
     properties(Constant = true)
        DEBUG = true;
-       LIST_BLOCK_PARAMS = true;    % Will list all dialog parameters of a block which is chosen for current chart
+       LIST_BLOCK_PARAMS = false;    % Will list all dialog parameters of a block which is chosen for current chart
        LIST_CONN = false;            % If true will print info when connecting blocks
        
     end
     
     properties
         NUM_BLOCKS;                 % These many blocks will be placed in chart
+        record_runtime = true;
+        num_log_len_mismatch_attempt = 5;
         
         slb;                        % Object of class slblocks
         
         sys;                        % Name of the model
         
         candi_blocks;               % Will choose from these blocks
+        num_preadded_blocks = 0;    % Blocks which are already added in the model. E.g. in a For-each block some blocks are already given
         
 %         diff_tester;                % Instance of comparator class
                 
@@ -41,19 +44,22 @@ classdef simple_generator < handle
         log_signals = true;
         simulation_mode = [];
         compare_results = true;
+                
         
-        
-        simulation_mode_values = {'off' 'on'};
+        simulation_mode_values = [];    % Actually these are compiler optimization on/off values
+        use_signal_logging_api = true;
         
         is_simulation_successful = [];  % Boolean, whether the model can be simulated in Normal mode without any error.
         
         simulation_data = [];
         my_result = [];                 % Instance of Single result
         
+        use_pre_generated_model = [];   % Instead of generating ranodm model use this pre-generated model
+        
         % Drawing related
-        d_x;
-        d_y;
-        c_block;
+        d_x = 0;
+        d_y = 0;
+        c_block = 0;
         
         width = 60;
         height = 60;
@@ -82,7 +88,6 @@ classdef simple_generator < handle
         end
         
         
-        
         function ret = go(obj)
             % Call this function to start
             obj.p('--- Starting ---');
@@ -91,63 +96,61 @@ classdef simple_generator < handle
             
 %             obj.init(); % NOTE: Client has to call init() explicityly!
                         
+            if isempty(obj.use_pre_generated_model)
             
-            
-            obj.get_candidate_blocks();
-            
-            
-            
-            if obj.stop
-                return;
+                obj.get_candidate_blocks();
+                
+%                 ret = true;
+%                 return;
+
+                obj.draw_blocks();
+
+                obj.chk_compatibility();
+                
+                obj.my_result.store_runtime(singleresult.BLOCK_SEL);
+
+                obj.connect_blocks();
+                obj.my_result.store_runtime(singleresult.PORT_CONN);
+                
+                fprintf('--Done Connecting!--\n');
+
+    %             disp('Returning abruptly');
+    %             ret = true;
+    %             return;
+
+            else
+                % Use pre-generated model
+%                 obj.my_result.store_runtime(singleresult.BLOCK_SEL);
+%                 obj.my_result.store_runtime(singleresult.PORT_CONN);
+                
+                obj.sys = obj.use_pre_generated_model;
+                open_system(obj.sys);
             end
             
+            % Set up signal logging even before the simulation
             
-            
-            obj.draw_blocks();
-            
-            
-            
-            if obj.stop
-                return;
+            fprintf('[SIGNAL LOGGING] PRE-simulation setting up...\n');
+            if obj.log_signals
+                if obj.use_signal_logging_api
+                    obj.signal_logging_setup();
+                else
+                    obj.logging_using_outport_setup();
+                end
+                
+                obj.my_result.store_runtime(singleresult.SIGNAL_LOGGING);
+            else
+                fprintf('Skipping signal logging...\n');
             end
             
-            
-            
-            
-            
-            obj.chk_compatibility();
-            
-            
-            
-            if obj.stop
-                return;
-            end
-            
-            
-            
-            
-            obj.connect_blocks();
-            
-            
-            
-            
-            fprintf('--Done Connecting!--\n');
-            
-            if obj.stop
-                return;
-            end
-            
-            disp('Returning abruptly');
-            ret = true;
-            return;
-            
+            % Simulation %
             
             obj.is_simulation_successful = obj.simulate();
+            
+            obj.my_result.store_runtime(singleresult.FAS);
+            
             ret = obj.is_simulation_successful;
+            fprintf('Done Simulating\n');
             
-            
-%             fprintf('Done Simulating\n');
-%             
 %             disp('Returning abruptly');
 %             return;
             
@@ -159,20 +162,38 @@ classdef simple_generator < handle
 %                 obj.my_result.set_ok_normal_mode();
                 obj.my_result.set_ok(singleresult.NORMAL)
                 
-                fprintf('[SIGNAL LOGGING] Now setting up...\n');
+%                 fprintf('[SIGNAL LOGGING] Now setting up...\n');
+%                 if obj.log_signals
+%                     if obj.use_signal_logging_api
+%                         obj.signal_logging_setup();
+%                     else
+%                         obj.logging_using_outport_setup();
+%                     end
+%                 else
+%                     fprintf('Skipping signal logging...\n');
+%                 end
                 
-                obj.signal_logging_setup();
                 
 %                 save_system(obj.sys);
 %                 disp('Returning abruptly');
 %                 return;
+
+                % Eliminate new algebraic loops (e.g. due to signal logging)
+%                 simul = simulator(obj, obj.max_simul_attempt);
+%                 simul.alg_loop_eliminator();
                 
-      
-                
+           
                 % Run simulation again for comparing results
-                max_try = 2;
                 
-                diff_tester = difftester(obj.sys, obj.my_result, max_try, obj.simulation_mode, obj.simulation_mode_values, obj.compare_results);
+                
+                if ~ obj.compare_results
+                    fprintf('Comparing results is turned off. Returning...\n');
+                    return;
+                end
+                                
+                diff_tester = difftester(obj.sys, obj.my_result, obj.num_log_len_mismatch_attempt, obj.simulation_mode, obj.simulation_mode_values, obj.compare_results);
+                diff_tester.logging_method_siglog = obj.use_signal_logging_api;
+                
                 ret = diff_tester.go();
 %                 for i=1:max_try
 %                     
@@ -218,16 +239,19 @@ classdef simple_generator < handle
             obj.slb = slblocks(obj.NUM_BLOCKS);
             obj.blkcfg = blockconfigure();
 %             obj.simul = simulator(obj, obj.max_simul_attempt);
-            obj.my_result = singleresult(obj.sys);
+            obj.my_result = singleresult(obj.sys, obj.record_runtime);
+            
+            obj.my_result.init_runtime_recording();
             
             obj.create_and_open_system();
         end
         
         
-        
         function create_and_open_system(obj)
-            new_system(obj.sys);
-            open_system(obj.sys);
+            if isempty(obj.use_pre_generated_model)
+                new_system(obj.sys);
+                open_system(obj.sys);
+            end
         end
         
         
@@ -243,24 +267,75 @@ classdef simple_generator < handle
 %         end
         
         
-        
+        function logging_using_outport_setup(obj)
+            
+            set_param(obj.sys, 'SaveFormat', 'StructureWithTime');
+            
+            % Configure Model
+%             set_param(obj.sys, 'EnhancedBackFolding', 'on');
+            
+%             return;                                                                 % TODO
+            
+            all_blocks = util.get_all_top_level_blocks(obj.sys);
+            
+            for i = 1:numel(all_blocks)
+                cur_blk = all_blocks(i);
+                [out_ports, other_end_ports] = util.get_other_blocks(cur_blk, true);
+                
+                for j = 1:numel(out_ports)
+                    other_ports = other_end_ports{j};
+                    
+                    % Check if the port is already connected to an Outport
+                    
+                    already_outport_connected = false;
+                    
+                    for k = 1:numel(other_ports)
+                        block_name = other_ports(k).Parent; % This gives the name of the block which contains the port
+                        block_type = get_param(block_name, 'BlockType');
+                        
+                        if strcmpi(block_type, 'Outport')
+                            % Do not need to connect an Output block here
+                        	% because we already have one Outport connected.
+                            already_outport_connected = true;
+                            break;
+                        end
+                    end
+                    
+                    if already_outport_connected
+                        fprintf('Already an outport connected, skipping this itereation\n');
+                        continue;
+                    end
+                    
+                    
+                    % Connect an Outport block here
+                    [d_name, d_h] = obj.add_new_block('simulink/Sinks/Out1');
+                    
+                    add_line(obj.sys, [get_param(cur_blk, 'Name') '/' int2str(j)], [d_name '/1'], 'autorouting', 'on');
+                end
+            end
+        end
         
         
         function obj = signal_logging_setup(obj)
-            if ~ obj.log_signals
-                fprintf('Returning from signal logging setup');
-                return;
-            end
             
-            for i = obj.slb.handles
-                port_handles = get_param(i{1}, 'PortHandles');
+            all_blocks = util.get_all_top_level_blocks(obj.sys);
+            
+            for i = 1:numel(all_blocks)
+                port_handles = get_param(all_blocks(i), 'PortHandles');
                 out_ports = port_handles.Outport;
                 
                 for j = 1: numel(out_ports)
                     set_param(out_ports(j), 'DataLogging', 'On');
                 end
-                
             end
+            
+            % Following code uses our data structure. Cons: Can not work
+            % with pre-generated models
+            
+%             for i = obj.slb.handles
+%                 port_handles = get_param(i{1}, 'PortHandles');
+%                 ... rest is same as upper code ...
+%             end
             
         end
         
@@ -418,7 +493,8 @@ classdef simple_generator < handle
             fprintf('[~] Simulating...\n');
             simul = simulator(obj, obj.max_simul_attempt);
             ret =  simul.simulate();
-                
+            
+%             simul.alg_loop_eliminator();
         end
         
         
@@ -438,20 +514,32 @@ classdef simple_generator < handle
             end
         end
         
+        function process_preadded_blocks(obj)
+            % Manually overload for the time being.
+        end
+        
         
         
         function obj = get_candidate_blocks(obj)
             % Randomly choose which blocks will be used to populate the
-            % chart
+            % model
             all = obj.get_all_simulink_blocks();  
-            obj.candi_blocks = cell(1, obj.NUM_BLOCKS);
-            rand_vals = randi([1, numel(all)], 1, obj.NUM_BLOCKS);
+            
+            obj.process_preadded_blocks();
+            
+            if obj.num_preadded_blocks == 0
+                obj.candi_blocks = cell(1, obj.NUM_BLOCKS);
+            end
+            
+%             rand_vals = randi([1, numel(all)], 1, obj.NUM_BLOCKS);
             
             for index = 1:obj.NUM_BLOCKS
-                obj.candi_blocks{index} = all{rand_vals(index)};
+                obj.candi_blocks{index + obj.num_preadded_blocks} = all.get(index);
+%                 obj.candi_blocks{index + obj.num_preadded_blocks} = all{rand_vals(index)};
             end
+            
+            obj.NUM_BLOCKS = obj.NUM_BLOCKS + obj.num_preadded_blocks;
         end
-        
         
         
         function ret = get_all_simulink_blocks(obj)
@@ -462,7 +550,8 @@ classdef simple_generator < handle
                 bc = blockchooser();
             end
             
-            ret = bc.get(obj.current_hierarchy_level, obj.max_hierarchy_level);
+            ret = bc.get(obj.current_hierarchy_level, obj.max_hierarchy_level, obj.NUM_BLOCKS);
+            obj.my_result.block_sel_stat = bc.selection_stat;
         end
         
         
@@ -658,6 +747,7 @@ classdef simple_generator < handle
             % Choose a block and pointer
             
             % choose a block
+           num_blocks
            rand_num = randi([1, num_blocks], 1, 1);
            r_blk = blocks{rand_num(1)};
 
@@ -718,11 +808,18 @@ classdef simple_generator < handle
             for block_name = obj.candi_blocks
                 cur_blk = cur_blk + 1;          % Create block name
                 
+                is_preadded_block = cur_blk <= obj.num_preadded_blocks;
+                
                 h_len = x + obj.width;
 
                 pos = [x, y, h_len, y + obj.height];
+                
+                if is_preadded_block
+                    this_blk_name = block_name{1};
+                else
+                    this_blk_name = obj.create_blk_name(cur_blk);
+                end
 
-                this_blk_name = obj.create_blk_name(cur_blk);
 
                 % Add this block name to list of all added blocks
                 obj.slb.all{cur_blk} = this_blk_name;
@@ -730,12 +827,39 @@ classdef simple_generator < handle
                 this_blk_name = strcat('/', this_blk_name);
 %                 disp('Pos array is:');
 %                 disp(pos);
-                h = add_block(block_name{1}, [obj.sys, this_blk_name], 'Position', pos);
+                if is_preadded_block
+                    h = get_param([obj.sys this_blk_name], 'handle');
+                    set_param(h,'Position',pos);
+                else
+                    h = add_block(block_name{1}, [obj.sys, this_blk_name], 'Position', pos);
+                end
                 
                 % Save the handle of this new block. Accessing a block by
                 % its handle is faster than accessing by its name
                 
                 obj.slb.handles{cur_blk} = h;
+                
+                % Generate hierarchy and subsystem blocks
+                
+                if is_preadded_block
+                    blk_type = get_param(h, 'blocktype');
+                else
+                    blk_type = block_name{1};
+                end
+                
+                if blockchooser().is_hierarchy_block(blk_type)
+                    fprintf('Hierarchy block %s found.\n', this_blk_name);
+
+                    mdl_name = obj.handle_hierarchy_blocks();
+                    fprintf('Generated this hierarchy model: %s\n', mdl_name);
+
+                    set_param(h, 'ModelNameDialog', mdl_name);
+                end
+
+                if blockchooser().is_submodel_block(blk_type)
+                    fprintf('Submodel block %s found.\n', this_blk_name);
+                    obj.handle_submodel_creation(this_blk_name, obj.sys);
+                end
                 
 
                 % Get its inputs and outputs
@@ -745,7 +869,11 @@ classdef simple_generator < handle
                 
                 % Configure block parameters
                 
-                obj.config_block(h, block_name{1}, this_blk_name);
+                if is_preadded_block
+                    obj.config_block(h, get_param(h, 'blocktype'), this_blk_name);
+                else
+                    obj.config_block(h, block_name{1}, this_blk_name);
+                end
                 
                 %%%%%%% Done configuring block %%%%%%%%%
 
@@ -774,6 +902,11 @@ classdef simple_generator < handle
         
         function [this_blk_name, h] = add_new_block(obj, block_type)
             
+            if obj.c_block == 0
+                fprintf('Resetting block count!\n');
+                obj.c_block =   numel(util.get_all_top_level_blocks(obj.sys));
+            end
+            
             obj.c_block = obj.c_block + 1;
             
             h_len = obj.d_x + obj.width;
@@ -781,6 +914,9 @@ classdef simple_generator < handle
             pos = [obj.d_x, obj.d_y, h_len, obj.d_y + obj.height];
             
             this_blk_name = obj.create_blk_name(obj.c_block);
+            
+%             fprintf('Calculated this position array:\n');
+%             disp(pos);
             
             h = add_block(block_type, [obj.sys '/' this_blk_name], 'Position', pos);
             
@@ -800,9 +936,11 @@ classdef simple_generator < handle
         
         
         function ret=handle_hierarchy_blocks(obj)
+            ret = 'nil';
+            return;                                                             % TODO
             model_name = ['hier' int2str(util.rand_int(1, 10000, 1))]; % TODO fix Max number
             
-            SIMULATE_MODELS = true;
+            SIMULATE_MODELS = false;
             CLOSE_MODEL = true;
             LOG_SIGNALS = false;
             SIMULATION_MODE = [];
@@ -852,7 +990,9 @@ classdef simple_generator < handle
             
             full_model_name = [parent_model blk_name];
             
-            hg = submodel_generator(obj.inner_model_num_blocks, full_model_name, SIMULATE_MODELS, CLOSE_MODEL, LOG_SIGNALS, SIMULATION_MODE, COMPARE_SIM_RESULTS);
+            hg = submodel_generator(1, full_model_name, SIMULATE_MODELS, CLOSE_MODEL, LOG_SIGNALS, SIMULATION_MODE, COMPARE_SIM_RESULTS);                      
+%             hg = submodel_generator(obj.inner_model_num_blocks, full_model_name, SIMULATE_MODELS, CLOSE_MODEL, LOG_SIGNALS, SIMULATION_MODE, COMPARE_SIM_RESULTS);
+
             hg.max_hierarchy_level = obj.max_hierarchy_level;
             hg.current_hierarchy_level = obj.current_hierarchy_level + 1;
             
@@ -882,28 +1022,6 @@ classdef simple_generator < handle
         
         
         function obj=config_block(obj, h, blk_type, blk_name)
-            
-            if blockchooser().is_hierarchy_block(blk_type)
-                fprintf('Hierarchy block %s found.\n', blk_name);
-                
-                mdl_name = obj.handle_hierarchy_blocks();
-                fprintf('Generated this hierarchy model: %s\n', mdl_name);
-                
-                set_param(h, 'ModelNameDialog', mdl_name);
-                return;
-            end
-            
-            if blockchooser().is_submodel_block(blk_type)
-                fprintf('Submodel block %s found.\n', blk_name);
-                
-                obj.handle_submodel_creation(blk_name, obj.sys);
-                
-%                 set_param(h, 'ModelNameDialog', mdl_name);
-                
-                return;
-            end
-            
-            
             
             
             disp(['(' blk_name ') Attempting to config block ', blk_type]);

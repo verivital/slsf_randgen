@@ -4,6 +4,7 @@ classdef mymap < handle
     
     properties
         data
+        data_keys = [];                  % WARNING Value of this field is valid ONLY after calling keys() method.
     end
     
     methods
@@ -13,7 +14,8 @@ classdef mymap < handle
         
         
         function put(obj, k, v)
-            obj.data.(util.mvn(k)) = v;
+            effective_key = util.mvn(k);
+            obj.data.(effective_key) = v;
         end
         
         function ret = contains(obj, k)
@@ -26,6 +28,17 @@ classdef mymap < handle
             else
                 ret = obj.data.(util.mvn(k));
             end
+        end
+        
+        function ret = keys(obj)
+            ret = fieldnames(obj.data);
+            obj.data_keys = ret;
+        end
+        
+        function ret  = key(obj, index)
+            %  WARNING only call this after calling `keys()` first
+            %  otherwise you might not get updated values.
+            ret = obj.data_keys{index};
         end
     end
     

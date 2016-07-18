@@ -8,6 +8,7 @@ classdef comparator < handle
         refined_data;               % After we process the `data`;
         try_count;
         my = [];  
+        max_log_len_mismatch_allowed; % How many log len mismatches are allowed?
         
     end
     
@@ -70,7 +71,7 @@ classdef comparator < handle
                     num_time_1 = numel(data_1.Time);
                     num_time_2 = numel(data_2.Time);
                     
-                    if obj.try_count == 1
+                    if obj.try_count < obj.max_log_len_mismatch_allowed
                         if num_data_1 ~= num_data_2 || num_time_1 ~= num_time_2
                             fprintf('[!E!] Length mismatch. Will try again\n');
                             obj.my.is_log_len_mismatch = true;
@@ -144,7 +145,7 @@ classdef comparator < handle
                     bp = char(s_dataset.BlockPath.convertToCell());
 %                     fprintf('Now inserting data in\n');
                     
-                    single_simulation.(util.mvn(bp)) = new_data;
+                    single_simulation.(util.mvn([bp '_' int2str(s_dataset.PortIndex)])) = new_data;
                 end
                 
                 obj.refined_data{i} = single_simulation;
@@ -155,6 +156,7 @@ classdef comparator < handle
         
         
         function obj = log_all(obj)
+            
             f = obj.refined_data{1};                    % First Simulation Trace
             blocks = fieldnames(f);
             
@@ -162,30 +164,29 @@ classdef comparator < handle
             
             obj.my.logdata = cell(numel(blocks), num_cols * 2);
             
-            
             for i = 1: numel(obj.refined_data)
 %                 fprintf('Comparing Simulation Number %d with %d\n', i, 1);
                 
                 for j = 1 : numel(blocks)
                     bl_name = blocks{j};
                     
-                    bl_index = strsplit(bl_name, '_bl');
-                    bl_index = str2double(bl_index(2));
+%                     bl_index = strsplit(bl_name, '_bl');
+%                     bl_index = str2double(bl_index(2));
                     
                     data_2 = obj.refined_data{i}.(bl_name);
                     
                     d_2 = data_2.Data(numel(data_2.Data));
                     t_2 = data_2.Time(numel(data_2.Time));
                     
-                    obj.my.logdata{bl_index, i} = t_2;
-                    obj.my.logdata{bl_index, (i + num_cols)} = d_2;
+                    obj.my.logdata{j, i} = t_2;
+                    obj.my.logdata{j, (i + num_cols)} = d_2;
                     
                     d2_dbl = d_2;
                     if isfi(d_2)
                         d2_dbl = d_2.todoubles();
                     end
                     
-                    fprintf('[L]\t%d\t%d\t%f\t%f\n', bl_index, i, t_2, d2_dbl);
+                    fprintf('[L]\t%s\t%d\t%f\t%f\n', bl_name, i, t_2, d2_dbl);
                     
                 end
             end

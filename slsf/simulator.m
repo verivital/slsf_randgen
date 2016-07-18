@@ -6,7 +6,7 @@ classdef simulator < handle
         generator;
         max_try;
         
-        simulation_timeout = 12;        % After this many seconds simulation will be killed. 
+        simulation_timeout = 18;        % After this many seconds simulation will be killed. 
         sim_status = [];
         
         
@@ -64,12 +64,15 @@ classdef simulator < handle
             for i=1:obj.max_try
                 disp(['(s) Simulation attempt ' int2str(i)]);
                 
+                found = false;
+                
                 try
                     obj.sim();
 %                     sim(obj.generator.sys);  
-                    disp('Success simulating in NORMAL mode!');
+                    disp('Success simulating in SIMULATOR.M module!');
                     done = true;
                     ret = true;
+                    found = true; % So that we eliminate alg. loops
                 catch e
                     disp(['[E] Error in simulation: ', e.identifier]);
                     obj.generator.my_result.exc = e;
@@ -116,13 +119,23 @@ classdef simulator < handle
 
                 end
                 
+                if done && found % Don't waste executing below block if simulation fixer was not done.
+                    try
+                        obj.alg_loop_eliminator();
+                    catch e
+                        done = false;
+                        ret = false;
+                        fprintf('Error in algebraic loop elimination: %s. Will try simulating again. \n', e.identifier);
+                    end
+                end
+                
                 if done
                     disp('(s) Exiting from simulation attempt loop');
                     break;
                 end
                 
                 
-            end
+            end         %       fix-and-simulate loop
 
                     
         end
@@ -140,9 +153,17 @@ classdef simulator < handle
                 else
 
                     switch e.identifier
-                        case {'Simulink:Engine:AlgStateNotFinite'}
+                        case {'Simulink:Engine:AlgStateNotFinite', 'Simulink:Engine:UnableToSolveAlgLoop', 'Simulink:Engine:BlkInAlgLoopErr'}
                             obj.fix_alg_loop(e);
                             found = true;
+%                         case {'Simulink:utility:GetAlgebraicLoopFailed'}
+%                             % Will fix in next FAS attempt. This is the
+%                             % case when sim() is successful, but algebraic
+%                             % loop eliminator introduced a new problem and 
+%                             % failed to simulate. In this case another
+%                             % round of simulation is needed to fix the new
+%                             % problem
+%                             found = true;
                         case {'Simulink:Parameters:InvParamSetting'}
                             obj.fix_invParamSetting(e);
                             done = true;                                    % TODO
@@ -161,6 +182,10 @@ classdef simulator < handle
                             done = obj.fix_data_type_mismatch(e, false, false);
                             found = true;
                             
+                        case {'Simulink:blocks:NormModelRefBlkNotSupported'}
+                            done = obj.fix_normal_mode_ref_block(e);
+                            found = true;
+                            
                         otherwise
                             done = true;
                     end
@@ -172,7 +197,16 @@ classdef simulator < handle
         end  
         
         
-        
+        function done = fix_normal_mode_ref_block(obj, e)
+            done = false;
+            for j = 1:numel(e.handles)
+%                 fprintf('XXXXXXXXXXXXXXXX \n' );
+                handles = e.handles{j};
+%                 get_param(handles, 'Name')
+                set_param(handles, 'SimulationMode', 'Accelerator');
+            end
+            
+        end
         
         
         function done = fix_inv_comp_disc_sample_time(obj, e, do_parent)
@@ -266,9 +300,11 @@ classdef simulator < handle
                         continue;
                     end
                     h = util.select_me_or_parent(current(i));
-                    new_delay_block = obj.add_block_in_the_middle(h, 'Simulink/Discrete/Delay', false, true);
-                    set_param(new_delay_block, 'SampleTime', '1');                  %       TODO sample time
-%                     disp(h);
+                    new_delay_blocks = obj.add_block_in_the_middle(h, 'Simulink/Discrete/Delay', false, true);
+                    for xc = 1:new_delay_blocks.len
+                        set_param(new_delay_blocks.get(xc), 'SampleTime', '1');                  %       TODO sample time
+    %                     disp(h);
+                    end
                     
                     
                     
@@ -284,7 +320,9 @@ classdef simulator < handle
         
         
         
-        function d_h = add_block_in_the_middle(obj, h, replacement, ignore_in, ignore_out)
+        function ret = add_block_in_the_middle(obj, h, replacement, ignore_in, ignore_out)
+            
+            ret = mycell(-1);
             
             my_name = get_param(h, 'Name');
 
@@ -361,6 +399,7 @@ classdef simulator < handle
                     other_name
                     other_port
                     d_h = obj.add_block_in_middle_multi(my_b_p, other_name, other_port, replacement);
+                    ret.add(d_h);
                     return;
                 end
 
@@ -372,6 +411,7 @@ classdef simulator < handle
                 % get a new block
 
                 [d_name, d_h] = obj.generator.add_new_block(replacement);
+                ret.add(d_h);
 
                 %  delete and Connect
 
@@ -432,6 +472,53 @@ classdef simulator < handle
 %             e.message
 %             e.cause
 %             e.stack
+        end
+        
+        
+        function obj = alg_loop_eliminator(obj)
+      
+            num_max_attempts = 3;
+            
+            for gc = 1:num_max_attempts
+                
+                fprintf('Starting alg. loop eliminator... attempt %d\n', gc);
+                
+                aloops = Simulink.BlockDiagram.getAlgebraicLoops(obj.generator.sys);
+            
+                if numel(aloops) == 0
+                    fprintf('No Algebraic loop. Returning...\n');
+                    return;
+                end
+
+                for i = 1:numel(aloops)
+                    cur_loop = aloops(i);
+
+                    visited_handles = mycell(-1);
+
+                    for j = 1:numel(cur_loop.VariableBlockHandles)
+                        j_block = cur_loop.VariableBlockHandles(1);
+                        effective_j_blk = util.select_me_or_parent(j_block);
+
+                        fprintf('j blk: %s \t effective blk: %s\n',get_param(j_block, 'name'), get_param(effective_j_blk, 'name'));
+
+                        if util.cell_in(visited_handles.data, effective_j_blk)
+                            fprintf('Blk already visited\n');
+                        else
+
+                            visited_handles.add(effective_j_blk);
+                            
+                            fprintf('[AlgLoopEliminator] Adding new block....\n');
+                            new_delay_blocks = obj.add_block_in_the_middle(effective_j_blk, 'Simulink/Discrete/Delay', false, true);
+                            for xc = 1:new_delay_blocks.len
+                                new_delay_block = new_delay_blocks.get(xc);
+                                fprintf('[AlgLoopEliminator] Done adding block %s\n', get_param(new_delay_block, 'Name'));
+                                set_param(new_delay_block, 'SampleTime', '1'); 
+                                fprintf('[AlgLoopEliminator] Handled sample time.\n');
+                            end
+                        end
+                    end
+                end
+            end
         end
         
         

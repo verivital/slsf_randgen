@@ -3,18 +3,28 @@ classdef singleresult < handle
     %   Detailed explanation goes here
     
      properties(Constant = true)
-       % Phases
+       % Comparison Framework Options
          
-       NORMAL = 1;
-       NORMAL_SIGLOG = 2;
-       ACC = 3;
+       NORMAL = 1;              % Normal mode
+       NORMAL_SIGLOG = 2;       % Normal mode with signal logging
+       ACC = 3;                 % Accelerator
+       RACC = 4;                % Rapid Accelerator
        
-       % States in various phases
+       % States in various Comparison Framework Options
        NA = 0;
        STARTED = -1;
        OK = 1;
        TO = -2;
        ER = -3;
+       
+       % Index for runtime count of various phases of the diff. test.
+       % framework
+       
+       BLOCK_SEL = 1;
+       PORT_CONN = 2;
+       FAS = 3;         % Fix and Simulate
+       SIGNAL_LOGGING = 4;
+       COMPARISON = 5;
        
     end
     
@@ -29,6 +39,9 @@ classdef singleresult < handle
 %         mode_diff_val = [];          % Value used for differential testing
 %         last_action = [];            % Last action (Normal mode or Acc mode) performed 
         
+        
+        record_runtime = true;
+
         is_log_len_mismatch = false; % After signal logging, length of two simulation was not same.
         log_len_mismatch_count = 0;
         
@@ -41,11 +54,17 @@ classdef singleresult < handle
         
         hier_models = [];           % Names of the models generated as part of the hierarchy. Storing them here so that we can delete them later
         
+        block_sel_stat = [];        % Count which library got selected how many times for statistics
+        
+        runtime = [];               % To count runtime of various phases of DT framework
+        
     end
     
     methods
-         function obj = singleresult(model_name)
+         function obj = singleresult(model_name, record_runtime)
              obj.model_name = model_name;
+             obj.record_runtime = record_runtime;
+             
              obj.hier_models = mycell(-1);
          end
          
@@ -80,6 +99,22 @@ classdef singleresult < handle
          end
          
          function ret = is_ok(obj, p)
+             % Will return false if data is not available.
+             if p > numel(obj.phases) || isempty(obj.phases{p})
+                 ret = false;
+                 return
+             end
+             ret = (obj.phases{p} == obj.OK);
+         end
+         
+         function ret = is_valid_and_ok(obj, p)
+             % Will not return false if data is not available.
+%              fprintf('array index: %d\n', p);
+%              disp(obj.phases);
+             if p > numel(obj.phases) || isempty(obj.phases{p})
+                 ret = true;
+                 return
+             end
              ret = (obj.phases{p} == obj.OK);
          end
          
@@ -144,6 +179,26 @@ classdef singleresult < handle
 %              obj.is_acc_sim_ok = true;
 %              obj.last_action = 'Acc';
 %          end
+    
+    
+        function obj = store_runtime(obj, phase)
+            if ~ obj.record_runtime
+                return;
+            end
+            obj.runtime(phase) = obj.runtime(phase) + toc();
+            % Automatically start counting for next phase!
+            tic();
+        end
+        
+        
+        function obj = init_runtime_recording(obj)
+            if obj.record_runtime
+                % Init all values to zero, necessary.
+                obj.runtime = zeros(singleresult.COMPARISON, 1);
+                tic();
+            end
+        end
+    
     end
     
 end
