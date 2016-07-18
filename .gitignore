@@ -28,5 +28,6 @@ slsf/reports/errors/*.slx
 slsf/reports/othererrors/*.slx
 slsf/reports/comperrors/*.slx
 slsf/reports/loglenmismatch/*.slx
+slsf/reports/success/*.slx
 *.asv
 slsf/temp

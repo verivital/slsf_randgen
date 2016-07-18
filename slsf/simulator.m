@@ -72,6 +72,7 @@ classdef simulator < handle
                     disp('Success simulating in SIMULATOR.M module!');
                     done = true;
                     ret = true;
+                    found = true; % So that we eliminate alg. loops
                 catch e
                     disp(['[E] Error in simulation: ', e.identifier]);
                     obj.generator.my_result.exc = e;

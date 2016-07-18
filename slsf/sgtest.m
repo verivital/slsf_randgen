@@ -2,7 +2,7 @@
 % Run this script from the command line. You can edit following options
 % (options are always written using all upper-case letters).
 
-NUM_TESTS = 1;                          % Number of models to generate
+NUM_TESTS = 100;                          % Number of models to generate
 
 SIMULATE_MODELS = true;                 % Will simulate model if value is true
 
@@ -10,28 +10,29 @@ LOG_SIGNALS = true;                     % If set to true, will log all output si
 
 COMPARE_SIM_RESULTS = true;             % Compare simulation results.
 
-% USE_PRE_GENERATED_MODEL = [];
-USE_PRE_GENERATED_MODEL = 'potential';                % If you want to skip generation then put name of the model here. Otherwise put empty 
+USE_PRE_GENERATED_MODEL = [];
+% USE_PRE_GENERATED_MODEL = 'sampleModel7189';                % If you want to skip generation then put name of the model here. Otherwise put empty 
 
 
 STOP_IF_ERROR = false;                   % Stop the script when meet the first simulation error
 STOP_IF_OTHER_ERROR = true;             % Stop the script for errors not related to simulation e.g. unhandled exceptions or code bug. ALWAYS KEEP IT TRUE
 
-CLOSE_MODEL = false;                    % Close models after simulation
+CLOSE_MODEL = true;                    % Close models after simulation
 CLOSE_OK_MODELS = false;                % Close models for which simulation ran OK
 
-NUM_BLOCKS = [3 5];                    % Number of blocks in each model. Give single number or a matrix [minval maxval]. Example: "5" will create models with exactly 5 blocks. "[5 10]" will choose a value randomly between 5 and 10.
+NUM_BLOCKS = [30 40];                    % Number of blocks in each model. Give single number or a matrix [minval maxval]. Example: "5" will create models with exactly 5 blocks. "[5 10]" will choose a value randomly between 5 and 10.
 
-MAX_HIERARCHY_LEVELS = 3;               % Minimum value is 1 indicating a flat model with no hierarchy.
+MAX_HIERARCHY_LEVELS = 1;               % Minimum value is 1 indicating a flat model with no hierarchy.
 
 SAVE_ALL_ERR_MODELS = true;             % Save the models which we can not simulate 
 LOG_ERR_MODEL_NAMES = true;             % Log error model names keyed by their errors
 SAVE_COMPARE_ERR_MODELS = true;         % Save models for which we got signal compare error after diff. testing
+SAVE_SUCC_MODELS = true;                % Save successful simulation models
 
 
 
-USE_SIGNAL_LOGGING_API = false;          % If true, will use Signal Logging API, otherwise adds Outport blocks to each block of the top level model
-SIMULATION_MODE = {'rapid'};      % See 'SimulationMode' parameter in http://bit.ly/1WjA4uE
+USE_SIGNAL_LOGGING_API = true;          % If true, will use Signal Logging API, otherwise adds Outport blocks to each block of the top level model
+SIMULATION_MODE = {'accelerator'};      % See 'SimulationMode' parameter in http://bit.ly/1WjA4uE
 COMPILER_OPT_VALUES = {'off'};          % Compiler opt. values of Accelerator and Rapid Accelerator modes
 
 
@@ -52,6 +53,7 @@ WS_FILE_NAME = ['data' filesep 'savedws.mat'];       % Saving ws vars so that we
 ERR_MODEL_STORAGE = ['reports' filesep 'errors'];    % In this directory save all the error models (not including timed-out models)
 COMPARE_ERR_MODEL_STORAGE = ['reports' filesep 'comperrors'];    % In this directory save all the signal compare error models
 OTHER_ERR_MODEL_STORAGE = ['reports' filesep 'othererrors'];
+SUCC_MODEL_STORAGE = ['reports' filesep 'success'];
 LOG_LEN_MISMATCH_STORAGE = ['reports' filesep 'loglenmismatch'];
 WSVAR_BACKUP_DIR = ['data' filesep 'backup'];
 
@@ -275,10 +277,12 @@ for ind = 1:NUM_TESTS
 %                 break;
             end
             
+            util.cond_save_model(SAVE_SUCC_MODELS, model_name, SUCC_MODEL_STORAGE, sg.my_result);
+            
             if CLOSE_MODEL || CLOSE_OK_MODELS
                 sg.close();           % Close Model
             end
-
+            
         end
     catch e
         % Exception occurred when simulating, but the error was not caught.
