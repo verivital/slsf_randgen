@@ -107,10 +107,10 @@ static void mdlOutputs(SimStruct *S, int_T tid)
         y++;
     }
     
-    if(!is_main_called){
+    // if(!is_main_called){
         main();
-        is_main_called = true;
-    }
+        // is_main_called = true;
+    // }
 }
 
 

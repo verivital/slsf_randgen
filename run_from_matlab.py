@@ -35,22 +35,22 @@ class Multi_RandC_Generator():
         ]
 
         # Internal variables
-        self._main_func = 'int main(void){\nstatic int top=0;\nswitch (top){\n'
+        self._main_func = 'int main(void){\n  static int top=0;\n  switch (top){\n'
 
     def _generate_multi(self):
 
-        shutil.copy('randgen_start.c', 'randgen.c') # Clears everything from randgen.c
+        shutil.copy('ee_pre.c', 'randgen.c') # Clears everything from randgen.c
 
         for i in range(self._num_programs):
             single_terminating_file = self._generate_single(i)
             self._append('randgen.c', single_terminating_file)
 
-            self._main_func += 'case ' + str(i) + ':\nmain_' + self.PREFIX + str(i) + '();\ntop++;\nbreak;\n'
+            self._main_func += '    case ' + str(i) + ':\n      printf("(c) Calling main %d\\n",top);\n      main_' + self.PREFIX + str(i) + '();\n      top++;\n      break;\n'
 
         self._finish_main('randgen.c')
 
     def _finish_main(self, big_file):
-        self._main_func += 'default:\nmain_slsf0();\nbreak;\n}\nreturn 0;\n}'
+        self._main_func += '    default:\n      printf("(c) NOT CALLING ANY MAIN!\\n");\n      break;\n    }\n  return 0;\n}'
 
         with open(big_file, 'a') as outfile:
             outfile.write(self._main_func)
@@ -59,7 +59,7 @@ class Multi_RandC_Generator():
 
         while True:
 
-            current_args = self.CSMITH_ARGS
+            current_args = list(self.CSMITH_ARGS)       # Shallow copy is sufficient
             main_prefix = '{0}{1}'.format(self.PREFIX, file_index)
 
             print('Trying with this main prefix: {}'.format(main_prefix))
@@ -105,6 +105,7 @@ class Multi_RandC_Generator():
 
     def go(self):
         self._generate_multi()
+        copy_files()
 
     def _append(self, big_file, little_file):
         with open(big_file, 'a') as outfile:

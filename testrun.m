@@ -1,7 +1,9 @@
-num_run = 100;    % Number of times the outer loop will run
+num_run = 1;    % Number of times the outer loop will run
 gen_random_c = true; % Will generate a random c code using csmith if set to `true`
 
-gcc_opt_flags = {'-O0', '-O1', '-O2', '-O3', '-Os'}; % We will build using these compiler opt flags
+% gcc_opt_flags = {'-O0', '-O1', '-O2', '-O3', '-Os'}; % We will build using these compiler opt flags
+gcc_opt_flags = {'-O0'}; % We will build using these compiler opt flags
+
 
 while num_run > 0
     disp(num_run);
@@ -31,6 +33,7 @@ while num_run > 0
     
         disp('... Calling Simulink Model ...');
         sim staticmodel;
+        fprintf('Returned from Simulink Model...\n');
 
         % Read checksum from file
         try
@@ -59,4 +62,4 @@ while num_run > 0
     end
 end
 
-quit;
+% quit;
