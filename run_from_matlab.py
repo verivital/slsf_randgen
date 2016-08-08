@@ -16,7 +16,9 @@ import sys
 import os
 import signal
 import shutil
+
 from runcmd import RunCmd
+from pro_csmith import ProCSmith
 
 TIMEOUT = 10  # The generated C program is allowed this much seconds to terminate.
 
@@ -104,8 +106,38 @@ class Multi_RandC_Generator():
             return RunCmd(('./{}'.format(executable),), TIMEOUT).go()
 
     def go(self):
+        # Use this function to generate multiple main functions
         self._generate_multi()
         copy_files()
+
+    def go_pro(self):
+        # Use this function to generate ONE main function that can be safely called over and over
+        current_file_name = 'current.c'
+        
+        while True:
+
+            with open(current_file_name, 'w') as current_write:
+                with subprocess.Popen(('csmith', '--no-structs', '--no-unions', '--no-arrays', '--no-argc'), stdout=current_write) as c_p:
+                    c_p.wait()
+
+            print('[!] current.c Generated! Now check for termination...') 
+            
+            # Check for termination
+
+            if self._terminates(current_file_name):
+                print('Terminated!')
+                break
+            else:
+                print('Not terminated, continue...')
+
+        processed_file = 'randgen.c'
+        pc = ProCSmith(current_file_name, processed_file)
+
+        pc.parse()
+
+        copy_files_pro(pc)
+
+
 
     def _append(self, big_file, little_file):
         with open(big_file, 'a') as outfile:
@@ -117,6 +149,22 @@ class Multi_RandC_Generator():
 
 
 p_randgen = None
+
+def copy_files_pro(processor):
+    """
+        Used to concat multiple files into one single file
+    """
+    filenames = ['ee_post.c']
+    with open('staticsfun.c', 'w') as outfile:
+
+        outfile.write(processor.get_output())
+
+        for fname in filenames:
+            with open(fname) as infile:
+                for line in infile:
+                    outfile.write(line)
+
+        outfile.write(processor.create_mdlOutputs())
 
 def copy_files():
     """
@@ -160,6 +208,6 @@ def copy_files():
 # print('[x] Returning successfully from python script');
 # sys.exit(0)
 
-Multi_RandC_Generator(5).go()
+Multi_RandC_Generator(1).go_pro()
 
 print('--DONE--')

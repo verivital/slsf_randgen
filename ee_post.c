@@ -80,38 +80,8 @@ static void mdlInitializeSampleTimes(SimStruct *S)
     ssSetModelReferenceSampleTimeDefaultInheritance(S); 
 }
 
-/* Function: mdlOutputs =======================================================
- * Abstract:
- *    y = 2*u
- */
-static void mdlOutputs(SimStruct *S, int_T tid)
-{
-    int_T             i;
-    InputRealPtrsType uPtrs = ssGetInputPortRealSignalPtrs(S,0);
-    real_T            *y    = ssGetOutputPortRealSignal(S,0);
-    int_T             width = ssGetOutputPortWidth(S,0);
 
-    for (i=0; i<width; i++) {
-        /*
-         * This example does not implement complex signal handling.
-         * To find out see an example about how to handle complex signal in 
-         * S-function, see sdotproduct.c for details.
-         */
-        
-        g_slsf_in = (int) *uPtrs[i];
-        
-        *y = 2.0 *(*uPtrs[i]); 
-        
-        g_slsf_out = (int) *y;
-        
-        y++;
-    }
-    
-    // if(!is_main_called){
-        main();
-        // is_main_called = true;
-    // }
-}
+
 
 
 /* Function: mdlTerminate =====================================================
@@ -123,10 +93,48 @@ static void mdlTerminate(SimStruct *S)
 }
 
 
+/* Uncomment following code if using multi-main feature */
 
-#ifdef  MATLAB_MEX_FILE    /* Is this file being compiled as a MEX-file? */
-#include "simulink.c"      /* MEX-file interface mechanism */
-#else
-#include "cg_sfun.h"       /* Code generation registration function */
-#endif
+
+
+/* Function: mdlOutputs =======================================================
+ * Abstract:
+ *    y = 2*u
+ */
+
+// 
+// static void mdlOutputs(SimStruct *S, int_T tid)
+// {
+//     int_T             i;
+//     InputRealPtrsType uPtrs = ssGetInputPortRealSignalPtrs(S,0);
+//     real_T            *y    = ssGetOutputPortRealSignal(S,0);
+//     int_T             width = ssGetOutputPortWidth(S,0);
+
+//     for (i=0; i<width; i++) {
+//         // This example does not implement complex signal handling. To find out see an example about how to handle complex signal in 
+//         // S-function, see sdotproduct.c for details.
+                 
+//         g_slsf_in = (int) *uPtrs[i];
+        
+//         *y = 2.0 *(*uPtrs[i]); 
+        
+//         g_slsf_out = (int) *y;
+        
+//         y++;
+//     }
+    
+//     // if(!is_main_called){
+//         main();
+//         // is_main_called = true;
+//     // }
+// }
+
+
+
+
+// #ifdef  MATLAB_MEX_FILE    /* Is this file being compiled as a MEX-file? */
+// #include "simulink.c"      /* MEX-file interface mechanism */
+// #else
+// #include "cg_sfun.h"       /* Code generation registration function */
+// #endif
 
