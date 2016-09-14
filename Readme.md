@@ -59,4 +59,6 @@ In linux, we can set up this way. Please note that we need both `csmith` and `ma
     export C_INCLUDE_PATH=$CSMITH_PATH/runtime
     export CSMITH_HOME=$CSMITH_PATH # Needed for running csmith test driver
 
-Thank You :-)
+## Acknowledgement
+
+This material is based upon work supported by the National Science Foundation under Grants No. 1117369, 1464311, and 1527398. Any opinions, findings, and conclusions or recommendations expressed in this material are those of the author(s) and do not necessarily reflect the views of the National Science Foundation.
