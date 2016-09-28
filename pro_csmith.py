@@ -163,7 +163,7 @@ static void mdlOutputs(SimStruct *S, int_T tid)
 
         if rand_v is None:
             print('[[!]] NO Output variables available after processing! Assigning zero...')
-            ret += '  *y = ' + 0 + '; \n'
+            ret += '  *y = 0; \n'
         else:
             ret += '  *y = ' + rand_v + '; \n'
 
