@@ -33,6 +33,7 @@ class ProCSmith:
     _globals_started = False
 
     initialize_globals_in_main = False # Set to False if generating the mdlOutput function. We wish to initialize the globals explicitly in the mdlOutput function, before calling main.
+    generate_many_mains = True  # If True, will generate many calls to main function -- use only for testing ProCsmith!
 
     _main_started = False
 
@@ -66,20 +67,29 @@ class ProCSmith:
                     self._process_line(line)
 
     def _process_line_for_candidate_outputs(self, line):
-        
+        """
+            If this function has also written the line, then returns False.
+            If this function returns True, then the caller has to write the line.
+        """
 
         if not self._main_started:
             if line.startswith('int main (void)'):
                 self._main_started = True
 
-            return
+                if self.generate_many_mains:
+                    self._my_output += 'int main1 (void)'
+                    return False
+
+            return True
 
         m = self._p.match(line)
 
         if m is None:
-            return
+            return True
 
         self.candidate_outputs.append(Var(m.group(1)))
+
+        return True
 
 
 
@@ -89,8 +99,8 @@ class ProCSmith:
             self._my_output += line
             return
         elif not self._globals_started:
-            self._my_output += line
-            self._process_line_for_candidate_outputs(line)
+            if self._process_line_for_candidate_outputs(line):
+                self._my_output += line
             return
 
         # Handle Globals declaration
@@ -185,7 +195,23 @@ static void mdlOutputs(SimStruct *S, int_T tid)
     def get_output(self):
         return self._my_output
 
+    def _get_many_mains(self):
+        self._my_output += """
+            int main (void){
+                int i;
+                for (i=0; i<50; i++){
+                    printf("Many Mains: %d\\n", i);
+                    init_globals();
+                    main1();
+                }
+            }
+        """
+
     def write_op(self):
+
+        if self.generate_many_mains:
+            self._get_many_mains()
+
         with open(self._my_output_file, 'w') as outfile:
             outfile.write(self._my_output)
 
@@ -193,7 +219,8 @@ static void mdlOutputs(SimStruct *S, int_T tid)
 
 if __name__ == '__main__':
 
-    NUM_TESTS  = 0
+    NUM_TESTS  = 250
+    GENERATE_MANY_MAINS = True
 
     if NUM_TESTS <= 0:
         print('---------- FROM PRO-CSMITH MAIN -------------')
@@ -228,8 +255,13 @@ if __name__ == '__main__':
 
         # Run Csmith
 
+        csmith_cmd = ('csmith', '--no-structs', '--no-unions', '--no-arrays', '--no-argc')
+
+        # if GENERATE_MANY_MAINS:
+        #     csmith_cmd = ('csmith', '--no-structs', '--no-unions', '--no-arrays', '--no-argc', '--easy-x', '--suffix-main', '1')
+
         with open(current_file_name, 'w') as current_write:
-            with subprocess.Popen(('csmith', '--no-structs', '--no-unions', '--no-arrays', '--no-argc'), stdout=current_write) as c_pp:
+            with subprocess.Popen(csmith_cmd, stdout=current_write) as c_pp:
                 c_pp.wait()
         
         # Compile. Terminates?
@@ -254,6 +286,11 @@ if __name__ == '__main__':
         # Run ProCsmith
         pcs = ProCSmith(current_file_name, pro_file_name)
         pcs.initialize_globals_in_main = True
+
+        if GENERATE_MANY_MAINS:
+            pcs.initialize_globals_in_main = False;
+            pcs.generate_many_mains = True;
+
         pcs.go()
 
         # Compile. Terminates?
@@ -273,7 +310,20 @@ if __name__ == '__main__':
             for lines in c_p.stdout:
                 line = lines.decode("utf-8")
                 # print('[x]>' + line)
+
+                if not line.startswith('checksum = '):
+                    print('no chksum');
+
+                    continue
+                else:
+                    print('line with chksum');
+
                 checksum2 = line
+
+                if checksum != checksum2:
+                    print('Error!!! Checksums not equal: {} vs {}'.format(checksum, checksum2))
+                    exit()
+
             c_p.wait()
 
         if checksum != checksum2:
