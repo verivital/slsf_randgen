@@ -144,7 +144,7 @@ static void mdlOutputs(SimStruct *S, int_T tid)
 
         # Input
 
-        ret += '  ' + self._get_random_var(self.candidate_inputs) + ' = (int) *uPtrs[0];\n'
+        ret += '  ' + self._get_random_var(self.candidate_outputs) + ' = (int) *uPtrs[0];\n'
 
         # Call main
 

@@ -16,6 +16,7 @@ while num_run > 0
 
         if status ~= 0
             disp('[!] Skipping this run as does not terminate.');
+            cmdout
             continue;
         end
 
