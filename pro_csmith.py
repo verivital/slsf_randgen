@@ -125,6 +125,9 @@ class ProCSmith:
         self.candidate_inputs.append(Var(this_var_name))
 
     def _get_random_var(self, var_list):
+        if len(var_list) == 0:
+            return None
+
         return var_list[random.randint(0, len(var_list) - 1)].v_name   
 
 
@@ -143,8 +146,12 @@ static void mdlOutputs(SimStruct *S, int_T tid)
         # We don't support multi width yet.
 
         # Input
+        rand_v = self._get_random_var(self.candidate_inputs)
 
-        ret += '  ' + self._get_random_var(self.candidate_inputs) + ' = (int) *uPtrs[0];\n'
+        if rand_v is None:
+            print('[[!]] NO Input variables available after processing!')
+        else:
+            ret += '  ' + rand_v + ' = (int) *uPtrs[0];\n'
 
         # Call main
 
@@ -152,7 +159,13 @@ static void mdlOutputs(SimStruct *S, int_T tid)
 
         # Get Output
 
-        ret += '  *y = ' + self._get_random_var(self.candidate_outputs) + '; \n'
+        rand_v = self._get_random_var(self.candidate_outputs);
+
+        if rand_v is None:
+            print('[[!]] NO Output variables available after processing! Assigning zero...')
+            ret += '  *y = ' + 0 + '; \n'
+        else:
+            ret += '  *y = ' + rand_v + '; \n'
 
         # Closing boilerplate
 
