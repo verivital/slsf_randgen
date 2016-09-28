@@ -15,7 +15,7 @@ class Var:
 
 class ProCSmith:
     """
-        For post-processing Csmith generated C code
+        A post-processor for Csmith-generated C code
     """
 
     candidate_inputs = []
@@ -118,7 +118,7 @@ class ProCSmith:
         # line_till_varname = ' '.join(left_side_tokens[:-2])
         to_avoid = ('*', 'int64') # Not sure why int64 is here?
 
-        if any(_ in left_side_tokens for _ in to_avoid):
+        if any(_ in tokens[0] for _ in to_avoid):
             print('Avoiding {} for candidate input'.format(left_side_tokens))
             return
 
@@ -144,7 +144,7 @@ static void mdlOutputs(SimStruct *S, int_T tid)
 
         # Input
 
-        ret += '  ' + self._get_random_var(self.candidate_outputs) + ' = (int) *uPtrs[0];\n'
+        ret += '  ' + self._get_random_var(self.candidate_inputs) + ' = (int) *uPtrs[0];\n'
 
         # Call main
 
@@ -179,15 +179,21 @@ static void mdlOutputs(SimStruct *S, int_T tid)
 
 
 if __name__ == '__main__':
-    print('---------- FROM PRO-CSMITH MAIN -------------')
-    pc = ProCSmith('in.c', 'out.c')
-    pc.go()
-    print(pc.candidate_inputs)
-    print('-- Outputs --')
-    print(pc.candidate_outputs)
-    print(pc.create_mdlOutputs())
-    print('DONE')
-    exit()
+
+    NUM_TESTS  = 0
+
+    if NUM_TESTS <= 0:
+        print('---------- FROM PRO-CSMITH MAIN -------------')
+        pc = ProCSmith('in.c', 'out.c')
+        pc.go()
+        print(pc.candidate_inputs)
+        print('-- Outputs --')
+        print(pc.candidate_outputs)
+        print(pc.create_mdlOutputs())
+        print('DONE')
+        exit()
+
+    # Running automated tests for checking sanity of Csmith Post Processor.
 
     import subprocess
     import sys
@@ -196,17 +202,13 @@ if __name__ == '__main__':
     import shutil
     from runcmd import RunCmd
 
-
-
-    NUM_TESTS  = 0
-
     current_file_name = 'temptestprocsmith.c'
     pro_file_name = 'pro_output.c'
     executable = 'temptestprocsmith.out'
     TIMEOUT = 10
 
     for i in range(NUM_TESTS):
-        print('Test {}'.format(i))
+        print(' >>NEW<< Test {}'.format(i))
 
         checksum = None
         checksum2 = None
@@ -215,7 +217,6 @@ if __name__ == '__main__':
 
         with open(current_file_name, 'w') as current_write:
             with subprocess.Popen(('csmith', '--no-structs', '--no-unions', '--no-arrays', '--no-argc'), stdout=current_write) as c_pp:
-                # pass
                 c_pp.wait()
         
         # Compile. Terminates?
@@ -238,7 +239,9 @@ if __name__ == '__main__':
             c_p.wait()
 
         # Run ProCsmith
-        ProCSmith(current_file_name, pro_file_name).go()
+        pcs = ProCSmith(current_file_name, pro_file_name)
+        pcs.initialize_globals_in_main = True
+        pcs.go()
 
         # Compile. Terminates?
 
@@ -269,4 +272,4 @@ if __name__ == '__main__':
 
 
 
-    print('End Test')
+    print('--- End Test ---')
