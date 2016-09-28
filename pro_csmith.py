@@ -32,7 +32,7 @@ class ProCSmith:
 
     _globals_started = False
 
-    initialize_globals_in_main = False
+    initialize_globals_in_main = False # Set to False if generating the mdlOutput function. We wish to initialize the globals explicitly in the mdlOutput function, before calling main.
 
     _main_started = False
 
@@ -115,10 +115,10 @@ class ProCSmith:
         # Add in candidate list for S-function's inputs
 
         # Avoid pointers - check if we have '*' in the characters till the variable's name
-        line_till_varname = ' '.join(left_side_tokens[:-2])
-        to_avoid = ('*', 'int64')
+        # line_till_varname = ' '.join(left_side_tokens[:-2])
+        to_avoid = ('*', 'int64') # Not sure why int64 is here?
 
-        if any(_ in line_till_varname for _ in to_avoid):
+        if any(_ in left_side_tokens for _ in to_avoid):
             print('Avoiding {} for candidate input'.format(left_side_tokens))
             return
 
