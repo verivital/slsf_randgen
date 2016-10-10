@@ -219,8 +219,9 @@ static void mdlOutputs(SimStruct *S, int_T tid)
 
 if __name__ == '__main__':
 
-    NUM_TESTS  = 250
+    NUM_TESTS  = 1
     GENERATE_MANY_MAINS = True
+    CREATE_NEW_C = False # To test existing file
 
     if NUM_TESTS <= 0:
         print('---------- FROM PRO-CSMITH MAIN -------------')
@@ -260,9 +261,13 @@ if __name__ == '__main__':
         # if GENERATE_MANY_MAINS:
         #     csmith_cmd = ('csmith', '--no-structs', '--no-unions', '--no-arrays', '--no-argc', '--easy-x', '--suffix-main', '1')
 
-        with open(current_file_name, 'w') as current_write:
-            with subprocess.Popen(csmith_cmd, stdout=current_write) as c_pp:
-                c_pp.wait()
+        
+        if CREATE_NEW_C:
+            with open(current_file_name, 'w') as current_write:
+                with subprocess.Popen(csmith_cmd, stdout=current_write) as c_pp:
+                    c_pp.wait()
+        else:
+            print('CSMITH NOT CALLED!');            
         
         # Compile. Terminates?
 
