@@ -1,58 +1,45 @@
-# Random Generation and Comparison of Simulink models
+# CyFuzz: A Differential Testing Framework for Cyber-Physical Systems Development Environments
 
-This directory contains scripts regarding *Csmith* integration. The 
-actual Simulink random generator (aka *CyFuzz*) is located under `slsf` 
-folder. Check out the [slsf/Readme.md](slsf/Readme.md) file to learn how to 
+Welcome to the CyFuzz project! Prototype implementation for *Simulink* is located under `slsf` 
+directory. Check out the [slsf/Readme.md](slsf/Readme.md) file to learn how to 
 run the tool.
 
-Rest of the contents in this file is related to *Csmith* integration
+# Recent News
+
+ - We presented at the 6th Workshop on Design, Modeling, and Evaluation of Cyber Physical Systems (CyPhy'16)
+ - [Reproduced bug](https://github.com/verivital/slsf_randgen/wiki/CyFuzz-Reproduced-Bug-in-Simulink)
+ - [Sample Models](https://github.com/verivital/slsf_randgen/wiki/Sample-random-models-generated-by-CyFuzz) 
 
 ## Git Branches
 
- - *(CyFuzz implementation)* Development branch is `random-generation` where you can find latest code. Stable code can be found in `master`.
- - *(Csmith related)* Code without "multiple main functions" feature can be found in `csmith-integration` branch
- - *(Csmith related)* Code with the feature of generating multiple `main` functions can be found in `multi-main` branch
+We welcome new contributors! Please be familiar with different git branches. Development branch is `random-generation` where you can find latest code. Stable code can be found in `master`.
 
-## Structure
+Other temporary branches:
 
- - All random genration and comparison code is located under `slsf` directory.
- - This folder contains scripts for experimenting with *Csmith*
+ - *(Csmith related)*  `csmith-integration` branch
 
-# Experiments with Csmith
+## Running the prototype
 
-## Issues/TODO (warning: this section may be outdated)
+Please check out the [slsf/Readme.md](slsf/Readme.md) file to learn how to 
+run the tool.
 
- - Try out different *compilers* (not just different optimization flags) 
-and optimization flags to eventually check "Wrong Code" (as mentioned by 
-csmith work - when run time output of same source 
-file is different changing compilers and optimization levels due to 
-compiler bug).
- - Figure out how to calculate "checksum" (this is how csmith checks "wrong
-code") for our case. This will incorporate both Simulink/Matlab variables and 
-C-variables in the checksum generation procedure.
+### Requirements
 
-## How to run
-
- - Call `run.py` from your shell.
- - We can tune some options (number of loops to run, whether to call csmith etc) by changing the options located at the top of `testrun.m` file.
-
-## Set-up
-
- - Python3 (for running the scripts I've written)
+ - Python3 (Python2 might not work). Also require Linux to run the Python scripts, as I've not tested them in other platforms. 
  - csmith (see below for instructions)
- - Matlab with Simulink 
+ - Matlab with Simulink. Matlab scripts can be run from either Windows or Linux (as tested so far).
 
-### Building and installing csmith
+### Building and installing csmith (required if you want to create custom models)
 
- - First clone source from https://github.com/shafiul/csmith
+ - Please clone source code from (customized Csmith)[ttps://github.com/shafiul/csmith].
  - To build csmith, follow official doc at https://embed.cs.utah.edu/csmith/
  - You need `m4` library in Ubuntu
  - Once built, the csmith binary is located inside `src` directory.
  - We have to ensure csmith executable and `include` directory is in OS path (see below). 
 
-### Set up environment variables
+### Set up environment variables (in Linux)
 
-In linux, we can set up this way. Please note that we need both `csmith` and `matlab` executables in our path.
+Please note that we need both `csmith` and `matlab` executables in our path.
 
     export CSMITH_PATH=/path/to/csmith
     export PATH=$PATH:/$CSMITH_PATH/src:path/to/matlab/binary
