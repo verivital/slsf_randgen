@@ -2,7 +2,7 @@
 % Run this script from the command line. You can edit following options
 % (options are always written using all upper-case letters).
 
-NUM_TESTS = 100;                        % Number of models to generate
+NUM_TESTS = 2;                        % Number of models to generate
 
 SIMULATE_MODELS = true;                 % To simulate generated model
 
@@ -10,17 +10,21 @@ LOG_SIGNALS = true;                     % To log all output signals for comparis
 
 COMPARE_SIM_RESULTS = true;             % To compare simulation results obtained by logging signals.
 
-USE_PRE_GENERATED_MODEL = [];           % If this is non-empty and a string, then instead of generating a model, will use value of this variable as an already generated model. Put empty ``[]'' to randomly generate models.
-% USE_PRE_GENERATED_MODEL = 'sampleModel7189';  % If uncommented, instead of randomly generating model will simply use this model in the comparison framework. 
+% If this is non-empty and a string, then instead of generating a model, will use value of this variable as an already generated model. 
+% Put empty ``[]'' to randomly generate models.
 
+USE_PRE_GENERATED_MODEL = [];           
+% USE_PRE_GENERATED_MODEL = 'potential';  
+
+LOAD_RNG_STATE = true;                  % Set this `true` if we want to create NEW models each time the script is run. Set to `false` if generating same models at each run of the script is desired. For first time running in a new computer set to false, as this will fail first time if set to true.
 
 STOP_IF_ERROR = false;                  % Stop the script when meet the first simulation error
 STOP_IF_OTHER_ERROR = true;             % Stop the script for errors not related to simulation e.g. unhandled exceptions or code bug. ALWAYS KEEP IT TRUE to detect my own bugs.
 
-CLOSE_MODEL = true;                    % Close models after simulation
-CLOSE_OK_MODELS = false;                % Close models for which simulation ran OK
+CLOSE_MODEL = false;                    % Close models after simulation
+CLOSE_OK_MODELS = true;                % Close models for which simulation ran OK
 
-NUM_BLOCKS = [30 40];                    % Number of blocks in each model. Give single number or a matrix [minval maxval]. Example: "5" will create models with exactly 5 blocks. "[5 10]" will choose a value randomly between 5 and 10.
+NUM_BLOCKS = 300;                    % Number of blocks in each model. Give single number or a matrix [minval maxval]. Example: "5" will create models with exactly 5 blocks. "[5 10]" will choose a value randomly between 5 and 10.
 
 MAX_HIERARCHY_LEVELS = 1;               % Minimum value is 1 indicating a flat model with no hierarchy.
 
@@ -35,8 +39,6 @@ USE_SIGNAL_LOGGING_API = true;          % If true, will use Simulink's Signal Lo
 SIMULATION_MODE = {'accelerator'};      % See 'SimulationMode' parameter in http://bit.ly/1WjA4uE
 COMPILER_OPT_VALUES = {'off'};          % Compiler opt. values of Accelerator and Rapid Accelerator modes
 
-
-LOAD_RNG_STATE = false;                  % Set this `true` if we want to create NEW models each time the script is run. Set to `false` if generating same models at each run of the script is desired. For first time running in a new computer set to false, as this will fail first time if set to true.
 BREAK_AFTER_COMPARE_ERR = true;
 
 SAVE_SIGLOG_IN_DISC = true;
@@ -356,7 +358,9 @@ for ind = 1:NUM_TESTS
     % Delete sub-models
     sg.my_result.hier_models.print_all('Printing sub models...');
     for i = 1:sg.my_result.hier_models.len
-        close_system(sg.my_result.hier_models.get(i));  % TODO closing subsystem, so will not be visible for inspection if desired.
+        if CLOSE_MODEL
+            close_system(sg.my_result.hier_models.get(i));  % TODO closing subsystem, so will not be visible for inspection if desired.
+        end
         delete([sg.my_result.hier_models.get(i) '.slx']);
     end
     

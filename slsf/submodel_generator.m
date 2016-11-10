@@ -26,7 +26,7 @@ classdef submodel_generator < hier_generator
             
             obj.candi_blocks{1} = 'In1';
             obj.candi_blocks{2} = 'Out1';
-            obj.candi_blocks{3} = 'For Each'
+            obj.candi_blocks{3} = 'For Each';
         end
         
         

@@ -1,5 +1,7 @@
 function [big_total, big_timedout] = getreport(datefrom)
     %%% datefrom is string in format 'yyyy-MM-dd-HH-mm-ss'
+    
+    break_after_single = true;
 
     report_dir = 'reports';
 
@@ -38,7 +40,7 @@ function [big_total, big_timedout] = getreport(datefrom)
 
         f_date = datetime(cur_files(1),'InputFormat','yyyy-MM-dd-HH-mm-ss');
 
-        if f_date > date_from
+        if f_date >= date_from
             fprintf('Processing file %s...\n', cur_file);
 
             load([report_dir filesep cur_file]);
@@ -92,6 +94,9 @@ function [big_total, big_timedout] = getreport(datefrom)
 
             end
 
+            if break_after_single
+                break;
+            end
 
         end
     end

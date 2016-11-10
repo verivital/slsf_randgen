@@ -1,6 +1,6 @@
 disp('-- starting OPTEST script --');
 
-sys = 'top';
+sys = 'triggered';
 
 modes = {'normal', 'rapid'};
 % modes = {'normal', 'accelerator', 'rapid'};
@@ -8,7 +8,7 @@ modes = {'normal', 'rapid'};
 last_run_time = [];
 last_run_data = [];
 
-num_run = 50;
+num_run = 1;
 num_time_mismatch = 0;
 num_data_mismatch = 0;
 
