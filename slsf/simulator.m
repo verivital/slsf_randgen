@@ -172,7 +172,7 @@ classdef simulator < handle
                             done = obj.fix_inv_comp_disc_sample_time(e, is_multi_exception);
                             ret = done;                             
                             found = true;
-                        case{'Simulink:DataType:InputPortDataTypeMismatch'}
+                        case{'Simulink:DataType:InputPortDataTypeMismatch', 'SimulinkBlock:Foundation:SignedOnlyPortDType', 'Simulink:DataType:InvDisagreeInternalRuleDType'}
                             done = obj.fix_data_type_mismatch(e, true, true);
                             found = true;
                         case {'Simulink:DataType:PropForwardDataTypeError'}
