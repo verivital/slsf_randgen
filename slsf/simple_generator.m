@@ -111,12 +111,10 @@ classdef simple_generator < handle
                 obj.my_result.store_runtime(singleresult.PORT_CONN);
                 
                 fprintf('--Done Connecting!--\n');
-                
-                
 
-    %             disp('Returning abruptly');
-    %             ret = true;
-    %             return;
+%                 disp('Returning abruptly');
+%                 ret = true;
+%                 return;
 
             else
                 % Use pre-generated model
@@ -792,6 +790,21 @@ classdef simple_generator < handle
         end
         
         
+        function obj = set_sample_time_for_discrete_blk(obj, h, blk)
+            if ~ blk{2}
+                disp('NOT A DISCRETE BLOCK. RETURN');
+                return;
+            end
+            
+            disp('DISCRETE BLK!');
+            
+            try
+                set_param(h, 'SampleTime', '1');  % TODO random choose sample time?
+            catch e
+            end
+                
+        end
+        
         
         function obj = draw_blocks(obj)
             % Draw blocks in the screen
@@ -807,6 +820,11 @@ classdef simple_generator < handle
             disp(obj.candi_blocks);
 
             for block_name = obj.candi_blocks
+                % Warning: block_name could be a string or a cell. This is
+                % a string if the block is pre-added. Cell otherwise, where
+                % first element of the cell is the block name and 2nd
+                % element is boolean: whether the block is discrete.
+                
                 cur_blk = cur_blk + 1;          % Create block name
                 
                 is_preadded_block = cur_blk <= obj.num_preadded_blocks;
@@ -832,7 +850,8 @@ classdef simple_generator < handle
                     h = get_param([obj.sys this_blk_name], 'handle');
                     set_param(h,'Position',pos);
                 else
-                    h = add_block(block_name{1}, [obj.sys, this_blk_name], 'Position', pos);
+                    h = add_block(block_name{1}{1}, [obj.sys, this_blk_name], 'Position', pos);
+                    obj.set_sample_time_for_discrete_blk(h, block_name{1});
                 end
                 
                 % Save the handle of this new block. Accessing a block by
@@ -845,7 +864,7 @@ classdef simple_generator < handle
                 if is_preadded_block
                     blk_type = get_param(h, 'blocktype');
                 else
-                    blk_type = block_name{1};
+                    blk_type = block_name{1}{1};
                 end
                 
                 if blockchooser().is_hierarchy_block(blk_type)
@@ -864,11 +883,9 @@ classdef simple_generator < handle
                 
                 % Configure block parameters
                 
-                if is_preadded_block
-                    obj.config_block(h, get_param(h, 'blocktype'), this_blk_name);
-                else
-                    obj.config_block(h, block_name{1}, this_blk_name);
-                end
+                
+                obj.config_block(h, blk_type, this_blk_name);
+                
                 
                 %%%%%%% Done configuring block %%%%%%%%%
                 

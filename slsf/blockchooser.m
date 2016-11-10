@@ -113,8 +113,13 @@ classdef blockchooser < handle
             counts = util.roulette_wheel(obj.all_cats, num_choose);
             obj.do_selection_stat(counts, num_choose);
             
+%             is_discrete = false;
+            
             for i=1:numel(obj.categories)
                 c = obj.categories{i};
+                
+                is_discrete = strcmpi(c.name, 'Discrete');
+                
                 fprintf('Choosing %d elements from %s\n', counts(i), c.name);
                 
                 all_blocks = find_system(['Simulink/' c.name]);
@@ -130,13 +135,13 @@ classdef blockchooser < handle
                         now_blk = all_blocks{i_rand};
                     end
 
-                    ret.add(now_blk);
+                    ret.add({now_blk, is_discrete});
                 end                
              
             end
             
             fprintf('Now adding must-have blocks... \n');
-            counts_counter = numel(obj.all_cats) - numel(obj.allowlist) + 1
+            counts_counter = numel(obj.all_cats) - numel(obj.allowlist) + 1;
             
             for i=counts_counter:numel(obj.all_cats)
                 cur = obj.all_cats{i}.name;
@@ -144,7 +149,7 @@ classdef blockchooser < handle
                 fprintf('About to add BLOCK %s FROM ALLOWLIST %d times\n', cur, counts(i));
                 
                 for j=1:counts(i)
-                    ret.add(cur);
+                    ret.add({cur, false}); % 2nd element is boolean: is the block discrete
                 end
 
             end

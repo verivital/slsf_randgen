@@ -6,7 +6,7 @@ classdef simulator < handle
         generator;
         max_try;
         
-        simulation_timeout = 18;        % After this many seconds simulation will be killed. 
+        simulation_timeout = 50;        % After this many seconds simulation will be killed. 
         sim_status = [];
         
         
@@ -182,6 +182,11 @@ classdef simulator < handle
                             done = obj.fix_data_type_mismatch(e, false, false);
                             found = true;
                             
+                        case {'Simulink:SampleTime:BlkFastestTsNotGCDOfInTs'}
+                            disp('HEREEEEE');
+                            done = obj.fix_st_gcd(e);
+                            found = true;
+                            
                         case {'Simulink:blocks:NormModelRefBlkNotSupported'}
                             done = obj.fix_normal_mode_ref_block(e);
                             found = true;
@@ -277,7 +282,17 @@ classdef simulator < handle
                  
         end
         
-        
+        function done = fix_st_gcd(obj, e)
+            disp('FIXING Sample Time not GCD...');
+            done = false;
+                        
+            for i = 1:numel(e.handles)
+                inner = e.handles{i};
+
+                h = util.select_me_or_parent(inner);
+                obj.add_block_in_the_middle(h, sprintf('simulink/Discrete/Zero-Order\nHold'), false, true);
+            end
+        end
         
         
         

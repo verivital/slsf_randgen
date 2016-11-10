@@ -2,7 +2,7 @@
 % Run this script from the command line. You can edit following options
 % (options are always written using all upper-case letters).
 
-NUM_TESTS = 2;                        % Number of models to generate
+NUM_TESTS = 1;                        % Number of models to generate
 
 SIMULATE_MODELS = true;                 % To simulate generated model
 

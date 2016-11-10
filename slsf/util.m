@@ -104,6 +104,15 @@ classdef util < handle
         end
         
         
+        function getBlocksOfLibrary_PrettyPrint(lib)
+            all_blocks = find_system(['Simulink/' lib]);
+            
+            for i=1:numel(all_blocks)
+                disp(all_blocks{i})
+            end
+        end
+        
+        
         function post_model_gen(sg)
             disp(halum);
         end
@@ -163,6 +172,17 @@ classdef util < handle
                     found = true;
                     return
                 end
+            end
+        end
+        
+        function inspect_parameters(elem)
+            x = get_param(elem, 'ObjectParameters');
+            fn = fieldnames(x);
+            for i=1:numel(fn)
+                fn_i = fn{i};
+                fprintf('************************** %s **********************\n', fn_i);
+                get_param(elem, fn_i)
+                x.(fn_i)
             end
         end
         
