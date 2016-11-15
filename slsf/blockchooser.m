@@ -10,8 +10,8 @@ classdef blockchooser < handle
         % `num`.  NOTE THAT MAXIMUM VALUE OF num CAN BE 1.0
         
         categories = {
-            struct('name', 'Discrete', 'num', 0.7)
-%             struct('name', 'Continuous', 'num', 0.25)
+%            struct('name', 'Discrete', 'num', 0.7)
+             struct('name', 'Continuous', 'num', 0.7)
 %             struct('name', 'Math Operations', 'num', 10)
 %             struct('name', 'Logic and Bit Operations', 'num', 10)
             struct('name', 'Sinks', 'num', 0.15)
@@ -49,6 +49,8 @@ classdef blockchooser < handle
             obj.blocklist.(util.mvn('simulink/Discrete/Discrete Derivative')) = 1;
             obj.blocklist.(util.mvn('simulink/Math Operations/FindNonzeroElements')) = 1;
             obj.blocklist.(util.mvn('simulink/Continuous/VariableTransport Delay')) = 1;
+            obj.blocklist.(util.mvn('simulink/Continuous/VariableTime Delay')) = 1;
+            obj.blocklist.(util.mvn('simulink/Continuous/Transport Delay')) = 1;
             obj.blocklist.(util.mvn('simulink/Sinks/StopSimulation')) = 1;
 %             obj.blocklist.(util.mvn('simulink/Continuous/PID Controller (2DOF)')) = 1;
 
