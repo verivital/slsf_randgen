@@ -7,6 +7,17 @@ classdef mymap < handle
         data_keys = [];                  % WARNING Value of this field is valid ONLY after calling keys() method.
     end
     
+    
+    methods (Static)
+      function ret = create_from_cell(data)
+         ret = mymap();
+         
+         for i=1:numel(data)
+            ret.put(data{i}, 1);
+         end
+      end
+   end
+    
     methods
         function obj = mymap()
             obj.data = struct;

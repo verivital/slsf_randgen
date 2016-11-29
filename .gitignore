@@ -31,3 +31,4 @@ slsf/reports/loglenmismatch/*.slx
 slsf/reports/success/*.slx
 *.asv
 slsf/temp
+slsf/reportsneo/*

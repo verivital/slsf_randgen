@@ -542,14 +542,13 @@ classdef simple_generator < handle
         
         function ret = get_all_simulink_blocks(obj)
 %             ret = {'simulink/Sources/Constant', 'simulink/Sinks/Scope', 'simulink/Sources/Constant', 'simulink/Sinks/Display', 'simulink/Math Operations/Add'};
-            bc = obj.blkchooser;
-            
-            if isempty(bc)
-                bc = blockchooser();
+
+            if isempty(obj.blkchooser)
+                obj.blkchooser = blockchooser();
             end
             
-            ret = bc.get(obj.current_hierarchy_level, obj.max_hierarchy_level, obj.NUM_BLOCKS);
-            obj.my_result.block_sel_stat = bc.selection_stat;
+            ret = obj.blkchooser.get(obj.current_hierarchy_level, obj.max_hierarchy_level, obj.NUM_BLOCKS);
+            obj.my_result.block_sel_stat = obj.blkchooser.selection_stat;
         end
         
         
@@ -867,7 +866,7 @@ classdef simple_generator < handle
                     blk_type = block_name{1}{1};
                 end
                 
-                if blockchooser().is_hierarchy_block(blk_type)
+                if obj.blkchooser.is_hierarchy_block(blk_type)
                     fprintf('Hierarchy block %s found.\n', this_blk_name);
 
                     mdl_name = obj.handle_hierarchy_blocks();
@@ -876,7 +875,7 @@ classdef simple_generator < handle
                     set_param(h, 'ModelNameDialog', mdl_name);
                 end
 
-                if blockchooser().is_submodel_block(blk_type)
+                if obj.blkchooser.is_submodel_block(blk_type)
                     fprintf('Submodel block %s found.\n', this_blk_name);
                     obj.handle_submodel_creation(this_blk_name, obj.sys);
                 end

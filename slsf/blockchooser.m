@@ -9,14 +9,7 @@ classdef blockchooser < handle
         % wheel), probability of each category is denoted by the field
         % `num`.  NOTE THAT MAXIMUM VALUE OF num CAN BE 1.0
         
-        categories = {
-%            struct('name', 'Discrete', 'num', 0.7)
-             struct('name', 'Continuous', 'num', 0.7)
-%             struct('name', 'Math Operations', 'num', 10)
-%             struct('name', 'Logic and Bit Operations', 'num', 10)
-            struct('name', 'Sinks', 'num', 0.15)
-            struct('name', 'Sources', 'num', 0.15)
-        };
+        categories;
     
         
 %     
@@ -28,10 +21,9 @@ classdef blockchooser < handle
 
         all_cats = [];                       % Will be processed later
     
-        blocklist = struct;
-        
-        hierarchy_blocks = mymap();
-        submodel_blocks = mymap();
+        blocklist; 
+        hierarchy_blocks;
+        submodel_blocks;
         
         selection_stat = [];
     end
@@ -42,23 +34,14 @@ classdef blockchooser < handle
         function obj=blockchooser()
             % CONSTRUCTOR %
             
-            % Blacklist some blocks
-            obj.blocklist.(util.mvn('simulink/Sources/From File')) = 1;
-            obj.blocklist.(util.mvn('simulink/Sources/FromWorkspace')) = 1;
-            obj.blocklist.(util.mvn('simulink/Sources/EnumeratedConstant')) = 1;
-            obj.blocklist.(util.mvn('simulink/Discrete/Discrete Derivative')) = 1;
-            obj.blocklist.(util.mvn('simulink/Math Operations/FindNonzeroElements')) = 1;
-            obj.blocklist.(util.mvn('simulink/Continuous/VariableTransport Delay')) = 1;
-            obj.blocklist.(util.mvn('simulink/Continuous/VariableTime Delay')) = 1;
-            obj.blocklist.(util.mvn('simulink/Continuous/Transport Delay')) = 1;
-            obj.blocklist.(util.mvn('simulink/Sinks/StopSimulation')) = 1;
-%             obj.blocklist.(util.mvn('simulink/Continuous/PID Controller (2DOF)')) = 1;
-
-            % List the hierarchy blocks
-            obj.hierarchy_blocks.put('simulink/Ports & Subsystems/Model', 1);
-
-            % List the submodel-blocks
-            obj.submodel_blocks.put('simulink/Ports & Subsystems/For Each Subsystem', 1);
+            % Following instructions are supposed to DEEP COPY
+            
+            helper = slblocklibcfg.getInstance();
+            
+            obj.categories = helper.categories;
+            obj.blocklist = helper.blocklist;
+            obj.hierarchy_blocks = helper.hierarchy_blocks;
+            obj.submodel_blocks = helper.submodel_blocks;
         end
         
         
