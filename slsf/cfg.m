@@ -3,7 +3,7 @@ classdef cfg
     %   Detailed explanation goes here
     
     properties(Constant = true)
-        NUM_TESTS = 100;                        % Number of models to generate
+        NUM_TESTS = 1;                        % Number of models to generate
 
         SIMULATE_MODELS = true;                 % To simulate generated model
 
@@ -25,7 +25,7 @@ classdef cfg
         CLOSE_MODEL = false;                    % Close models after simulation
         CLOSE_OK_MODELS = true;                % Close models for which simulation ran OK
 
-        NUM_BLOCKS = 10;                    % Number of blocks in each model. Give single number or a matrix [minval maxval]. Example: "5" will create models with exactly 5 blocks. "[5 10]" will choose a value randomly between 5 and 10.
+        NUM_BLOCKS = 50;                    % Number of blocks in each model. Give single number or a matrix [minval maxval]. Example: "5" will create models with exactly 5 blocks. "[5 10]" will choose a value randomly between 5 and 10.
 
         MAX_HIERARCHY_LEVELS = 1;               % Minimum value is 1 indicating a flat model with no hierarchy.
 
@@ -42,10 +42,11 @@ classdef cfg
 
         BREAK_AFTER_COMPARE_ERR = true;
         
+        SL_SIM_TIMEOUT = 24;
         
         SL_BLOCKLIBS = {
-%            struct('name', 'Discrete', 'num', 0.7)
-             struct('name', 'Continuous', 'num', 0.7)
+           struct('name', 'Discrete', 'num', 0.35)
+             struct('name', 'Continuous', 'num', 0.35)
 %             struct('name', 'Math Operations', 'num', 10)
 %             struct('name', 'Logic and Bit Operations', 'num', 10)
             struct('name', 'Sinks', 'num', 0.15)

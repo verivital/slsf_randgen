@@ -6,7 +6,6 @@ classdef simulator < handle
         generator;
         max_try;
         
-        simulation_timeout = 50;        % After this many seconds simulation will be killed. 
         sim_status = [];
         
         
@@ -33,7 +32,7 @@ classdef simulator < handle
             % A wrapper to the built in `sim` command - which is used to
             % start the simulation.
             obj.sim_status = [];
-            myTimer = timer('StartDelay',obj.simulation_timeout, 'TimerFcn', {@sim_timeout_callback, obj});
+            myTimer = timer('StartDelay',cfg.SL_SIM_TIMEOUT, 'TimerFcn', {@sim_timeout_callback, obj});
 %             myTimer = timer('StartDelay',obj.simulation_timeout, 'TimerFcn',['set_param(''' obj.generator.sys ''',''SimulationCommand'',''stop'')']);
             start(myTimer);
             try
@@ -78,7 +77,7 @@ classdef simulator < handle
                     obj.generator.my_result.exc = e;
                     
                     if(strcmp(e.identifier, 'RandGen:SL:SimTimeout'))
-                        obj.generator.my_result.set_to(singleresult.NORMAL, obj.simulation_timeout);
+                        obj.generator.my_result.set_to(singleresult.NORMAL, cfg.SL_SIM_TIMEOUT);
                         return;
                     end
                     
@@ -191,6 +190,10 @@ classdef simulator < handle
                             done = obj.fix_normal_mode_ref_block(e);
                             found = true;
                             
+                        case {'Simulink:Engine:SolverConsecutiveZCNum'}
+                            done = obj.fix_solver_consecutive_zc(e);
+                            found = true;
+                            
                         otherwise
                             done = true;
                     end
@@ -200,6 +203,11 @@ classdef simulator < handle
                 done = true;                                        % TODO
             end
         end  
+        
+        function done = fix_solver_consecutive_zc(obj, e)
+            done = false;
+            set_param(obj.generator.sys, 'ZeroCrossAlgorithm', 'Adaptive');
+        end
         
         
         function done = fix_normal_mode_ref_block(obj, e)
