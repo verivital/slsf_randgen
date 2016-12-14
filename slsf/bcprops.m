@@ -31,6 +31,26 @@ classdef bcprops < handle
                     ret = obj.chars(i);
                 case {'e'}
                     ret = obj.chars{util.rand_int(1, obj.len_chars, 1)};
+                case {'m'}
+                    ret = ['['];
+                    ret_len = 2;
+                    if strcmp(obj.chars{1}, 'int')
+                        randmat = randi(obj.chars{2}, obj.len(1), obj.len(2));
+                        for i=1:obj.len(1)
+                            for j = 1:obj.len(2)
+                                ret(ret_len) = int2str(randmat(i, j));
+                                ret(ret_len + 1) = ' ';
+                                ret_len = ret_len + 2;
+                            end
+                            ret(ret_len) = ';';
+                            ret_len = ret_len + 1;
+                        end
+                        ret(ret_len) = ']';
+                        ret = char(ret);
+                        fprintf('This is random matrix: %s\n', ret);
+                    else
+                        throw(MException('RandGen:SL:InvalidMatrixConfiguration'));
+                    end
                 otherwise
                     throw(MException('RandGen:SL:BlkConfUnknwnKind'));
             end

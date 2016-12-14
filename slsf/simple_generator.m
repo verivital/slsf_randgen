@@ -33,7 +33,7 @@ classdef simple_generator < handle
         inner_model_num_blocks = 4;     % Number of blocks for models whose `current_hierarchy_level` is > 1 % TODO
         
 %         simul;                      % Instance of simulator class
-        max_simul_attempt = 10;
+        max_simul_attempt = 15;
         
         close_model = true;         % Close after simulation
         

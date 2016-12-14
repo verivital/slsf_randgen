@@ -11,6 +11,11 @@ classdef mycell < handle
     methods
         
         function obj = mycell(capacity)
+            
+            if nargin < 1
+                capacity = -1;
+            end
+            
             obj.capacity = capacity;
             
             if capacity == -1
@@ -31,6 +36,12 @@ classdef mycell < handle
         
         function ret = get(obj, indx)
             ret = obj.data{indx};
+        end
+        
+        function obj = extend(obj, other_cell)
+            for i=1:other_cell.len
+                obj.add(other_cell.get(i));
+            end
         end
         
         

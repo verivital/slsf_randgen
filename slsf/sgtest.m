@@ -64,6 +64,12 @@ end
 REPORT_FILE_NAME = 'reports';
 REPORT_FILE = [REPORTS_BASE filesep REPORT_FILE_NAME];
 
+% Reload configuration. This is necessary as the only instance of the
+% singleton class `slblocklibcfg` is not deleted between subsequent run of
+% `sgtest.m` in Matlab.
+
+singleInst = slblocklibcfg.getInstance();
+singleInst.reload_config();
 
 % Script is Starting %
 
@@ -95,8 +101,6 @@ all_models = mycell(cfg.NUM_TESTS);             % Store some stats regarding all
 block_selection = mymap();                  % Stats on library selection
 total_time = [];                            % Time elapsed so far since the start of the experiment
 runtime = mycell(-1);
-
-% tic
 
 break_main_loop = false;
 
@@ -211,7 +215,6 @@ for ind = 1:cfg.NUM_TESTS
                     if cfg.BREAK_AFTER_COMPARE_ERR
                         fprintf('COMPARE ERROR... BREAKING');
                         break_main_loop = true;
-%                         break;
                     end
                     
                 otherwise
@@ -224,16 +227,14 @@ for ind = 1:cfg.NUM_TESTS
                 
             end
 
-%             if(strcmp(e.identifier, 'MATLAB:MException:MultipleErrors'))
-%                 e = e.cause{1};
-%             end
-
             e_map = util.map_inc(e_map, e.identifier);
 
             if cfg.STOP_IF_ERROR
                 disp('BREAKING FROM MAIN LOOP AS ERROR OCCURRED IN SIMULATION');
                 break_main_loop = true;
-%                 break;
+            elseif cfg.STOP_IF_LISTED_ERRORS && util.cell_str_in(cfg.STOP_ERRORS_LIST, e.identifier)
+                disp('BREAKING FROM MAIN LOOP --- ERROR IS LISTED IN cfg.m FILE.');
+                break_main_loop = true;
             end
             
             if cfg.CLOSE_MODEL

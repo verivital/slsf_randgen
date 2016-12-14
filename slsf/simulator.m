@@ -8,6 +8,8 @@ classdef simulator < handle
         
         sim_status = [];
         
+        fixed_blocks = mymap();
+        
         
         % Data type fixer related
         last_handle = [];
@@ -23,6 +25,27 @@ classdef simulator < handle
             % CONSTRUCTOR %
             obj.generator = generator;
             obj.max_try = max_try;
+        end
+        
+        
+        function found = is_block_fixed_before(obj, exc, blk, add)
+            found = false;
+            d = obj.fixed_blocks.get(exc);
+    
+            if isempty(d) && add
+                % Not Found
+                d = mymap.create_from_cell({blk});
+                obj.fixed_blocks.put(exc, d);
+            else
+                if d.contains(blk)
+                    found = true;
+                    % No need to add!
+                elseif add
+                    d.put(blk, 1);
+                    obj.fixed_blocks.put(exc, d);
+                end
+            end
+            
         end
         
         
@@ -67,7 +90,6 @@ classdef simulator < handle
                 
                 try
                     obj.sim();
-%                     sim(obj.generator.sys);  
                     disp('Success simulating in SIMULATOR.M module!');
                     done = true;
                     ret = true;
@@ -149,6 +171,8 @@ classdef simulator < handle
                 if util.starts_with(e.identifier, 'Simulink:Engine:AlgLoopTrouble')
                     obj.fix_alg_loop(e);
                     found = true;
+                elseif util.starts_with(e.identifier, 'Simulink:Engine:PortDimsMismatch')
+                    [done, found] = obj.fix_port_dimensions_mismatch(e);
                 else
 
                     switch e.identifier
@@ -172,17 +196,22 @@ classdef simulator < handle
                             ret = done;                             
                             found = true;
                         case{'Simulink:DataType:InputPortDataTypeMismatch', 'SimulinkBlock:Foundation:SignedOnlyPortDType', 'Simulink:DataType:InvDisagreeInternalRuleDType'}
-                            done = obj.fix_data_type_mismatch(e, true, true);
+                            done = obj.fix_data_type_mismatch(e, 'both');
                             found = true;
-                        case {'Simulink:DataType:PropForwardDataTypeError'}
-                            done = obj.fix_data_type_mismatch(e, false, true);
+                        case {'Simulink:DataType:PropForwardDataTypeError', 'Simulink:blocks:DiscreteFirHomogeneousDataType', 'Simulink:blocks:SumBlockOutputDataTypeIsBool'}
+                            done = obj.fix_data_type_mismatch(e, 'both');
                             found = true;
                         case {'Simulink:DataType:PropBackwardDataTypeError'}
-                            done = obj.fix_data_type_mismatch(e, false, false);
+                            done = obj.fix_data_type_mismatch(e, 'both');
+                            found = true;
+                        case {'SimulinkFixedPoint:util:fxpBitOpUnsupportedFloatType'}
+                            done = false;
+                            obj.fix_data_type_mismatch(e, 'input', {{'OutDataTypeStr', 'boolean'}});
+                            obj.fix_data_type_mismatch(e, 'output');
                             found = true;
                             
                         case {'Simulink:SampleTime:BlkFastestTsNotGCDOfInTs'}
-                            disp('HEREEEEE');
+%                             disp('HEREEEEE');
                             done = obj.fix_st_gcd(e);
                             found = true;
                             
@@ -264,10 +293,45 @@ classdef simulator < handle
         end
         
         
+        function [done, found] = fix_port_dimensions_mismatch(obj, e)
+            done = false;
+            found = false;
+            
+            for j = 1:numel(e.handles)
+                handles = e.handles{j};
+                blkFullName = getfullname(handles)
+                blkType = get_param(handles, 'blocktype')
+                if strcmp(blkType, 'CombinatorialLogic')
+                    
+                    if obj.is_block_fixed_before(e.identifier, blkFullName, true)
+                        % Block was previously addressed. Most likely is
+                        % that there is another block with same exception,
+                        % at subsequent positions of the Multiple Error. So
+                        % try those blocks. found = false already.
+                    else
+                        obj.fix_combinatorial_logic_block(handles);
+                        found = true;
+                    end
+                end
+            end
+            
+        end
+        
+        function obj = fix_combinatorial_logic_block(obj, handle)
+            % Creates One input port and One output port.
+            disp('Fixing comb logic block...');
+            rs = randi([0 1], 2, 1); % Two random integers from 0 and 1
+            set_param(handle, 'TruthTable', sprintf('[%d;%d]', rs(1), rs(2)));
+        end
         
         
-        
-        function done = fix_data_type_mismatch(obj, e, fetch_parent, at_output)
+        function done = fix_data_type_mismatch(obj, e, loc, blk_params)
+            
+            if nargin < 4
+                blk_params = []; % Parameters for the new block
+            end
+            
+            
             disp('FIXING DATA TYPE MISMATCH...');
             done = false;
             
@@ -282,10 +346,29 @@ classdef simulator < handle
                 h = util.select_me_or_parent(inner);
 
 %                 if at_output
-                    obj.add_block_in_the_middle(h, 'Simulink/Signal Attributes/Data Type Conversion', true, false);
-%                 else
-                    obj.add_block_in_the_middle(h, 'Simulink/Signal Attributes/Data Type Conversion', false, true);
-%                 end
+                switch loc
+                    case {'output'}
+                        new_blocks = obj.add_block_in_the_middle(h, 'Simulink/Signal Attributes/Data Type Conversion', true, false);
+                        break;
+                    case {'input'}
+                        new_blocks = obj.add_block_in_the_middle(h, 'Simulink/Signal Attributes/Data Type Conversion', false, true);
+                        break;
+                    case {'both'}
+                        new_blocks = obj.add_block_in_the_middle(h, 'Simulink/Signal Attributes/Data Type Conversion', true, false);
+                        more_new = obj.add_block_in_the_middle(h, 'Simulink/Signal Attributes/Data Type Conversion', false, true);
+                        new_blocks.extend(more_new);
+                        break;
+                    otherwise
+                        throw(MException('RandGen:FixDataType:InvalidValForParamLOC', 'Invalid value for parameter loc'));
+                end
+            end
+            
+            if ~isempty(blk_params) 
+                for i=1:new_blocks.len
+                    for j=1:numel(blk_params)
+                        set_param(new_blocks.get(i), blk_params{j}{1}, blk_params{j}{2});
+                    end
+                end
             end
                  
         end
@@ -344,7 +427,7 @@ classdef simulator < handle
         
         
         function ret = add_block_in_the_middle(obj, h, replacement, ignore_in, ignore_out)
-            
+  
             ret = mycell(-1);
             
             my_name = get_param(h, 'Name');
@@ -455,10 +538,7 @@ classdef simulator < handle
                 
                 disp('Done adding block!');
 
-                
-%                 delete_line( obj.generator.sys, src_b_p , my_b_p);
-%                 add_line(obj.generator.sys, src_b_p, d_b_p , 'autorouting','on');
-%                 add_line(obj.generator.sys, d_b_p, my_b_p , 'autorouting','on');
+               
 
             end
             
