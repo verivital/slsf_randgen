@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 import random
 import re
+import unittest
+
+OPT_NUM_MANY_MAINS = 50
 
 class Var:
     """docstring for Var
@@ -33,7 +36,7 @@ class ProCSmith:
     _globals_started = False
 
     initialize_globals_in_main = False # Set to False if generating the mdlOutput function. We wish to initialize the globals explicitly in the mdlOutput function, before calling main.
-    generate_many_mains = True  # If True, will generate many calls to main function -- use only for testing ProCsmith!
+    generate_many_mains = False  # If True, will generate many calls to main function -- use only for testing ProCsmith.
 
     _main_started = False
 
@@ -45,6 +48,7 @@ class ProCSmith:
 
 
     def go(self):
+        # Note: currently we don't call this function. Only using it for testing ProCsmith.
         self.parse()
         self.write_op()
 
@@ -53,15 +57,19 @@ class ProCSmith:
         with open(self._my_input, 'r') as infile:
             for line in infile:
                 if line.startswith('/* --- GLOBAL VARIABLES --- */'):
+                    # From this point we start handling the global variables.
                     self._globals_started = True
                     self._my_output += line
 
                 elif line.startswith('/* --- FORWARD DECLARATIONS --- */'):
+                    # End of global declarations in original Csmith-generated file.
                     self._globals_started = False
-                    self._my_output += 'void init_globals(void){\n    printf("Initializing...\\n");\n' + self._globals_initializer_body + '    printf("End of init\\n");\n}\n'
+                    # We write the "init_globals" function now.
+                    self._my_output += 'void init_globals(void){\n    /*printf("Initializing...\\n");*/\n' + self._globals_initializer_body + '    /*printf("End of init\\n");*/\n}\n'
 
                     self._my_output += line
                 elif self.initialize_globals_in_main and line.strip().startswith('int print_hash_value = 0;'):
+                    # CALL "init_globals" inside main() function [if instructed by setting initialize_globals_in_main to TRUE]
                     self._my_output += '    init_globals();\n' + line
                 else:
                     self._process_line(line)
@@ -108,15 +116,29 @@ class ProCSmith:
         tokens = line.split('=')
         left_side_tokens = tokens[0].split(' ')
 
+        # Avoid pointers - check if we have '*' in the characters till the variable's name
+        if '*' in tokens[0]:
+            is_pointer = True
+        else:
+            is_pointer = False
+
         if 'const' in left_side_tokens:
-            self._my_output += line
-            return
+            # Check whether this is a pointer
+            # if is_pointer and left_side_tokens[-3] != 'const':
+            # if is_pointer and left_side_tokens[1] == 'const':
+            if is_pointer and (tokens[0].rfind('const') < tokens[0].rfind('*')):
+                # Check whether this is an immutable pointer or just a pointer to an immutable (constant) variable
+                # For the second case we need to initialize! 
+                # http://stackoverflow.com/questions/10091825/constant-pointer-vs-pointer-on-a-constant-value
+                # print('{} is not a true constant.'.format(line))
+                pass
+            else:
+                self._my_output += line
+                return
         
         # print('tokens...')
-        # print((tokens[0].split(' '))[-2])
 
         # The variable's name is in left_side_tokens[-2]
-
         this_var_name = left_side_tokens[-2].strip('*')
 
         self._globals_initializer_body += '    ' + this_var_name + ' = ' + tokens[1]
@@ -124,12 +146,10 @@ class ProCSmith:
 
         # Add in candidate list for S-function's inputs
 
-        # Avoid pointers - check if we have '*' in the characters till the variable's name
-        # line_till_varname = ' '.join(left_side_tokens[:-2])
-        to_avoid = ('*', 'int64') # Not sure why int64 is here?
+        to_avoid = ('int64',) # Not sure why int64 is here?
 
-        if any(_ in tokens[0] for _ in to_avoid):
-            print('Avoiding {} for candidate input'.format(left_side_tokens))
+        if is_pointer or any(_ in tokens[0] for _ in to_avoid):
+            # print('Avoiding {} for candidate input. is_pointer: {}'.format(left_side_tokens, is_pointer))
             return
 
         self.candidate_inputs.append(Var(this_var_name))
@@ -199,8 +219,8 @@ static void mdlOutputs(SimStruct *S, int_T tid)
         self._my_output += """
             int main (void){
                 int i;
-                for (i=0; i<50; i++){
-                    printf("Many Mains: %d\\n", i);
+                for (i=0; i<""" + str(OPT_NUM_MANY_MAINS) + """; i++){
+                    /*printf("Many Mains: %d\\n", i);*/
                     init_globals();
                     main1();
                 }
@@ -216,128 +236,133 @@ static void mdlOutputs(SimStruct *S, int_T tid)
             outfile.write(self._my_output)
 
 
-
-if __name__ == '__main__':
-
-    NUM_TESTS  = 1
-    GENERATE_MANY_MAINS = True
-    CREATE_NEW_C = False # To test existing file
-
-    if NUM_TESTS <= 0:
-        print('---------- FROM PRO-CSMITH MAIN -------------')
-        pc = ProCSmith('in.c', 'out.c')
+class TestPCSingle(unittest.TestCase):
+    """
+        Command to run this testcase: `python3 -m unittest pro_csmith.TestPCSingle`
+    """
+    
+    def test_single(self):
+        print('---------- FROM PRO-CSMITH SINGLE TEST -------------')
+        pc = ProCSmith('current.c', 'out.c')
         pc.go()
+        print('-- Inputs --')
         print(pc.candidate_inputs)
         print('-- Outputs --')
         print(pc.candidate_outputs)
+        print('-- mdlOutputs --')
         print(pc.create_mdlOutputs())
-        print('DONE')
-        exit()
+        self.assertTrue(True)
+    
 
-    # Running automated tests for checking sanity of Csmith Post Processor.
+class TestPCMany(unittest.TestCase):
+    """
+        Running automated tests for checking sanity of Csmith Post Processor.
+    """
 
-    import subprocess
-    import sys
-    import os
-    import signal
-    import shutil
-    from runcmd import RunCmd
+    def test_many(self):
 
-    current_file_name = 'temptestprocsmith.c'
-    pro_file_name = 'pro_output.c'
-    executable = 'temptestprocsmith.out'
-    TIMEOUT = 10
+        NUM_TESTS  = 1000
+        GENERATE_MANY_MAINS = True
+        CREATE_NEW_C = True # To test existing file
 
-    for i in range(NUM_TESTS):
-        print(' >>NEW<< Test {}'.format(i))
+        import subprocess
+        import sys
+        import os
+        import signal
+        import shutil
+        from runcmd import RunCmd
 
-        checksum = None
-        checksum2 = None
-
-        # Run Csmith
-
-        csmith_cmd = ('csmith', '--no-structs', '--no-unions', '--no-arrays', '--no-argc')
-
-        # if GENERATE_MANY_MAINS:
-        #     csmith_cmd = ('csmith', '--no-structs', '--no-unions', '--no-arrays', '--no-argc', '--easy-x', '--suffix-main', '1')
-
+        current_file_name = 'temptestprocsmith.c'
+        pro_file_name = 'pro_output.c'
+        executable = 'temptestprocsmith.out'
+        executable2 = 'temptestprocsmith2.out'
         
-        if CREATE_NEW_C:
-            with open(current_file_name, 'w') as current_write:
-                with subprocess.Popen(csmith_cmd, stdout=current_write) as c_pp:
-                    c_pp.wait()
-        else:
-            print('CSMITH NOT CALLED!');            
-        
-        # Compile. Terminates?
+        TIMEOUT = 10
 
-        with subprocess.Popen(('gcc', '-w', '-o', executable, current_file_name)) as pr:
-            pr.wait()
+        num_nonterminate = 0
 
-            print('Termination test...')
-            if not RunCmd(('./{}'.format(executable),), TIMEOUT).go():
-                print('...DOES NOT TERMINATE! CONTINUE...')
-                continue 
+        for i in range(NUM_TESTS):
+            print(' >>-- NEW TEST {} --<<'.format(i))
 
-        # Get output value
+            checksum = None
+            checksum2 = None
 
-        with subprocess.Popen('./' + executable, stdout=subprocess.PIPE, shell=True) as c_p:
-            for lines in c_p.stdout:
-                line = lines.decode("utf-8")
-                # print('[x]>' + line)
-                checksum = line
-            c_p.wait()
+            # Run Csmith
 
-        # Run ProCsmith
-        pcs = ProCSmith(current_file_name, pro_file_name)
-        pcs.initialize_globals_in_main = True
+            csmith_cmd = ('csmith', '--no-structs', '--no-unions', '--no-arrays', '--no-argc')
 
-        if GENERATE_MANY_MAINS:
-            pcs.initialize_globals_in_main = False;
-            pcs.generate_many_mains = True;
+            # if GENERATE_MANY_MAINS:
+            #     csmith_cmd = ('csmith', '--no-structs', '--no-unions', '--no-arrays', '--no-argc', '--easy-x', '--suffix-main', '1')
 
-        pcs.go()
+            
+            if CREATE_NEW_C:
+                with open(current_file_name, 'w') as current_write:
+                    with subprocess.Popen(csmith_cmd, stdout=current_write) as c_pp:
+                        c_pp.wait()
+            else:
+                print('CSMITH NOT CALLED!');            
+            
+            # Compile. Terminates?
 
-        # Compile. Terminates?
+            with subprocess.Popen(('gcc', '-std=gnu99', '-w', '-o', executable, current_file_name)) as pr:
+                self.assertEqual(pr.wait(), 0)
 
+                # print('Termination test...')
+                if not RunCmd(('./{}'.format(executable),), TIMEOUT).go():
+                    print('...DOES NOT TERMINATE! CONTINUE...')
+                    num_nonterminate = num_nonterminate + 1
+                    continue 
 
-        with subprocess.Popen(('gcc', '-w', '-o', executable, pro_file_name)) as pr:
-            pr.wait()
+            # Get output value
 
-            print('Termination test (2)...')
-            if not RunCmd(('./{}'.format(executable),), TIMEOUT).go():
-                print('...DOES NOT TERMINATE! Error!!...')
-                exit(-1)
+            with subprocess.Popen('./' + executable, stdout=subprocess.PIPE, shell=True) as c_p:
+                for lines in c_p.stdout:
+                    line = lines.decode("utf-8")
+                    # print('[x]>' + line)
+                    checksum = line
+                c_p.wait()
 
-        # Get output value
+            # Run ProCsmith ################################################################################################
 
-        with subprocess.Popen('./' + executable, stdout=subprocess.PIPE, shell=True) as c_p:
-            for lines in c_p.stdout:
-                line = lines.decode("utf-8")
-                # print('[x]>' + line)
+            pcs = ProCSmith(current_file_name, pro_file_name)
+            pcs.initialize_globals_in_main = True
 
-                if not line.startswith('checksum = '):
-                    print('no chksum');
+            if GENERATE_MANY_MAINS:
+                pcs.initialize_globals_in_main = False;
+                pcs.generate_many_mains = True;
 
-                    continue
-                else:
-                    print('line with chksum');
+            pcs.go()
 
-                checksum2 = line
+            # Compile. Terminates?
 
-                if checksum != checksum2:
-                    print('Error!!! Checksums not equal: {} vs {}'.format(checksum, checksum2))
-                    exit()
+            with subprocess.Popen(('gcc',  '-std=gnu99', '-w', '-o', executable2, pro_file_name)) as pr:
+                self.assertEqual(pr.wait(), 0)
 
-            c_p.wait()
+                # print('Termination test (2)...')
+                if not RunCmd(('./{}'.format(executable2),), (TIMEOUT * (OPT_NUM_MANY_MAINS + 5) )).go():
+                    print('...DOES NOT TERMINATE! Error!!...')
+                    exit(-1)
 
-        if checksum != checksum2:
-            print('Error!!! Checksums not equal: {} vs {}'.format(checksum, checksum2))
-            break
-        else:
-            print('Checksums equal: {} vs {}'.format(checksum, checksum2))
+            # Get output value
 
+            with subprocess.Popen('./' + executable2, stdout=subprocess.PIPE, shell=True) as c_p:
+                for lines in c_p.stdout:
+                    line = lines.decode("utf-8")
+                    # print('[x]>' + line)
 
+                    if not line.startswith('checksum = '):
+                        # print('no chksum');
+                        continue
+                    else:
+                        # print('line with chksum. value: {}'.format(line));
+                        pass
 
+                    checksum2 = line
 
-    print('--- End Test ---')
+                    self.assertEqual(checksum, checksum2)
+
+                c_p.wait()
+
+            self.assertEqual(checksum, checksum2)
+
+        print('--- End Test. Non-terminating: {} ---'.format(num_nonterminate))

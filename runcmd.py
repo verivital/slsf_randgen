@@ -2,6 +2,9 @@ import subprocess
 import threading
 
 class RunCmd(threading.Thread):
+
+    p = None
+
     def __init__(self, cmd, timeout):
         threading.Thread.__init__(self)
         self.cmd = cmd
@@ -12,8 +15,10 @@ class RunCmd(threading.Thread):
         self.p.wait()
 
     def go(self):
+        
         self.start()
         self.join(self.timeout)
+        
 
         if self.is_alive():
             # self.p.terminate()      #use self.p.kill() if process needs a kill -9
@@ -22,5 +27,14 @@ class RunCmd(threading.Thread):
             print('..Does not Terminate..')
             return False
         
-        print('..Terminates!..')
+        # print('..Terminates!..')
+
+        if self.p is None or self.p.returncode != 0:
+            raise CrashedWhileTerminationCheck();
+        
         return True
+
+
+
+class CrashedWhileTerminationCheck(Exception):
+    pass

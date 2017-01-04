@@ -1,5 +1,5 @@
 num_run = 1;    % Number of times the outer loop will run
-gen_random_c = true; % Will generate a random c code using csmith if set to `true`
+gen_random_c = false; % Will generate a random c code using csmith if set to `true`
 
 % gcc_opt_flags = {'-O0', '-O1', '-O2', '-O3', '-Os'}; % We will build using these compiler opt flags
 gcc_opt_flags = {'-O0'}; % We will build using these compiler opt flags
@@ -13,11 +13,14 @@ while num_run > 0
     if gen_random_c
         disp('Calling csmith...');
         [status, cmdout] = system('./run_from_matlab.py');
+        
+        cmdout
 
         if status ~= 0
             disp('[!] Skipping this run as does not terminate.');
-            cmdout
-            continue;
+%             cmdout
+%             continue;
+            break; % Just for curiocity
         end
 
         disp('csmith returned terminating program.')

@@ -17,7 +17,7 @@ import os
 import signal
 import shutil
 
-from runcmd import RunCmd
+from runcmd import RunCmd, CrashedWhileTerminationCheck
 from pro_csmith import ProCSmith
 
 TIMEOUT = 10  # The generated C program is allowed this much seconds to terminate.
@@ -35,6 +35,12 @@ class Multi_RandC_Generator():
         self.CSMITH_ARGS = [
             'csmith', '--no-unions', '--no-structs', '--suffix-main', '--no-argc'
         ]
+
+        # In some Ubuntu (e.g. 16.04) there is problem when using Matlab's libstdc. As a workaround, we have to 
+        # use the system's libstdc. Use command `locate libstdc++.so` to know the path. If not found, use
+        # `sudo apt-get install libstdc++6` to install.
+        # If not needed, set to None.
+        self.path_to_libstd = '/usr/lib/x86_64-linux-gnu/libstdc++.so.6'
 
         # Internal variables
         self._main_func = 'int main(void){\n  static int top=0;\n  switch (top){\n'
@@ -105,6 +111,7 @@ class Multi_RandC_Generator():
             print('Now running executable...')
             return RunCmd(('./{}'.format(executable),), TIMEOUT).go()
 
+
     def go(self):
         # Use this function to generate multiple main functions
         self._generate_multi()
@@ -112,26 +119,50 @@ class Multi_RandC_Generator():
 
     def go_pro(self):
         # Use this function to generate ONE main function that can be safely called over and over
+        print('Inside Go_PRO....')
         current_file_name = 'current.c'
         
         while True:
 
             with open(current_file_name, 'w') as current_write:
+
+                old_env = None
+
+                if self.path_to_libstd is not None:
+                    try:
+                        old_env = os.environ['LD_LIBRARY_PATH']
+                        print('Changing env LD_LIBRARY_PATH. OLD env: {}\nNEW env: {}'.format(old_env, self.path_to_libstd))
+                        os.environ['LD_LIBRARY_PATH'] = self.path_to_libstd
+                    except Exception:
+                        pass
+                # else:
+                #     print('Not setting ld environment')
+                    
+                # with subprocess.Popen(('./mycsmith.sh'), stdout=current_write, shell=True) as c_p:
                 with subprocess.Popen(('csmith', '--no-structs', '--no-unions', '--no-arrays', '--no-argc'), stdout=current_write) as c_p:
                     c_p.wait()
+
+                if old_env is not None:
+                    os.environ['LD_LIBRARY_PATH'] = old_env
 
             print('[!] current.c Generated! Now check for termination...') 
             
             # Check for termination
 
-            if self._terminates(current_file_name):
-                print('Terminated!')
-                break
-            else:
-                print('Not terminated, continue...')
+            try:
 
-        processed_file = 'randgen.c'
-        pc = ProCSmith(current_file_name, processed_file)
+                if self._terminates(current_file_name):
+                    print('Terminated!')
+                    break
+                else:
+                    print('Not terminated, continue...')
+            except CrashedWhileTerminationCheck:
+                print('Fatal: Program crashed while checking termination')
+                sys.exit(-2) 
+
+
+        # processed_file = 'randgen.c'
+        pc = ProCSmith(current_file_name, None)
 
         pc.parse()
 
@@ -208,6 +239,10 @@ def copy_files():
 # print('[x] Returning successfully from python script');
 # sys.exit(0)
 
-Multi_RandC_Generator(1).go_pro()
+try:
+    Multi_RandC_Generator(1).go_pro()
 
-print('--DONE--')
+    print('--DONE--')
+except Exception as e:
+    print('Exception in run_from_matlab.py: {}'.format(e));
+    sys.exit(-1) 
