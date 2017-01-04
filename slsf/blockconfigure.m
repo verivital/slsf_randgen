@@ -103,7 +103,11 @@ classdef blockconfigure < handle
             d.(util.mvn('simulink/Continuous/VariableTransportDelay')) = t;
             
             
-            
+            % simulink/Logic and BitOperations/Combinatorial Logic
+            t = {
+                bcprops('TruthTable', {'int', [0 1]}, [2 1], 'm')
+            };
+            d.(util.mvn('simulink/Logic and BitOperations/Combinatorial Logic')) = t;
             
             % Save All
             

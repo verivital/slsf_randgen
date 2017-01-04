@@ -33,7 +33,7 @@ classdef simple_generator < handle
         inner_model_num_blocks = 4;     % Number of blocks for models whose `current_hierarchy_level` is > 1 % TODO
         
 %         simul;                      % Instance of simulator class
-        max_simul_attempt = 10;
+        max_simul_attempt = 15;
         
         close_model = true;         % Close after simulation
         
@@ -100,10 +100,8 @@ classdef simple_generator < handle
             
                 obj.get_candidate_blocks();
                 
-%                 ret = true;
-%                 return;
-
                 obj.draw_blocks();
+               
 
                 obj.chk_compatibility();
                 
@@ -114,9 +112,9 @@ classdef simple_generator < handle
                 
                 fprintf('--Done Connecting!--\n');
 
-    %             disp('Returning abruptly');
-    %             ret = true;
-    %             return;
+%                 disp('Returning abruptly');
+%                 ret = true;
+%                 return;
 
             else
                 % Use pre-generated model
@@ -544,14 +542,13 @@ classdef simple_generator < handle
         
         function ret = get_all_simulink_blocks(obj)
 %             ret = {'simulink/Sources/Constant', 'simulink/Sinks/Scope', 'simulink/Sources/Constant', 'simulink/Sinks/Display', 'simulink/Math Operations/Add'};
-            bc = obj.blkchooser;
-            
-            if isempty(bc)
-                bc = blockchooser();
+
+            if isempty(obj.blkchooser)
+                obj.blkchooser = blockchooser();
             end
             
-            ret = bc.get(obj.current_hierarchy_level, obj.max_hierarchy_level, obj.NUM_BLOCKS);
-            obj.my_result.block_sel_stat = bc.selection_stat;
+            ret = obj.blkchooser.get(obj.current_hierarchy_level, obj.max_hierarchy_level, obj.NUM_BLOCKS);
+            obj.my_result.block_sel_stat = obj.blkchooser.selection_stat;
         end
         
         
@@ -663,7 +660,8 @@ classdef simple_generator < handle
                 try
                     add_line(obj.sys, t_o, t_i, 'autorouting','on')
                 catch e
-                    fprintf('Error while connecting: %s\n', e.identifier);
+                    fprintf('Error while connecting. Exception: %s\n', e.identifier);
+                    fprintf('add_line(''%s\'', ''%s'', ''%s'', ''autorouting'', ''on'')\n', obj.sys, t_o, t_i);
                     fprintf('[!] Giving up... RETURNGING FROM BLOCK CONNECTION...\n');
                     break;
                 end
@@ -791,6 +789,21 @@ classdef simple_generator < handle
         end
         
         
+        function obj = set_sample_time_for_discrete_blk(obj, h, blk)
+            if ~ blk{2}
+                disp('NOT A DISCRETE BLOCK. RETURN');
+                return;
+            end
+            
+            disp('DISCRETE BLK!');
+            
+            try
+                set_param(h, 'SampleTime', '1');  % TODO random choose sample time?
+            catch e
+            end
+                
+        end
+        
         
         function obj = draw_blocks(obj)
             % Draw blocks in the screen
@@ -806,6 +819,11 @@ classdef simple_generator < handle
             disp(obj.candi_blocks);
 
             for block_name = obj.candi_blocks
+                % Warning: block_name could be a string or a cell. This is
+                % a string if the block is pre-added. Cell otherwise, where
+                % first element of the cell is the block name and 2nd
+                % element is boolean: whether the block is discrete.
+                
                 cur_blk = cur_blk + 1;          % Create block name
                 
                 is_preadded_block = cur_blk <= obj.num_preadded_blocks;
@@ -831,7 +849,8 @@ classdef simple_generator < handle
                     h = get_param([obj.sys this_blk_name], 'handle');
                     set_param(h,'Position',pos);
                 else
-                    h = add_block(block_name{1}, [obj.sys, this_blk_name], 'Position', pos);
+                    h = add_block(block_name{1}{1}, [obj.sys, this_blk_name], 'Position', pos);
+                    obj.set_sample_time_for_discrete_blk(h, block_name{1});
                 end
                 
                 % Save the handle of this new block. Accessing a block by
@@ -844,10 +863,10 @@ classdef simple_generator < handle
                 if is_preadded_block
                     blk_type = get_param(h, 'blocktype');
                 else
-                    blk_type = block_name{1};
+                    blk_type = block_name{1}{1};
                 end
                 
-                if blockchooser().is_hierarchy_block(blk_type)
+                if obj.blkchooser.is_hierarchy_block(blk_type)
                     fprintf('Hierarchy block %s found.\n', this_blk_name);
 
                     mdl_name = obj.handle_hierarchy_blocks();
@@ -856,26 +875,22 @@ classdef simple_generator < handle
                     set_param(h, 'ModelNameDialog', mdl_name);
                 end
 
-                if blockchooser().is_submodel_block(blk_type)
+                if obj.blkchooser.is_submodel_block(blk_type)
                     fprintf('Submodel block %s found.\n', this_blk_name);
                     obj.handle_submodel_creation(this_blk_name, obj.sys);
                 end
                 
-
-                % Get its inputs and outputs
-                ports = get_param(h, 'Ports');
-
-                obj.slb.new_block_added(cur_blk, ports);
-                
                 % Configure block parameters
                 
-                if is_preadded_block
-                    obj.config_block(h, get_param(h, 'blocktype'), this_blk_name);
-                else
-                    obj.config_block(h, block_name{1}, this_blk_name);
-                end
+                
+                obj.config_block(h, blk_type, this_blk_name);
+                
                 
                 %%%%%%% Done configuring block %%%%%%%%%
+                
+                % Get its inputs and outputs
+                ports = get_param(h, 'Ports');
+                obj.slb.new_block_added(cur_blk, ports);
 
                 % Update x
                 x = h_len;
@@ -936,8 +951,8 @@ classdef simple_generator < handle
         
         
         function ret=handle_hierarchy_blocks(obj)
-            ret = 'nil';
-            return;                                                             % TODO
+%             ret = 'nil';
+%             return;                                                             % TODO
             model_name = ['hier' int2str(util.rand_int(1, 10000, 1))]; % TODO fix Max number
             
             SIMULATE_MODELS = false;
@@ -990,8 +1005,7 @@ classdef simple_generator < handle
             
             full_model_name = [parent_model blk_name];
             
-            hg = submodel_generator(1, full_model_name, SIMULATE_MODELS, CLOSE_MODEL, LOG_SIGNALS, SIMULATION_MODE, COMPARE_SIM_RESULTS);                      
-%             hg = submodel_generator(obj.inner_model_num_blocks, full_model_name, SIMULATE_MODELS, CLOSE_MODEL, LOG_SIGNALS, SIMULATION_MODE, COMPARE_SIM_RESULTS);
+            hg = submodel_generator(obj.inner_model_num_blocks, full_model_name, SIMULATE_MODELS, CLOSE_MODEL, LOG_SIGNALS, SIMULATION_MODE, COMPARE_SIM_RESULTS);                      
 
             hg.max_hierarchy_level = obj.max_hierarchy_level;
             hg.current_hierarchy_level = obj.current_hierarchy_level + 1;
@@ -1019,6 +1033,33 @@ classdef simple_generator < handle
             end
         end
         
+        function obj = random_config_block(obj, h, blk_type, blk_name)
+%             fprintf(' --> Random config %s\n', blk_name);
+            
+            bp_data = get_param(h, 'DialogParameters');
+            try
+                bp_names = fieldnames(bp_data);
+            catch e
+                % TODO
+                return;
+            end
+
+            % Enumerating all parameters of a block
+            for j=1:numel(bp_names)
+                cur_param_name = bp_names{j};
+                cur_param_all = bp_data.(cur_param_name);
+
+                if strcmp(cur_param_all.Type, 'enum')
+                    % enum
+%                     fprintf('Enum found\n');
+                    try
+                        set_param(h, cur_param_name, cur_param_all.Enum{1}); % TODO
+                    catch e
+                    end
+                end
+            end
+        end
+        
         
         
         function obj=config_block(obj, h, blk_type, blk_name)
@@ -1032,6 +1073,8 @@ classdef simple_generator < handle
                 bp = get_param(h, 'DialogParameters');
                 disp(bp);
             end
+            
+%             obj.random_config_block(h, blk_type, blk_name);
             
             if isempty(found)
                 disp(['[!] Did not find config db for block ', blk_type]);

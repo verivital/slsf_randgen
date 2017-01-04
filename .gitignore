@@ -36,3 +36,4 @@ out.c
 pro_output.c
 *.pyc
 temptestprocsmith.c
+slsf/reportsneo/*

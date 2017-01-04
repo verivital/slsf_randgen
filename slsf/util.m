@@ -23,22 +23,48 @@ classdef util < handle
             end
         end
         
-        
-        
-        
-        function h = select_me_or_parent(inner)
+        function h = select_me_or_parent(inner, my_level)
             % If `inner` is a block inside a subsystem, then get the parent
             % block.
-            parent = get_param(inner, 'parent');
-                    
-            if strcmp(get_param(parent, 'Type'), 'block')
-                disp('WILL FETCH PARENT');
-                h = get_param(get_param(inner, 'parent'), 'Handle');
-            else
-                 disp('NOT fetching PARENT');
+            
+            if nargin < 2
+                my_level = 1;
+            end
+            
+            disp('INSIDE: Select me or parent');
+            my_full_name = getfullname(inner);
+            fprintf('Subject: %s\n', my_full_name);
+            
+            slash_pos = strfind(my_full_name, '/');
+            
+            desired_slash_pos = my_level + 1;
+            
+            if numel(slash_pos) < desired_slash_pos
+                disp('Not Fetching Parent!');
                 h = inner;
+            else
+                h = my_full_name(1: (slash_pos(desired_slash_pos) - 1));
+                fprintf('Fetched this parent: %s\n', getfullname(h));
             end
         end
+        
+        
+%         function h = select_me_or_parent(inner)
+%             % If `inner` is a block inside a subsystem, then get the parent
+%             % block.
+%             disp('INSIDE: Select me or parent');
+%             my_full_name = getfullname(inner);
+%             fprintf('Subject: %s\n', my_full_name);
+%             parent = get_param(inner, 'parent');
+%                     
+%             if strcmp(get_param(parent, 'Type'), 'block')
+%                 disp('WILL FETCH PARENT');
+%                 h = get_param(get_param(inner, 'parent'), 'Handle');
+%             else
+%                  disp('NOT fetching PARENT');
+%                 h = inner;
+%             end
+%         end
         
         
         function m = map_inc(m, k)
@@ -104,6 +130,15 @@ classdef util < handle
         end
         
         
+        function getBlocksOfLibrary_PrettyPrint(lib)
+            all_blocks = find_system(['Simulink/' lib]);
+            
+            for i=1:numel(all_blocks)
+                disp(all_blocks{i})
+            end
+        end
+        
+        
         function post_model_gen(sg)
             disp(halum);
         end
@@ -143,7 +178,7 @@ classdef util < handle
         
         
         function found=cell_str_in(hay, needle)
-            % Returns true if `needle` is one of the elements of matrix `hay`
+            % Returns true if `needle` is one of the elements of cell `hay`
             found = false;
             
             for i = 1:numel(hay)
@@ -155,7 +190,7 @@ classdef util < handle
         end
         
         function found=cell_in(hay, needle)
-            % Returns true if `needle` is one of the elements of matrix `hay`
+            % Returns true if `needle` is one of the elements of cell `hay`
             found = false;
             
             for i = 1:numel(hay)
@@ -163,6 +198,17 @@ classdef util < handle
                     found = true;
                     return
                 end
+            end
+        end
+        
+        function inspect_parameters(elem)
+            x = get_param(elem, 'ObjectParameters');
+            fn = fieldnames(x);
+            for i=1:numel(fn)
+                fn_i = fn{i};
+                fprintf('************************** %s **********************\n', fn_i);
+                get_param(elem, fn_i)
+                x.(fn_i)
             end
         end
         

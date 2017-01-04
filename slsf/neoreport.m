@@ -1,11 +1,11 @@
-function [big_total, big_timedout] = getreport(datefrom)
+function [big_total, big_timedout] = neoreport(datefrom)
     %%% datefrom is string in format 'yyyy-MM-dd-HH-mm-ss'
     
     break_after_single = true;
 
-    report_dir = 'reports';
+    report_dir = cfg.REPORTSNEO_DIR;
 
-    file_list = dir([report_dir filesep '*.mat']);
+    file_list = dir([report_dir]);
 
     date_from = datetime(datefrom,'InputFormat','yyyy-MM-dd-HH-mm-ss');
 
@@ -35,15 +35,26 @@ function [big_total, big_timedout] = getreport(datefrom)
 
 
     for i = 1:numel(file_list)
-        cur_file = file_list(i).name;
-        cur_files = strsplit(cur_file, '.');
-
-        f_date = datetime(cur_files(1),'InputFormat','yyyy-MM-dd-HH-mm-ss');
+        
+        cur_file = file_list(i).name
+        
+        if ~file_list(i).isdir || strcmp(cur_file, '.') || strcmp(cur_file, '..')
+            disp('Not a directory.... ignoring.');
+            continue;
+        end
+        
+        
+        f_date = datetime(cur_file,'InputFormat','yyyy-MM-dd-HH-mm-ss');
 
         if f_date >= date_from
             fprintf('Processing file %s...\n', cur_file);
 
-            load([report_dir filesep cur_file]);
+            try
+                load([report_dir filesep cur_file filesep 'reports.mat']);
+            catch e
+                disp('Didnt find reports.mat file. Skipping....');
+                continue;
+            end
 
             cur_file_index = cur_file_index + 1;
 
