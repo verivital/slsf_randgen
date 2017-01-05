@@ -14,6 +14,12 @@ classdef sfuncreator
             
             atoz = char('a' : 'z');
             ret = atoz(randi([1 26], 1, 12));
+            
+            if ~cfg.CSMITH_CREATE_C
+                fprintf('(( !! )) Not Calling Csmith\n');
+                return;
+            end
+            
             sfname = [ret '.c'];
             
             [status, cmdout] = system(['./csmith_gen.py --sfname ' sfname]);

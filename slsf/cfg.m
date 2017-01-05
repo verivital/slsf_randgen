@@ -4,7 +4,8 @@ classdef cfg
     
     properties(Constant = true)
         NUM_TESTS = 100;                        % Number of models to generate
-
+        CSMITH_CREATE_C = true;                 % Will call Csmith to create C files. Set to False if reproducing.
+        
         SIMULATE_MODELS = true;                 % To simulate generated model
 
         LOG_SIGNALS = true;                     % To log all output signals for comparison
