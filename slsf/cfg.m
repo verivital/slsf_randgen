@@ -25,7 +25,7 @@ classdef cfg
         CLOSE_MODEL = true;                    % Close models after simulation
         CLOSE_OK_MODELS = true;                % Close models for which simulation ran OK
 
-        NUM_BLOCKS = 50;                    % Number of blocks in each model. Give single number or a matrix [minval maxval]. Example: "5" will create models with exactly 5 blocks. "[5 10]" will choose a value randomly between 5 and 10.
+        NUM_BLOCKS = 100;                    % Number of blocks in each model. Give single number or a matrix [minval maxval]. Example: "5" will create models with exactly 5 blocks. "[5 10]" will choose a value randomly between 5 and 10.
 
         MAX_HIERARCHY_LEVELS = 1;               % Minimum value is 1 indicating a flat model with no hierarchy.
 
@@ -38,19 +38,20 @@ classdef cfg
 
         USE_SIGNAL_LOGGING_API = true;          % If true, will use Simulink's Signal Logging API, otherwise adds Outport blocks to each block of the top level model
         SIMULATION_MODE = {'accelerator'};      % See 'SimulationMode' parameter in http://bit.ly/1WjA4uE
-        COMPILER_OPT_VALUES = {'off'};          % Compiler opt. values of Accelerator and Rapid Accelerator modes
+        COMPILER_OPT_VALUES = {'off', 'on'};          % Compiler opt. values of Accelerator and Rapid Accelerator modes
 
         BREAK_AFTER_COMPARE_ERR = true;
         
-        SL_SIM_TIMEOUT = 24;
+        SL_SIM_TIMEOUT = 100;
         
         SL_BLOCKLIBS = {
-           struct('name', 'Discrete', 'num', 0.45)
-%              struct('name', 'Continuous', 'num', 0.45)
-%             struct('name', 'Math Operations', 'num', 10)
-            struct('name', 'Logic and Bit Operations', 'num', 0.15)
-            struct('name', 'Sinks', 'num', 0.15)
-            struct('name', 'Sources', 'num', 0.15)
+           struct('name', 'Discrete', 'is_blk', false, 'num', 0.3)
+             struct('name', 'Continuous', 'is_blk', false,  'num', 0.3)
+%             struct('name', 'Math Operations', 'is_blk', false, 'num', 10)
+%             struct('name', 'Logic and Bit Operations', 'is_blk', false, 'num', 0.15)
+            struct('name', 'Sinks', 'is_blk', false, 'num', 0.15)
+            struct('name', 'Sources', 'is_blk', false, 'num', 0.15)
+            struct('name', 'Simulink/User-Defined Functions/S-Function', 'is_blk', true, 'num', 0.10)
         };
     
         SL_BLOCKS_BLACKLIST = {
@@ -65,6 +66,8 @@ classdef cfg
             'simulink/Sinks/StopSimulation'
         };
     
+        % ALLOW LIST: LOOKS LIKE ALLOW_LIST IS NOT IMPLEMENTED.
+    
         SL_HIERARCHY_BLOCKS = {'simulink/Ports & Subsystems/Model'};                    % Blocks used to create child models
         SL_SUBSYSTEM_BLOCKS = {'simulink/Ports & Subsystems/For Each Subsystem'};       % Blocks used to create subsystem
 
@@ -75,8 +78,8 @@ classdef cfg
         REPORTSNEO_DIR = 'reportsneo';
         
         STOP_IF_LISTED_ERRORS = true;  % If any of the errors from the list below occurs, break even if STOP_IF_ERROR == true.
-%         STOP_ERRORS_LIST = {};
-        STOP_ERRORS_LIST = {'Simulink:Engine:SolverConsecutiveZCNum', 'Simulink:blocks:SumBlockOutputDataTypeIsBool'};
+        STOP_ERRORS_LIST = {};
+%         STOP_ERRORS_LIST = {'Simulink:Engine:SolverConsecutiveZCNum', 'Simulink:blocks:SumBlockOutputDataTypeIsBool'};
     end
     
     methods

@@ -33,7 +33,12 @@ WSVAR_BACKUP_DIR = ['data' filesep 'backup'];
 
 if cfg.LOAD_RNG_STATE
     % Backup the variable first
-    copyfile(WS_FILE_NAME, [REPORTS_BASE filesep WS_FILE_NAME_ACTUAL]);
+    try
+        copyfile(WS_FILE_NAME, [REPORTS_BASE filesep WS_FILE_NAME_ACTUAL]);
+    catch e
+        disp('FATAL: did not find previous state of random generator. Try setting `LOAD_RNG_STATE = false` in `cfg.m` file');
+        return;
+    end
     disp('Restoring RNG state from disc')
     load(WS_FILE_NAME);
 end
@@ -200,17 +205,17 @@ for ind = 1:cfg.NUM_TESTS
                     err_key = ['AfterError_' e.message];
                     e_later = util.map_inc(e_later, e.message);
                     
-                    if LOG_ERR_MODEL_NAMES
+                    if cfg.LOG_ERR_MODEL_NAMES
                         err_model_names = util.map_append(err_model_names, err_key, model_name);
                     end
                     
-                    util.cond_save_model(SAVE_ALL_ERR_MODELS, model_name, ERR_MODEL_STORAGE, sg.my_result);
+                    util.cond_save_model(cfg.SAVE_ALL_ERR_MODELS, model_name, ERR_MODEL_STORAGE, sg.my_result);
                     
                 case {'RandGen:SL:CompareError'}
                     fprintf('Compare Error occurred...\n');
                     num_compare_error = num_compare_error + 1;
                     compare_err_model_names.add(model_name);
-                    util.cond_save_model(SAVE_COMPARE_ERR_MODELS, model_name, COMPARE_ERR_MODEL_STORAGE, sg.my_result);
+                    util.cond_save_model(cfg.SAVE_COMPARE_ERR_MODELS, model_name, COMPARE_ERR_MODEL_STORAGE, sg.my_result);
                     
                     if cfg.BREAK_AFTER_COMPARE_ERR
                         fprintf('COMPARE ERROR... BREAKING');
@@ -346,8 +351,9 @@ for ind = 1:cfg.NUM_TESTS
 end
 
 % Clean-up
+delete('*.c');
 delete('*.mat');
-delete('*_acc.mexa64');
+delete('*.mexa64');
 delete('*_msf.*');  % Files generated in Windows
 
 disp('----------- SGTEST END -------------');

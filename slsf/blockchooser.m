@@ -107,21 +107,27 @@ classdef blockchooser < handle
                 
                 fprintf('Choosing %d elements from %s\n', counts(i), c.name);
                 
-                all_blocks = find_system(['Simulink/' c.name]);
-                num_all_blocks = numel(all_blocks) - 1; % Skip the first
-                
-                rand_vals = randi([2, num_all_blocks], 1, counts(i)); % Generates starting at 2
-            
-                for index = 1:counts(i)
-                    now_blk = all_blocks{rand_vals(index)};
-                    
-                    while isfield(obj.blocklist, util.mvn(now_blk))
-                        i_rand = randi([2, num_all_blocks], 1, 1);
-                        now_blk = all_blocks{i_rand};
-                    end
+                if c.is_blk
+                    for index = 1:counts(i)
+                        ret.add({c.name, is_discrete});
+                    end 
+                else
+                    all_blocks = find_system(['Simulink/' c.name]);
+                    num_all_blocks = numel(all_blocks) - 1; % Skip the first
 
-                    ret.add({now_blk, is_discrete});
-                end                
+                    rand_vals = randi([2, num_all_blocks], 1, counts(i)); % Generates starting at 2
+
+                    for index = 1:counts(i)
+                        now_blk = all_blocks{rand_vals(index)};
+
+                        while isfield(obj.blocklist, util.mvn(now_blk))
+                            i_rand = randi([2, num_all_blocks], 1, 1);
+                            now_blk = all_blocks{i_rand};
+                        end
+
+                        ret.add({now_blk, is_discrete});
+                    end 
+                end
              
             end
             

@@ -104,6 +104,10 @@ classdef util < handle
             % Conditionally save `mdl_name` only when `cond` is true
             if cond
                 save_system(mdl_name, [store_dir filesep mdl_name '.slx']);
+                % Save S-functions
+                for i=1:my_result.sfuns.len
+                    copyfile([my_result.sfuns.get(i) '*'], store_dir)
+                end
                 % Also save the sub-models generated in this phase
                 for i = 1:my_result.hier_models.len
                     hier_mdl = my_result.hier_models.get(i);

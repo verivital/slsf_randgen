@@ -19,8 +19,18 @@ classdef mymap < handle
    end
     
     methods
-        function obj = mymap()
+        function obj = mymap(varargin)
             obj.data = struct;
+            
+            if nargin >0
+%                 disp('MyMap called with argument!');
+                for i = 1:2:numel(varargin)
+                    obj.put(varargin{i}, varargin{i+1});
+                end
+%             else
+%                 disp('MyMap with NO arguments');
+            end
+            
         end
         
         

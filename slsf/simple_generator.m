@@ -7,6 +7,8 @@ classdef simple_generator < handle
        LIST_BLOCK_PARAMS = false;    % Will list all dialog parameters of a block which is chosen for current chart
        LIST_CONN = false;            % If true will print info when connecting blocks
        
+       blk_construction = mymap('Simulink/User-Defined Functions/S-Function', 'bcsfunction');
+       
     end
     
     properties
@@ -560,6 +562,18 @@ classdef simple_generator < handle
             end
         end
         
+        function obj = bcsfunction(obj, h)
+            fprintf('BLOCK CONSTRUCTION S FUNCTION..... !!!!!\n');
+            sfcreator = sfuncreator();
+            sfname = sfcreator.go();
+            if obj.current_hierarchy_level == 1
+                obj.my_result.sfuns.add(sfname);
+            else
+                obj.root_result.sfuns.add(sfname);
+            end
+            set_param(h, 'FunctionName', sfname)
+        end
+        
         
         
         function obj = connect_blocks(obj)
@@ -865,6 +879,14 @@ classdef simple_generator < handle
                 else
                     blk_type = block_name{1}{1};
                 end
+                                
+                if obj.blk_construction.contains(blk_type)
+%                     disp('matched!');
+                    obj.(obj.blk_construction.get(blk_type))(h)
+%                 else
+%                     disp('not matched!')
+                end
+                    
                 
                 if obj.blkchooser.is_hierarchy_block(blk_type)
                     fprintf('Hierarchy block %s found.\n', this_blk_name);

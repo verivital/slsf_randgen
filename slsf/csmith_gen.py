@@ -16,6 +16,7 @@ import sys
 import os
 import signal
 import shutil
+import argparse
 
 from runcmd import RunCmd, CrashedWhileTerminationCheck
 from pro_csmith import ProCSmith
@@ -117,7 +118,7 @@ class Multi_RandC_Generator():
         self._generate_multi()
         copy_files()
 
-    def go_pro(self):
+    def go_pro(self, sfname='staticsfun.c'):
         # Use this function to generate ONE main function that can be safely called over and over
         print('Inside Go_PRO....')
         current_file_name = 'current.c'
@@ -166,8 +167,20 @@ class Multi_RandC_Generator():
 
         pc.parse()
 
-        copy_files_pro(pc)
 
+        # Write the ultimate sfunction file
+
+        with open(sfname, 'w') as outfile:
+            outfile.write(pc.get_output())
+            outfile.write('\n\n#define S_FUNCTION_NAME  ' + sfname.split('.')[0] + '\n')
+            outfile.write(EE_POST)
+
+            # for fname in filenames:
+            #     with open(fname) as infile:
+            #         for line in infile:
+            #             outfile.write(line)
+
+            outfile.write(pc.create_mdlOutputs())
 
 
     def _append(self, big_file, little_file):
@@ -181,32 +194,34 @@ class Multi_RandC_Generator():
 
 p_randgen = None
 
-def copy_files_pro(processor):
-    """
-        Used to concat multiple files into one single file
-    """
-    filenames = ['ee_post.c']
-    with open('staticsfun.c', 'w') as outfile:
+# def copy_files_pro(processor, sfname):
+#     """
+#         Used to concat multiple files into one single file
+#     """
+#     # filenames = ['ee_post.c']
+#     with open(sfname, 'w') as outfile:
 
-        outfile.write(processor.get_output())
+#         outfile.write(processor.get_output())
+#         outfile.write('\n#define S_FUNCTION_NAME  ' + sfname.split('.')[0] + '\n')
+#         outfile.write(EE_POST)
 
-        for fname in filenames:
-            with open(fname) as infile:
-                for line in infile:
-                    outfile.write(line)
+#         # for fname in filenames:
+#         #     with open(fname) as infile:
+#         #         for line in infile:
+#         #             outfile.write(line)
 
-        outfile.write(processor.create_mdlOutputs())
+#         outfile.write(processor.create_mdlOutputs())
 
-def copy_files():
-    """
-        Used to concat multiple files into one single file
-    """
-    filenames = ['randgen.c', 'ee_post.c']
-    with open('staticsfun.c', 'w') as outfile:
-        for fname in filenames:
-            with open(fname) as infile:
-                for line in infile:
-                    outfile.write(line)
+# def copy_files():
+#     """
+#         Used to concat multiple files into one single file
+#     """
+#     filenames = ['randgen.c', 'ee_post.c']
+#     with open('staticsfun.c', 'w') as outfile:
+#         for fname in filenames:
+#             with open(fname) as infile:
+#                 for line in infile:
+#                     outfile.write(line)
 
 
 # try:
@@ -239,10 +254,90 @@ def copy_files():
 # print('[x] Returning successfully from python script');
 # sys.exit(0)
 
-try:
-    Multi_RandC_Generator(1).go_pro()
+EE_POST = """
+#define S_FUNCTION_LEVEL 2
 
-    print('--DONE--')
-except Exception as e:
-    print('Exception in run_from_matlab.py: {}'.format(e));
-    sys.exit(-1) 
+#include "simstruc.h"
+/*#include "randgen.c"*/
+
+/*================*
+ * Build checking *
+ *================*/
+
+
+/* Function: mdlInitializeSizes ===============================================
+ * Abstract:
+ *   Setup sizes of the various vectors.
+ */
+static void mdlInitializeSizes(SimStruct *S)
+{
+    ssSetNumSFcnParams(S, 0);
+    if (ssGetNumSFcnParams(S) != ssGetSFcnParamsCount(S)) {
+        return; /* Parameter mismatch will be reported by Simulink */
+    }
+
+    if (!ssSetNumInputPorts(S, 1)) return;
+    ssSetInputPortWidth(S, 0, DYNAMICALLY_SIZED);
+    ssSetInputPortDirectFeedThrough(S, 0, 1);
+
+    if (!ssSetNumOutputPorts(S,1)) return;
+    ssSetOutputPortWidth(S, 0, DYNAMICALLY_SIZED);
+
+    ssSetNumSampleTimes(S, 1);
+
+    /* specify the sim state compliance to be same as a built-in block */
+    ssSetSimStateCompliance(S, USE_DEFAULT_SIM_STATE);
+
+    /* Take care when specifying exception free code - see sfuntmpl_doc.c */
+    ssSetOptions(S,
+                 SS_OPTION_WORKS_WITH_CODE_REUSE |
+                 SS_OPTION_EXCEPTION_FREE_CODE);
+    /*main();*/
+}
+
+
+/* Function: mdlInitializeSampleTimes =========================================
+ * Abstract:
+ *    Specifiy that we inherit our sample time from the driving block.
+ */
+static void mdlInitializeSampleTimes(SimStruct *S)
+{
+    ssSetSampleTime(S, 0, INHERITED_SAMPLE_TIME);
+    ssSetOffsetTime(S, 0, 0.0);
+    ssSetModelReferenceSampleTimeDefaultInheritance(S); 
+}
+
+
+/* Function: mdlTerminate =====================================================
+ * Abstract:
+ *    No termination needed, but we are required to have this routine.
+ */
+static void mdlTerminate(SimStruct *S)
+{
+}
+
+"""
+
+if __name__ == '__main__':
+
+    print('FROM CSMITH_GEN.PY....');
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--sfname", help='Name of the S-Function file.')
+    args = parser.parse_args()
+
+    # if args.sfname:
+    #     print('sf name: {}'.format(args.sfname))
+    # else:
+    #     print('no name provided.');
+
+    # sys.exit(0)
+
+    try:
+        Multi_RandC_Generator(1).go_pro(args.sfname)
+        print('--RETURNING FROM CSMITH_GEN.PY--')
+        sys.exit(0)
+    except Exception as e:
+        print('Exception in CSMITH_GEN.py: {}'.format(e));
+        sys.exit(-1) 
+end

@@ -53,6 +53,7 @@ classdef singleresult < handle
         logdata = [];
         
         hier_models = [];           % Names of the models generated as part of the hierarchy. Storing them here so that we can delete them later
+        sfuns = mycell();                 % Names of s-function files. Storing them to here to save later.
         
         block_sel_stat = [];        % Count which library got selected how many times for statistics
         
