@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 import subprocess
+import threading
+
 import os
 import shutil
 from datetime import datetime
@@ -12,11 +14,71 @@ OPT_NUM_RUN = 1
 
 # You can configure more options in slsf/sgtest.m file.
 
+model_count = 0
+lock_model_count = threading.Lock()
+
+
+class MyTimer(threading.Thread):
+
+    prev_mdl_count = None
+    p = None
+
+    def __init__(self, p):
+        threading.Thread.__init__(self)
+        # try:
+        global model_count
+        self.prev_mdl_count = model_count
+        self.p = p
+        # except Exception as e:
+        #     print('Exception in INIT: {}'.format(e))
+
+        
+    def run(self):
+        # try:
+        print('MyTimer: Starting...');
+        time.sleep(20)
+        print('MyTimer: End Timer....');
+
+        global model_count
+
+        if model_count == self.prev_mdl_count:
+            print('Still running prev. Kill it');
+            self.p.kill()
+        else:
+            print('Not running prev. Do nothing');
+        # except Exception as e:
+        #     print('Exception in RUN: {}'.format(e))
+
+
+    # def go(self):
+        
+    #     self.start()
+    #     self.join(self.timeout)
+        
+
+    #     if self.is_alive():
+    #         # self.p.terminate()      #use self.p.kill() if process needs a kill -9
+    #         self.p.kill()
+    #         self.join()
+    #         print('..Does not Terminate..')
+    #         return False
+        
+    #     # print('..Terminates!..')
+
+    #     if self.p is None or self.p.returncode != 0:
+    #         raise CrashedWhileTerminationCheck();
+        
+    #     return True
+
 
 def run_tests():
     """
         This is the entry-point of running all sorts of test in our project.
     """
+
+    global model_count
+    mt = None
+
     try:
         for _ in range(OPT_NUM_RUN):
             try:
@@ -27,6 +89,18 @@ def run_tests():
                 
                         for line in p_ml.stdout:
                             linez = line.decode("utf-8")
+                            if linez.startswith('CyFuzz::NewRun'):
+
+                                print('!!! New Run!!')
+
+                                with lock_model_count:
+                                    model_count = model_count + 1
+                                
+                                print('before calling timer....');
+                                mt = MyTimer(p_ml)
+                                mt.start()
+                                # mt.join()
+
                             print (linez)
                         
                         p_ml.wait()  # Call this to get the returncode correctly.
