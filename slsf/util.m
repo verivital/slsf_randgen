@@ -102,9 +102,14 @@ classdef util < handle
         
         function cond_save_model(cond, mdl_name, store_dir, my_result)
             % Conditionally save `mdl_name` only when `cond` is true
-            if cond
+            if cond && isempty(cfg.USE_PRE_GENERATED_MODEL)
                 save_system(mdl_name, [store_dir filesep mdl_name '.slx']);
                 % Save S-functions
+                
+                for i=1:my_result.sfuns.len
+                    disp(['SFUN: ' my_result.sfuns.get(i)])
+                end
+                
                 for i=1:my_result.sfuns.len
                     copyfile([my_result.sfuns.get(i) '*'], store_dir)
                 end
@@ -214,6 +219,30 @@ classdef util < handle
                 get_param(elem, fn_i)
                 x.(fn_i)
             end
+        end
+        
+        function ret = strip(subject, needle)
+            new_start = 1;
+            len = numel(subject);
+            new_end = len;
+            
+            for i=1:len                
+                if subject(i) == needle
+                    new_start = new_start + 1;
+                else
+                    break;
+                end
+            end
+            
+            for i=1:(len - new_start)
+                if subject(len-i+1) == needle
+                    new_end = new_end - 1;
+                else
+                    break;
+                end
+            end
+            
+            ret = subject(new_start:new_end);
         end
         
         

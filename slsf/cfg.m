@@ -3,12 +3,12 @@ classdef cfg
     %   Detailed explanation goes here
     
     properties(Constant = true)
-        NUM_TESTS = 100;                        % Number of models to generate
-        CSMITH_CREATE_C = true;                 % Will call Csmith to create C files. Set to False if reproducing.
+        NUM_TESTS = 1;                        % Number of models to generate
+        CSMITH_CREATE_C = false;                 % Will call Csmith to create C files. Set to False if reproducing.
         
         SIMULATE_MODELS = true;                 % To simulate generated model
 
-        LOG_SIGNALS = true;                     % To log all output signals for comparison
+        LOG_SIGNALS = true;                     % To log all output signals for comparison. Note: it disregards `USE_PRE_GENERATED_MODEL` setting.
 
         COMPARE_SIM_RESULTS = true;             % To compare simulation results obtained by logging signals.
 
@@ -16,17 +16,20 @@ classdef cfg
         % Put empty ``[]'' to randomly generate models.
 
         USE_PRE_GENERATED_MODEL = [];           
-        % USE_PRE_GENERATED_MODEL = 'potential';  
+%          USE_PRE_GENERATED_MODEL = 'staticmodel';  
 
         LOAD_RNG_STATE = true;                  % Set this `true` if we want to create NEW models each time the script is run. Set to `false` if generating same models at each run of the script is desired. For first time running in a new computer set to false, as this will fail first time if set to true.
 
+        SKIP_IF_LAST_CRASHED = true;            % Skip one model if last time Matlab crashed trying to run the same model.
+        
         STOP_IF_ERROR = false;                  % Stop the script when meet the first simulation error
         STOP_IF_OTHER_ERROR = true;             % Stop the script for errors not related to simulation e.g. unhandled exceptions or code bug. ALWAYS KEEP IT TRUE to detect my own bugs.
 
         CLOSE_MODEL = true;                    % Close models after simulation
         CLOSE_OK_MODELS = true;                % Close models for which simulation ran OK
+        FINAL_CLEAN_UP = false;
 
-        NUM_BLOCKS = 100;                    % Number of blocks in each model. Give single number or a matrix [minval maxval]. Example: "5" will create models with exactly 5 blocks. "[5 10]" will choose a value randomly between 5 and 10.
+        NUM_BLOCKS = 30;                    % Number of blocks in each model. Give single number or a matrix [minval maxval]. Example: "5" will create models with exactly 5 blocks. "[5 10]" will choose a value randomly between 5 and 10.
 
         MAX_HIERARCHY_LEVELS = 1;               % Minimum value is 1 indicating a flat model with no hierarchy.
 
@@ -39,7 +42,7 @@ classdef cfg
 
         USE_SIGNAL_LOGGING_API = true;          % If true, will use Simulink's Signal Logging API, otherwise adds Outport blocks to each block of the top level model
         SIMULATION_MODE = {'accelerator'};      % See 'SimulationMode' parameter in http://bit.ly/1WjA4uE
-        COMPILER_OPT_VALUES = {'off', 'on'};          % Compiler opt. values of Accelerator and Rapid Accelerator modes
+        COMPILER_OPT_VALUES = {'off'};          % Compiler opt. values of Accelerator and Rapid Accelerator modes
 
         BREAK_AFTER_COMPARE_ERR = true;
         

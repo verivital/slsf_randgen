@@ -15,6 +15,7 @@ classdef simple_generator < handle
         NUM_BLOCKS;                 % These many blocks will be placed in chart
         record_runtime = true;
         num_log_len_mismatch_attempt = 5;
+        skip_after_creation = false;    % Skip rest of the experiments with this model after creating it. Reason: it crashed before
         
         slb;                        % Object of class slblocks
         
@@ -93,6 +94,7 @@ classdef simple_generator < handle
         function ret = go(obj)
             % Call this function to start
             obj.p('--- Starting ---');
+            fprintf('CyFuzz::NewRun\n');
             
             ret = false;
             
@@ -125,6 +127,13 @@ classdef simple_generator < handle
                 
                 obj.sys = obj.use_pre_generated_model;
                 open_system(obj.sys);
+            end
+            
+            if obj.skip_after_creation
+                fprintf('Skip_After_Creation: Skipping rest of the experiments after creating the model.\n');
+                obj.my_result.exc = MException('RandGen:SL:SkippedAfterCreation', 'Skipped experiment after model creation.');
+                ret = false;
+                return;
             end
             
             % Set up signal logging even before the simulation
@@ -565,7 +574,7 @@ classdef simple_generator < handle
         function obj = bcsfunction(obj, h)
             fprintf('BLOCK CONSTRUCTION S FUNCTION..... !!!!!\n');
             sfcreator = sfuncreator();
-            sfname = sfcreator.go();
+            sfname = sfcreator.go(obj.skip_after_creation);
             if obj.current_hierarchy_level == 1
                 obj.my_result.sfuns.add(sfname);
             else
@@ -984,6 +993,7 @@ classdef simple_generator < handle
             COMPARE_SIM_RESULTS = false;
             
             hg = hier_generator(obj.inner_model_num_blocks, model_name, SIMULATE_MODELS, CLOSE_MODEL, LOG_SIGNALS, SIMULATION_MODE, COMPARE_SIM_RESULTS);
+            hg.skip_after_creation = obj.skip_after_creation;
             hg.max_hierarchy_level = obj.max_hierarchy_level;
             hg.current_hierarchy_level = obj.current_hierarchy_level + 1;
             
@@ -1028,7 +1038,7 @@ classdef simple_generator < handle
             full_model_name = [parent_model blk_name];
             
             hg = submodel_generator(obj.inner_model_num_blocks, full_model_name, SIMULATE_MODELS, CLOSE_MODEL, LOG_SIGNALS, SIMULATION_MODE, COMPARE_SIM_RESULTS);                      
-
+            hg.skip_after_creation = obj.skip_after_creation;
             hg.max_hierarchy_level = obj.max_hierarchy_level;
             hg.current_hierarchy_level = obj.current_hierarchy_level + 1;
             

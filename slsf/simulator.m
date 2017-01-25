@@ -8,7 +8,7 @@ classdef simulator < handle
         
         sim_status = [];
         
-        fixed_blocks = mymap();
+        fixed_blocks;
         
         
         % Data type fixer related
@@ -25,6 +25,7 @@ classdef simulator < handle
             % CONSTRUCTOR %
             obj.generator = generator;
             obj.max_try = max_try;
+            obj.fixed_blocks = mymap();
         end
         
         

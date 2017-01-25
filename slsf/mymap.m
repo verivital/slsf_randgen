@@ -1,5 +1,5 @@
 classdef mymap < handle
-    %UNTITLED2 HashMap
+    %MYMAP HashMap
     %   Detailed explanation goes here
     
     properties
@@ -31,6 +31,15 @@ classdef mymap < handle
 %                 disp('MyMap with NO arguments');
             end
             
+        end
+        
+        function ret =  create_if_not_exists(obj, k, classn)
+            if obj.contains(k)
+                ret = obj.get(k);
+            else
+                ret = feval(classn);
+                obj.put(k, ret);
+            end
         end
         
         

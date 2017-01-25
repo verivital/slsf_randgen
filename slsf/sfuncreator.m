@@ -9,13 +9,13 @@ classdef sfuncreator
     methods
         
         
-        function ret = go(obj)
+        function ret = go(obj, skip_call_to_csmith)
             fprintf('Calling Csmith Generator...\n');
             
             atoz = char('a' : 'z');
             ret = atoz(randi([1 26], 1, 12));
             
-            if ~cfg.CSMITH_CREATE_C
+            if ~cfg.CSMITH_CREATE_C || skip_call_to_csmith
                 fprintf('(( !! )) Not Calling Csmith\n');
                 return;
             end

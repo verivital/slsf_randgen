@@ -12,7 +12,7 @@ while num_run > 0
     % Generate a csmith program and check whether it terminates
     if gen_random_c
         disp('Calling csmith...');
-        [status, cmdout] = system('./run_from_matlab.py');
+        [status, cmdout] = system('./csmith_gen.py --sfname staticsfun.c');
         
         cmdout
 

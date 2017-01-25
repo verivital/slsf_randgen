@@ -3,7 +3,7 @@ import random
 import re
 import unittest
 
-OPT_NUM_MANY_MAINS = 50
+OPT_NUM_MANY_MAINS = 500
 
 class Var:
     """docstring for Var
@@ -261,9 +261,9 @@ class TestPCMany(unittest.TestCase):
 
     def test_many(self):
 
-        NUM_TESTS  = 1000
+        NUM_TESTS  = 1
         GENERATE_MANY_MAINS = True
-        CREATE_NEW_C = True # To test existing file
+        CREATE_NEW_C = False # To test existing file
 
         import subprocess
         import sys
@@ -272,7 +272,7 @@ class TestPCMany(unittest.TestCase):
         import shutil
         from runcmd import RunCmd
 
-        current_file_name = 'temptestprocsmith.c'
+        current_file_name = 'current.c'
         pro_file_name = 'pro_output.c'
         executable = 'temptestprocsmith.out'
         executable2 = 'temptestprocsmith2.out'

@@ -11,64 +11,50 @@ import time
 # Options
 
 OPT_NUM_RUN = 1
+OPT_SINGLE_MODEL_TIMEOUT = 600
 
 # You can configure more options in slsf/sgtest.m file.
 
-model_count = 0
-lock_model_count = threading.Lock()
+is_killed = False
+lock_is_killed = threading.Lock()
+
+prev_run_crashed = False # Whether previous run of sgtest crashed
 
 
-class MyTimer(threading.Thread):
+# class MyTimer(threading.Thread):
 
-    prev_mdl_count = None
-    p = None
+#     prev_mdl_count = None
+#     p = None
 
-    def __init__(self, p):
-        threading.Thread.__init__(self)
-        # try:
-        global model_count
-        self.prev_mdl_count = model_count
-        self.p = p
-        # except Exception as e:
-        #     print('Exception in INIT: {}'.format(e))
+#     def __init__(self, p):
+#         threading.Thread.__init__(self)
+#         # try:
+#         global model_count
+#         self.prev_mdl_count = model_count
+#         self.p = p
+#         # except Exception as e:
+#         #     print('Exception in INIT: {}'.format(e))
 
         
-    def run(self):
-        # try:
-        print('MyTimer: Starting...');
-        time.sleep(20)
-        print('MyTimer: End Timer....');
+def ml_timer(p):
+    
+    global is_killed, lock_is_killed
 
-        global model_count
+    print('MyTimer: Running!');
+    # time.sleep(20)
+    # print('MyTimer: End Timer....');
 
-        if model_count == self.prev_mdl_count:
-            print('Still running prev. Kill it');
-            self.p.kill()
-        else:
-            print('Not running prev. Do nothing');
-        # except Exception as e:
-        #     print('Exception in RUN: {}'.format(e))
+    if p.poll() is None:
+        with lock_is_killed:
+            is_killed = True
+
+        print('ML TIMER: Still running prev model. Kill it')
+        p.kill()
+    else:
+        print('WEIRD: Timer is running but process terminated!')
 
 
-    # def go(self):
-        
-    #     self.start()
-    #     self.join(self.timeout)
-        
 
-    #     if self.is_alive():
-    #         # self.p.terminate()      #use self.p.kill() if process needs a kill -9
-    #         self.p.kill()
-    #         self.join()
-    #         print('..Does not Terminate..')
-    #         return False
-        
-    #     # print('..Terminates!..')
-
-    #     if self.p is None or self.p.returncode != 0:
-    #         raise CrashedWhileTerminationCheck();
-        
-    #     return True
 
 
 def run_tests():
@@ -76,42 +62,75 @@ def run_tests():
         This is the entry-point of running all sorts of test in our project.
     """
 
-    global model_count
+    global is_killed, lock_is_killed
     mt = None
 
     try:
         for _ in range(OPT_NUM_RUN):
             try:
-                print('............................ Starting Matlab ............................')
+                print('............................ Python Script: Starting Matlab ............................')
 
-                with open('sgtest.m') as matlab_script:
-                    with subprocess.Popen(['matlab', '-nodesktop', '-nosplash'], stdin=matlab_script, stdout=subprocess.PIPE, shell=False) as p_ml:
-                
-                        for line in p_ml.stdout:
-                            linez = line.decode("utf-8")
-                            if linez.startswith('CyFuzz::NewRun'):
+                matlab_skip_first = 'false'
 
-                                print('!!! New Run!!')
+                with lock_is_killed:
+                    if is_killed:
+                        print('Previous Matlab instance was killed. Skip the first run.')
+                        matlab_skip_first = 'true'
+                        is_killed = False
 
-                                with lock_model_count:
-                                    model_count = model_count + 1
-                                
-                                print('before calling timer....');
-                                mt = MyTimer(p_ml)
-                                mt.start()
-                                # mt.join()
 
-                            print (linez)
-                        
-                        p_ml.wait()  # Call this to get the returncode correctly.
-                        print('[Matlab Exit] return code: {}'.format(p_ml.returncode))
 
-                        if p_ml.returncode != 0:
-                            print('(!!!) Matlab crash detected (!!!)')
-                            # backup_crasher()
+                # with open('sgtest.m') as matlab_script:
+                with subprocess.Popen(['matlab', '-nodesktop', '-nosplash', "-r 'sgtest(" + matlab_skip_first + ");quit();'"], stdout=subprocess.PIPE, shell=False) as p_ml:
+            
+                    for line in p_ml.stdout:
+                        linez = line.decode("utf-8")
+
+                        if linez.startswith('CyFuzz::NewRun'):
+
+                            print('!!! New Run!!')
+
+
+                            # Stop previous timer
+                            if mt is not None:
+                                try:
+                                    mt.cancel()
+                                except Exception as e:
+                                    print('Exception while trying to cancel trimer: {}'.format(e))
+
+                            
+                            print('Setting up timer....');
+                            mt = threading.Timer(OPT_SINGLE_MODEL_TIMEOUT, ml_timer, (p_ml,))
+                            mt.start()
+
+                        print (linez)
+                    
+                    p_ml.wait()  # Call this to get the returncode correctly.
+
+
+                    if mt is not None:
+                        try:
+                            mt.cancel()
+                            mt = None
+                        except Exception as e:
+                            print('Exception while trying to cancel timer at the end: {}'.format(e))
+
+
+                    print('[Matlab Exit] return code: {}'.format(p_ml.returncode))
+
+                    if p_ml.returncode == 0:
+                        prev_run_crashed = True
+                    else:
+                        with lock_is_killed:
+                            if not is_killed:
+                                print('(!!!) Matlab crash detected (!!!)')
+
+                                if prev_run_crashed:
+                                    print('CONSECUTIVE CRASHES!!!')
+                                    # backup_crasher()
 
             except Exception as e:
-                print('(!) Exception Occurred in main tester loop: {0}'.format(e))
+                print('(!) Exception Occurred in slsf.py MAIN LOOP: {0}'.format(e))
             # print('python script: next run...')
             # time.sleep(5)
     except KeyboardInterrupt as ke:
