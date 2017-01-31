@@ -33,6 +33,10 @@ classdef mymap < handle
             
         end
         
+%         function obj = test(obj, a, b)
+%             fprintf('varargin: %d\n', nargin);
+%          end
+        
         function ret =  create_if_not_exists(obj, k, classn)
             if obj.contains(k)
                 ret = obj.get(k);

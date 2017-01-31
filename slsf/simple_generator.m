@@ -5,7 +5,7 @@ classdef simple_generator < handle
     properties(Constant = true)
        DEBUG = true;
        LIST_BLOCK_PARAMS = false;    % Will list all dialog parameters of a block which is chosen for current chart
-       LIST_CONN = false;            % If true will print info when connecting blocks
+       LIST_CONN = true;            % If true will print info when connecting blocks
        
        blk_construction = mymap('Simulink/User-Defined Functions/S-Function', 'bcsfunction');
        
@@ -501,7 +501,7 @@ classdef simple_generator < handle
             
             fprintf('[~] Simulating...\n');
             simul = simulator(obj, obj.max_simul_attempt);
-            ret =  simul.simulate();
+            ret =  simul.simulate(obj.slb);
             
 %             simul.alg_loop_eliminator();
         end
@@ -599,7 +599,7 @@ classdef simple_generator < handle
             
             while_it = 0;
             
-            while num_inp_ports > 0 || num_oup_ports > 0
+            while num_inp_ports > 0
                 
                 fprintf('-----\n');
                 
@@ -649,7 +649,6 @@ classdef simple_generator < handle
                         else
                             % Can not use this output block. pick another
                             % in later code
-                            
                         end
                     end
                         
@@ -661,6 +660,8 @@ classdef simple_generator < handle
                 if r_i_port == 0 || r_i_blk == 0
                    
                     obj.c_p('No new inputs available!', obj.LIST_CONN);
+                    
+                    throw(MException('SL:RandGen:UnexpectedBehavior', 'No Inputs were chosen!'));
                     
                     [r_i_blk, r_i_port] = obj.choose_bp(obj.slb.inp.len, obj.slb.inp.blocks, obj.slb.inp_ports);
                 end
@@ -686,8 +687,11 @@ classdef simple_generator < handle
                     fprintf('Error while connecting. Exception: %s\n', e.identifier);
                     fprintf('add_line(''%s\'', ''%s'', ''%s'', ''autorouting'', ''on'')\n', obj.sys, t_o, t_i);
                     fprintf('[!] Giving up... RETURNGING FROM BLOCK CONNECTION...\n');
+                    throw(MException('SL:RandGen:UnexpectedBehavior', 'Unexpected err while connecting line'));
                     break;
                 end
+                
+                obj.slb.connect_nodes(r_o_blk, r_o_port, r_i_blk, r_i_port);
                 
                 % Mark used blocks/ports
                 
@@ -695,7 +699,7 @@ classdef simple_generator < handle
                     obj.slb.inp_ports{r_i_blk}{r_i_port} = 1;
                     
                     if obj.is_all_ports_used(obj.slb.inp_ports{r_i_blk})
-                        fprintf('ALL inp PORTS OF BLOCK IS USED: %d\n', r_i_blk);
+%                         fprintf('ALL inp PORTS OF BLOCK IS USED: %d\n', r_i_blk);
                         [num_inp_blocks, inp_blocks] = obj.del_from_cell(r_i_blk, num_inp_blocks, inp_blocks);
                     end
                     
@@ -706,7 +710,7 @@ classdef simple_generator < handle
                     obj.slb.oup_ports{r_o_blk}{r_o_port} = 1;
                     
                     if obj.is_all_ports_used(obj.slb.oup_ports{r_o_blk})
-                        fprintf('ALL oup PORTS OF BLOCK IS USED: %d\n', r_o_blk);
+%                         fprintf('ALL oup PORTS OF BLOCK IS USED: %d\n', r_o_blk);
                         [num_oup_blocks, oup_blocks] = obj.del_from_cell(r_o_blk, num_oup_blocks, oup_blocks);
                     end
                     
@@ -922,6 +926,8 @@ classdef simple_generator < handle
                 % Get its inputs and outputs
                 ports = get_param(h, 'Ports');
                 obj.slb.new_block_added(cur_blk, ports);
+                
+                obj.slb.create_node(cur_blk, ports, block_name{1}{1}, h);
 
                 % Update x
                 x = h_len;

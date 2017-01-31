@@ -9,12 +9,14 @@ classdef slblockdata < handle
         out_dtypes;
         out_data_type_param = [];
         default_out_param = [];
+        is_source;
     end
     
     methods
         function obj = slblockdata()
             obj.in_dtypes = mycell();
             obj.out_dtypes = mycell();
+            obj.is_source = false;
         end
     end
     

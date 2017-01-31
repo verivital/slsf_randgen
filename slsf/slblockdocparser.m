@@ -17,23 +17,38 @@ classdef (Sealed) slblockdocparser < handle
     
     methods
         
-        function [in_types, out_types] = get_types_of_block(obj, lib, blk)
-            in_types = [];
-            out_types = [];
+        function blkob = get(obj, lib, blk)
+            
+            blkob = [];
+            
+            if nargin == 2
+                args = strsplit(lib, '/');
+                lib = args{1};
+                blk = args{2};
+            end
             
             if ~ obj.data.contains(lib)
-                fprintf('Lib not found!\n');
+                fprintf('Lib %s not found!\n', lib);
                 return;
             end
             
             libob = obj.data.get(lib);
             
             if ~ libob.contains(blk)
-                fprintf('Block not found!\n');
+                fprintf('Block %s not found!\n', blk);
                 return;
             end
             
             blkob = libob.get(blk);
+            
+        end
+        
+        function [in_types, out_types] = get_types_of_block(obj, lib, blk)
+            in_types = [];
+            out_types = [];
+
+            
+            blkob = obj.get(lib, blk);
             
             in_types = blkob.in_dtypes;
             out_types = blkob.out_dtypes;
@@ -46,6 +61,8 @@ classdef (Sealed) slblockdocparser < handle
             
             obj.parse_block_data_type_support();
             obj.parse_block_specific_params();
+            
+            fprintf('=-=-=- END Block Data Parsing =-=-=-=-=- \n');
             
         end
         
@@ -73,14 +90,14 @@ classdef (Sealed) slblockdocparser < handle
                     
                     disp(tline)
                     
-                    tokens = strsplit(tline, {'#'}, 'CollapseDelimiters', false)
+                    tokens = strsplit(tline, {'#'}, 'CollapseDelimiters', false);
                     
                     if ~isempty(tokens{1})
                         
                         % Indicates a new library
                         
                         if strcmpi(tokens{1}, 'Sublibrary')
-                            fprintf('Skipping.....\n');
+%                             fprintf('Skipping.....\n');
                             continue;
                         end
                         
@@ -91,6 +108,13 @@ classdef (Sealed) slblockdocparser < handle
                         if ~ skip_library
                             libmap = mymap();
                             obj.data.put(libname, libmap);
+                            
+                            if strcmp(libname, 'Sources')
+                                is_source_block = true;
+                            else
+                                is_source_block = false;
+                            end
+                            
                         end
                     end
                     
@@ -109,6 +133,8 @@ classdef (Sealed) slblockdocparser < handle
 %                             fprintf('Block %s: %s\n', blname, obj.DTYPES{i});
                         end
                     end
+                    
+                    bl_obj.is_source = is_source_block;
 
                     libmap.put(blname, bl_obj);
                     
@@ -158,21 +184,21 @@ classdef (Sealed) slblockdocparser < handle
                 while true
                     
                     %%%%%% Read next line %%%%%%
-                    fprintf('New LIne:\n');
+%                     fprintf('New LIne:\n');
                     tline = fgetl(fid);
                     
                     if ~ ischar(tline)
                         break;
                     end
                     
-                    disp(tline)
+%                     disp(tline)
                     
                     tokens = strsplit(tline, {'#'}, 'CollapseDelimiters', false);
                     
                     if isempty(tokens{1}) || strcmp(tokens{1}, 'Block (Type)/Parameter') || strcmp(tokens{1}, '...')
                         % NOTE: This also skips certain lines which are
                         % continual of previous lines.
-                        fprintf('Skipping...\n');
+%                         fprintf('Skipping...\n');
                         continue;
                     end
                     
@@ -184,7 +210,7 @@ classdef (Sealed) slblockdocparser < handle
                         skip_library = obj.is_skip_library(libname);
                         
                         if ~ skip_library
-                            fprintf('New SL library: %s\n', libname);
+%                             fprintf('New SL library: %s\n', libname);
                             libmap = obj.data.create_if_not_exists(libname, 'mymap');
                         end
                         
@@ -226,7 +252,7 @@ classdef (Sealed) slblockdocparser < handle
                     
                     if strcmpi(tokens{2}, 'Output data type')
                         blobj.out_data_type_param = tokens{1};
-                        fprintf('Output data type found as param:%s\n', tokens{1});
+%                         fprintf('Output data type found as param:%s\n', tokens{1});
                        
                         
                         dtypes = strsplit(tokens{3}, '|');

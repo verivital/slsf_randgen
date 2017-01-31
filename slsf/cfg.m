@@ -8,9 +8,9 @@ classdef cfg
         
         SIMULATE_MODELS = true;                 % To simulate generated model
 
-        LOG_SIGNALS = true;                     % To log all output signals for comparison. Note: it disregards `USE_PRE_GENERATED_MODEL` setting.
+        LOG_SIGNALS = false;                     % To log all output signals for comparison. Note: it disregards `USE_PRE_GENERATED_MODEL` setting.
 
-        COMPARE_SIM_RESULTS = true;             % To compare simulation results obtained by logging signals.
+        COMPARE_SIM_RESULTS = false;             % To compare simulation results obtained by logging signals.
 
         % If this is non-empty and a string, then instead of generating a model, will use value of this variable as an already generated model. 
         % Put empty ``[]'' to randomly generate models.
@@ -25,12 +25,13 @@ classdef cfg
         STOP_IF_ERROR = false;                  % Stop the script when meet the first simulation error
         STOP_IF_OTHER_ERROR = true;             % Stop the script for errors not related to simulation e.g. unhandled exceptions or code bug. ALWAYS KEEP IT TRUE to detect my own bugs.
 
-        CLOSE_MODEL = true;                    % Close models after simulation
-        CLOSE_OK_MODELS = true;                % Close models for which simulation ran OK
+        CLOSE_MODEL = false;                    % Close models after simulation
+        CLOSE_OK_MODELS = false;                % Close models for which simulation ran OK
+        
         FINAL_CLEAN_UP = false;
 
-        NUM_BLOCKS = 30;                    % Number of blocks in each model. Give single number or a matrix [minval maxval]. Example: "5" will create models with exactly 5 blocks. "[5 10]" will choose a value randomly between 5 and 10.
-
+        NUM_BLOCKS = 10;
+        
         MAX_HIERARCHY_LEVELS = 1;               % Minimum value is 1 indicating a flat model with no hierarchy.
 
         SAVE_ALL_ERR_MODELS = true;             % Save the models which we can not simulate 
@@ -49,13 +50,13 @@ classdef cfg
         SL_SIM_TIMEOUT = 100;
         
         SL_BLOCKLIBS = {
-           struct('name', 'Discrete', 'is_blk', false, 'num', 0.3)
-             struct('name', 'Continuous', 'is_blk', false,  'num', 0.3)
+           struct('name', 'Discrete', 'is_blk', false, 'num', 0.25)
+             struct('name', 'Continuous', 'is_blk', false,  'num', 0.25)
 %             struct('name', 'Math Operations', 'is_blk', false, 'num', 10)
 %             struct('name', 'Logic and Bit Operations', 'is_blk', false, 'num', 0.15)
-            struct('name', 'Sinks', 'is_blk', false, 'num', 0.15)
-            struct('name', 'Sources', 'is_blk', false, 'num', 0.15)
-            struct('name', 'Simulink/User-Defined Functions/S-Function', 'is_blk', true, 'num', 0.10)
+            struct('name', 'Sinks', 'is_blk', false, 'num', 0.35)
+            struct('name', 'Sources', 'is_blk', false, 'num', 0.05)
+%             struct('name', 'Simulink/User-Defined Functions/S-Function', 'is_blk', true, 'num', 0.10)
         };
     
         SL_BLOCKS_BLACKLIST = {

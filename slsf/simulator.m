@@ -77,12 +77,87 @@ classdef simulator < handle
         end
         
         
+        function obj = pre_sim_analysis(obj, slb)
+            fprintf('@@@@@@@@@@@@@@@ PRE SIMULATION ANALYSIS @@@@@@@@@@@@@@@\n');
+            
+            dfs = CStack();
+            second_stack = CStack();
+            
+            for i=1:slb.sources.len
+                c_s = slb.sources.get(i);
+                fprintf('pushing %d\n', c_s.my_id);
+                dfs.push(slbnodetags(c_s));
+            end
+            
+            num_visited = 0;
+            
+            while true
+                
+                if dfs.isempty()
+                    if second_stack.isempty()
+                        fprintf('Both stacks empty. Done!\n');
+                        break;
+                    else
+                        fprintf('--- Processing 2nd stack ---\n');
+                        temp_s = dfs;
+                        dfs = second_stack;
+                        second_stack = temp_s;
+                    end
+                end
+                
+                c = dfs.pop();
+                fprintf('\t\t\t\t\t\t\t\t\t\t\t\tPopped %d\n', c.n.my_id);
+                
+                if c.n.is_visited
+                    fprintf('%d is already visited\n', c.n.my_id);
+                    continue;
+                end
+                
+                fprintf('\t\t\t\tVisiting %d\n', c.n.my_id);
+                c.n.is_visited = true;
+                num_visited = num_visited + 1;
+                
+                for i=1:numel(c.n.out_nodes)
+                    for j=1:numel(c.n.out_nodes{i})
+                        chld = c.n.out_nodes{i}{j};
+                        
+                        if c.n.out_nodes_otherport{i}{j} == 1
+                            chld_tagged = slbnodetags(chld);
+                            fprintf('pushing %d\n', chld.my_id);
+                            dfs.push(chld_tagged);
+                        else
+                            fprintf('Not Pushing %d; pushed %d\n', chld.my_id, chld.in_node_first.my_id);
+                            second_stack.push(slbnodetags(chld.in_node_first));
+                        end
+                        
+                        
+                    end
+                end
+            end
+            
+            if num_visited ~= numel(slb.all)
+                num_visited
+                error('Num visited is not equal to all blocks.');
+            end
+            
+            fprintf('@@@@@@@@@@@@@@@ END PRE SIMULATION ANALYSIS @@@@@@@@@@@@@@@\n');
+        end
         
-        function ret = simulate(obj)
+        
+        function ret = simulate(obj, slb)
             % Returns true if simulation did not raise any error.
             
             done = false;
             ret = false;
+            
+            if isempty(slb)
+                throw(MException('SL:RandGen:Unexpected', 'SLB ref is empty!'));
+            end
+            
+            obj.pre_sim_analysis(slb);
+            
+            fprintf('Returning before simulating \n');
+            return;
             
             for i=1:obj.max_try
                 disp(['(s) Simulation attempt ' int2str(i)]);
