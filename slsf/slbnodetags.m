@@ -8,11 +8,14 @@ classdef slbnodetags < handle
         which_input_port = [];
         which_parent_block;
         which_parent_port;
+        
+        is_visited;
     end
     
     methods
         function obj = slbnodetags(n)
             obj.n = n;
+            obj.is_visited = false;
         end
     end
     

@@ -76,9 +76,25 @@ classdef simulator < handle
             
         end
         
+        function obj = df_analysis_all_nodes(obj, slb, fxd)
+            fprintf('DF Analysis for All Nodes\n');
+            
+            for i=1:numel(slb.nodes)
+                n = slb.nodes{i};
+                n.is_direct_feedthrough(fxd.df.get(n.search_name));
+            end
+            
+            fprintf('END F Analysis for All Nodes\n');
+        end
+        
         
         function obj = pre_sim_analysis(obj, slb)
             fprintf('@@@@@@@@@@@@@@@ PRE SIMULATION ANALYSIS @@@@@@@@@@@@@@@\n');
+            
+            fxd = slblockdocfixed.getInstance();
+            
+            obj.df_analysis_all_nodes(slb, fxd);
+            
             
             dfs = CStack();
             second_stack = CStack();
@@ -90,6 +106,8 @@ classdef simulator < handle
             end
             
             num_visited = 0;
+            
+            
             
             while true
                 
@@ -113,13 +131,28 @@ classdef simulator < handle
                     continue;
                 end
                 
+                
                 fprintf('\t\t\t\tVisiting %d\n', c.n.my_id);
                 c.n.is_visited = true;
-                num_visited = num_visited + 1;
+                num_visited = num_visited + 1;                
                 
+                % Get my output type
+                my_out_type = c.n.get_output_type(fxd);
+                
+
                 for i=1:numel(c.n.out_nodes)
                     for j=1:numel(c.n.out_nodes{i})
                         chld = c.n.out_nodes{i}{j};
+                        
+                        % Get In type
+                        
+                        chld_in_types = chld.get_input_type();
+                        
+                        is_compatible = chld.is_out_in_types_compatible(my_out_type, chld_in_types);
+                        
+                        if ~ is_compatible
+                            fprintf('Out: %s ||| In: %s\n', c.n.search_name, chld.search_name);
+                        end
                         
                         if c.n.out_nodes_otherport{i}{j} == 1
                             chld_tagged = slbnodetags(chld);
@@ -135,10 +168,10 @@ classdef simulator < handle
                 end
             end
             
-            if num_visited ~= numel(slb.all)
-                num_visited
-                error('Num visited is not equal to all blocks.');
-            end
+%             if num_visited ~= numel(slb.all)
+%                 num_visited
+%                 error('Num visited is not equal to all blocks.');
+%             end
             
             fprintf('@@@@@@@@@@@@@@@ END PRE SIMULATION ANALYSIS @@@@@@@@@@@@@@@\n');
         end
@@ -154,10 +187,14 @@ classdef simulator < handle
                 throw(MException('SL:RandGen:Unexpected', 'SLB ref is empty!'));
             end
             
-            obj.pre_sim_analysis(slb);
+            if cfg.GENERATE_TYPESMART_MODELS
+                obj.pre_sim_analysis(slb);
+            else
+                fprintf('TypeSmart generation analysis is turned off\n');
+            end
             
-            fprintf('Returning before simulating \n');
-            return;
+%             warning('Returning abruptly before simulating \n');
+%             return;
             
             for i=1:obj.max_try
                 disp(['(s) Simulation attempt ' int2str(i)]);

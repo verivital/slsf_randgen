@@ -12,6 +12,8 @@ classdef (Sealed) slblockdocparser < handle
     properties
     
         data = mymap();
+        
+%         fixed_data = slblockdocfixed.getInstance();
     
     end
     

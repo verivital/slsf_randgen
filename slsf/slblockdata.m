@@ -18,6 +18,7 @@ classdef slblockdata < handle
             obj.out_dtypes = mycell();
             obj.is_source = false;
         end
+        
     end
     
 end

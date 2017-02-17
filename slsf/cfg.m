@@ -3,34 +3,38 @@ classdef cfg
     %   Detailed explanation goes here
     
     properties(Constant = true)
-        NUM_TESTS = 1;                        % Number of models to generate
-        CSMITH_CREATE_C = false;                 % Will call Csmith to create C files. Set to False if reproducing.
+        NUM_TESTS = 100;                          % Number of test models to generate
+        CSMITH_CREATE_C = false;                % Will call Csmith to create C files. Set to False if reproducing.
         
-        SIMULATE_MODELS = true;                 % To simulate generated model
+        SIMULATE_MODELS = true;                 % Simulate generated model
 
-        LOG_SIGNALS = false;                     % To log all output signals for comparison. Note: it disregards `USE_PRE_GENERATED_MODEL` setting.
+        LOG_SIGNALS = true;                     % Log all block-output signals for comparison. Note: it disregards `USE_PRE_GENERATED_MODEL` setting.
 
-        COMPARE_SIM_RESULTS = false;             % To compare simulation results obtained by logging signals.
+        COMPARE_SIM_RESULTS = true;             % Compare simulation results obtained by logging signals.
 
-        % If this is non-empty and a string, then instead of generating a model, will use value of this variable as an already generated model. 
+        % If following is non-empty and a string, then instead of generating a model, will use value of this variable as an already generated model. 
         % Put empty ``[]'' to randomly generate models.
 
         USE_PRE_GENERATED_MODEL = [];           
-%          USE_PRE_GENERATED_MODEL = 'staticmodel';  
+%          USE_PRE_GENERATED_MODEL = 'staticmodel';  % Instead of randomly
+%          generating model will use this particular model for further
+%          phases of CyFuzz
 
         LOAD_RNG_STATE = true;                  % Set this `true` if we want to create NEW models each time the script is run. Set to `false` if generating same models at each run of the script is desired. For first time running in a new computer set to false, as this will fail first time if set to true.
 
-        SKIP_IF_LAST_CRASHED = true;            % Skip one model if last time Matlab crashed trying to run the same model.
+        SKIP_IF_LAST_CRASHED = false;            % Skip one model if last time Matlab crashed trying to run the same model.
         
         STOP_IF_ERROR = false;                  % Stop the script when meet the first simulation error
         STOP_IF_OTHER_ERROR = true;             % Stop the script for errors not related to simulation e.g. unhandled exceptions or code bug. ALWAYS KEEP IT TRUE to detect my own bugs.
 
-        CLOSE_MODEL = false;                    % Close models after simulation
-        CLOSE_OK_MODELS = false;                % Close models for which simulation ran OK
+        CLOSE_MODEL = true;                    % Close models after simulation
+        CLOSE_OK_MODELS = true;                % Close models for which simulation ran OK
         
-        FINAL_CLEAN_UP = false;
+        FINAL_CLEAN_UP = true;                 % Will delete models and related artifacts (e.g. binaries) for the model
 
-        NUM_BLOCKS = 10;
+        GENERATE_TYPESMART_MODELS = false;      % Will create models that respects data-type compatibility
+        
+        NUM_BLOCKS = 50;
         
         MAX_HIERARCHY_LEVELS = 1;               % Minimum value is 1 indicating a flat model with no hierarchy.
 
@@ -47,17 +51,22 @@ classdef cfg
 
         BREAK_AFTER_COMPARE_ERR = true;
         
-        SL_SIM_TIMEOUT = 100;
+        SL_SIM_TIMEOUT = 100;                   % After these many seconds give up testing the model and mark as Timed-Out model
+        
+        % Will only use following SL libraries/blocks. If this is a
+        % library, set `is_blk` false. Set true for blocks.
         
         SL_BLOCKLIBS = {
-           struct('name', 'Discrete', 'is_blk', false, 'num', 0.25)
-             struct('name', 'Continuous', 'is_blk', false,  'num', 0.25)
+           struct('name', 'Discrete', 'is_blk', false, 'num', 0.35)
+             struct('name', 'Continuous', 'is_blk', false,  'num', 0.35)
 %             struct('name', 'Math Operations', 'is_blk', false, 'num', 10)
 %             struct('name', 'Logic and Bit Operations', 'is_blk', false, 'num', 0.15)
-            struct('name', 'Sinks', 'is_blk', false, 'num', 0.35)
-            struct('name', 'Sources', 'is_blk', false, 'num', 0.05)
+            struct('name', 'Sinks', 'is_blk', false, 'num', 0.15)
+            struct('name', 'Sources', 'is_blk', false, 'num', 0.15)
 %             struct('name', 'Simulink/User-Defined Functions/S-Function', 'is_blk', true, 'num', 0.10)
         };
+    
+        % Won't use following SL blocks in generated models:
     
         SL_BLOCKS_BLACKLIST = {
             'simulink/Sources/From File'
@@ -76,15 +85,35 @@ classdef cfg
         SL_HIERARCHY_BLOCKS = {'simulink/Ports & Subsystems/Model'};                    % Blocks used to create child models
         SL_SUBSYSTEM_BLOCKS = {'simulink/Ports & Subsystems/For Each Subsystem'};       % Blocks used to create subsystem
 
-        SAVE_SIGLOG_IN_DISC = true;
+        SAVE_SIGLOG_IN_DISC = true; % Persistently save logged signals in dic
 
-        DELETE_MODEL = true;
+        DELETE_MODEL = true;    % Delete the model from working directory after testing 
         
-        REPORTSNEO_DIR = 'reportsneo';
+        REPORTSNEO_DIR = 'reportsneo';  % Reports will be stored in this directory
         
         STOP_IF_LISTED_ERRORS = true;  % If any of the errors from the list below occurs, break even if STOP_IF_ERROR == true.
         STOP_ERRORS_LIST = {};
 %         STOP_ERRORS_LIST = {'Simulink:Engine:SolverConsecutiveZCNum', 'Simulink:blocks:SumBlockOutputDataTypeIsBool'};
+    end
+    
+    
+    methods(Static)
+      function print_warnings
+          
+         if ~ cfg.SIMULATE_MODELS
+            warning('Generated models were Not Simulated!');
+         end
+          
+         if ~ cfg.LOG_SIGNALS
+            warning('Signal Logging was not enabled!');
+         end
+         
+         if ~ cfg.COMPARE_SIM_RESULTS
+            warning('Comparison Framework was not run!');
+         end
+         
+         
+      end
     end
     
     methods

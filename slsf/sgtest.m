@@ -4,6 +4,8 @@
 
 function sgtest(skip_first)
 
+    abrupt_return = false;
+
     if nargin == 0
         skip_first = false;
     end
@@ -147,8 +149,12 @@ function sgtest(skip_first)
             sg.skip_after_creation = true;
             skip_first = false;
         end
-
-        sg.init();
+        
+        try
+            sg.init();
+        catch e
+            throw(MException('SL:RandGen:LastModelNotClosed', 'Please Close the last model before continuing'));
+        end
 
         cur_mdl_data = struct;
 
@@ -190,6 +196,12 @@ function sgtest(skip_first)
                 c = struct;
                 c.m_no = model_name;
                 e = sg.my_result.exc;
+                
+                if isempty(e)
+                    abrupt_return = true;
+                    throw(MException('SL:RandGen:TestTerminatedWithoutExceptions',... 
+                    'The model does not have any exceptions, yet was not simulated successfully. Check for abrupt return from the script.'));
+                end
 
                 switch e.identifier
     %                 case {'MATLAB:MException:MultipleErrors'}
@@ -394,6 +406,11 @@ function sgtest(skip_first)
         fprintf('%s\t\t\t\t%.2f\n', k, block_selection.get(k) / num_total_sim);
     end
 
+    if abrupt_return
+        warning('The model does not have any exceptions, yet was not simulated successfully. Check for abrupt return from the script.'); 
+    end
+    
+    cfg.print_warnings();
 
     fprintf('------ BYE from SGTEST. Report saved in %s.mat -------\n', nowtime_str);
 end

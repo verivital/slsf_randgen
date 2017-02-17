@@ -4,7 +4,7 @@ classdef mycell < handle
     
     properties
         data;
-        capacity;
+        capacity = [];
         len;
     end
     
@@ -16,15 +16,23 @@ classdef mycell < handle
                 capacity = -1;
             end
             
-            obj.capacity = capacity;
             
-            if capacity == -1
-                obj.data = {};
+            
+            if iscell(capacity)
+                obj.data = capacity;
+                obj.len = numel(capacity);
+                
             else
-                obj.data = cell(1, obj.capacity);
+                obj.capacity = capacity;
+                
+                if capacity == -1
+                    obj.data = {};
+                else
+                    obj.data = cell(1, obj.capacity);
+                end
+
+                obj.len = 0;
             end
-            
-            obj.len = 0;
         end
         
         
