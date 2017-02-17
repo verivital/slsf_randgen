@@ -1,0 +1,280 @@
+Sublibrary#Block#Double#Single#Boolean#Base Integer#Fixed-Point#Enumerated#Bus#Code Generation Support#Multidimension Support#Variable-Size Support#For Each Subsystem Support
+Additional Math & Discrete/Additional Discrete#Fixed-Point State-Space#X#X#X (1)#X#X###X##X#X
+#Transfer Fcn Direct Form II#X#X##X#X###X (2)###X
+#Transfer Fcn Direct Form II Time Varying#X#X#X (1)#X#X###X (2)###X
+#Unit Delay Enabled#X#X#X#X#X#X##X (2)###X
+#Unit Delay Enabled External IC#X#X#X#X#X###X (2)###X
+#Unit Delay Enabled Resettable#X#X#X#X#X#X##X (2)###X
+#Unit Delay Enabled Resettable External IC#X#X#X#X#X###X (2)###X
+#Unit Delay External IC#X#X#X#X#X###X (2)##X#X
+#Unit Delay Resettable#X#X#X#X#X#X##X (2)###X
+#Unit Delay Resettable External IC#X#X#X#X#X###X (2)###X
+#Unit Delay With Preview Enabled#X#X#X#X#X#X##X (2)###X
+#Unit Delay With Preview Enabled Resettable#X#X#X#X#X#X##X (2)###X
+#Unit Delay With Preview Enabled Resettable External RV#X#X#X#X#X#X##X (2)###X
+#Unit Delay With Preview Resettable#X#X#X#X#X#X##X (2)###X
+#Unit Delay With Preview Resettable External RV#X#X#X#X#X#X##X (2)###X
+Sublibrary#Block#Double#Single#Boolean#Base Integer#Fixed-Point#Enumerated#Bus#Code Generation Support#Multidimension Support#Variable-Size Support#For Each Subsystem Support
+Additional Math & Discrete/Additional Math: Increment - Decrement#Decrement Real World#X#X##X#X###X##X#X
+#Decrement Stored Integer#X#X##X#X###X##X#X
+#Decrement To Zero#X#X##X#X###X###X
+#Decrement Time To Zero#X#X##X#X###X###X
+#Increment Real World#X#X##X#X###X##X#X
+#Increment Stored Integer#X#X##X#X###X##X#X
+Sublibrary#Block#Double#Single#Boolean#Base Integer#Fixed-Point#Enumerated#Bus#Code Generation Support#Multidimension Support#Variable-Size Support#For Each Subsystem Support
+Continuous#Derivative#X#######X (3, 4)###X
+#Integrator#X#######X (3, 4)###X
+#Integrator Limited#X#######X (3, 4)###X
+#Integrator, Second-Order#X#######X (3, 4)###X
+#Integrator, Second-Order Limited#X#######X (3, 4)###X
+#PID Controller (Continuous-time)#X#######X (3, 4)###X
+#PID Controller (2DOF) (Continuous-time)#X#######X (3, 4)###X
+#State-Space#X#######X (3, 4)###X
+#Transfer Fcn#X#######X (3, 4)###X
+#Transport Delay#X#######X (3, 4)###X
+#Variable Time Delay#X#######X (3, 4)###X
+#Variable Transport Delay#X#######X (3, 4)###X
+#Zero-Pole#X#######X (3, 4)###X
+Sublibrary#Block#Double#Single#Boolean#Base Integer#Fixed-Point#Enumerated#Bus#Code Generation Support#Multidimension Support#Variable-Size Support#For Each Subsystem Support
+Discontinuities#Backlash#X#X##X####X (2)###X
+#Coulomb & Viscous Friction#X#X##X#X###X###X
+#Dead Zone#X#X##X#X###X###X
+#Dead Zone Dynamic#X#X##X#X###X###X
+#Hit Crossing#X#######X (4)###X
+#Quantizer#X#X######X###X
+#Rate Limiter#X#X##X#X###X (5)###X
+#Rate Limiter Dynamic#X#X##X#X###X###X
+#Relay#X#X#X#X#X###X###X
+#Saturation#X#X##X#X###X###X
+#Saturation Dynamic#X#X#X (1)#X#X###X###X
+#Wrap To Zero#X#X#X#X#X###X#X##X
+Sublibrary#Block#Double#Single#Boolean#Base Integer#Fixed-Point#Enumerated#Bus#Code Generation Support#Multidimension Support#Variable-Size Support#For Each Subsystem Support
+Discrete#Delay#X#X#X#X#X#X#X#X (2)#X#X#X
+#Difference#X#X#X (1)#X#X###X (4)##X#X
+#Discrete Transfer Fcn#X#X##X (6)#X (6)###X###X
+#Discrete Zero-Pole#X#X######X (2)###X
+#Discrete Derivative#X#X##X#X###X (7, 2)##X#X
+#Discrete FIR Filter#X#X##X#X###X##X#X
+#Discrete Filter#X#X##X (6)#X (6)###X###X
+#Discrete PID Controller (Discrete-time)#X#X##X#X###X (7, 2)###X
+#Discrete PID Controller (2DOF) (Discrete-time)#X#X##X#X###X (7, 2)###X
+#Discrete State-Space#X#X######X (2)###X
+#Discrete-Time Integrator#X#X##X#X###X (7)###X
+#Enabled Delay#X#X#X#X#X#X#X#X (2)#X#X#X
+#First-Order Hold#X#######X (4)###X
+#Memory#X#X#X#X#X#X#X#X#X##X
+#Resettable Delay#X#X#X#X#X#X#X#X (2)#X#X#X
+#Tapped Delay#X#X#X#X#X###X###
+#Transfer Fcn First Order#X#X##X#X###X##X#X
+#Transfer Fcn Lead or Lag#X#X#X (1)#X#X###X##X#X
+#Transfer Fcn Real Zero#X#X#X (1)#X#X###X##X#X
+#Unit Delay#X#X#X#X#X#X#X#X (2)#X#X#X
+#Variable Integer Delay#X#X#X#X#X#X#X#X (2)#X#X#X
+#Zero-Order Hold#X#X#X#X#X#X#X#X###X
+Sublibrary#Block#Double#Single#Boolean#Base Integer#Fixed-Point#Enumerated#Bus#Code Generation Support#Multidimension Support#Variable-Size Support#For Each Subsystem Support
+Logic and Bit Operations#Bit Clear###X (8)#X#X###X###X
+#Bit Set###X (8)#X#X###X###X
+#Bitwise Operator###X (8)#X#X###X#X##X
+#Combinatorial Logic#X##X#####X###X
+#Compare To Constant#X#X#X#X#X#X##X#X#X#X
+#Compare To Zero#X#X#X#X#X###X#X#X#X
+#Detect Change#X#X#X#X#X#X##X (2)##X#X
+#Detect Decrease#X#X#X#X#X#X##X (2)##X#X
+#Detect Increase#X#X#X#X#X#X##X (2)##X#X
+#Detect Fall Negative#X#X#X#X#X###X (2)##X#X
+#Detect Fall Nonpositive#X#X#X#X#X###X (2)##X#X
+#Detect Rise Nonnegative#X#X#X#X#X###X (2)##X#X
+#Detect Rise Positive#X#X#X#X#X###X (2)##X#X
+#Extract Bits#X#X#X#X#X###X###X
+#Interval Test#X#X#X#X#X#X##X###X
+#Interval Test Dynamic#X#X#X#X#X#X##X###X
+#Logical Operator#X#X#X#X#X###X#X#X#X
+#Relational Operator#X#X#X#X#X#X##X#X#X#X
+#Shift Arithmetic#X#X##X#X###X###X
+Sublibrary#Block#Double#Single#Boolean#Base Integer#Fixed-Point#Enumerated#Bus#Code Generation Support#Multidimension Support#Variable-Size Support#For Each Subsystem Support
+Lookup Tables#1-D Lookup Table#X#X##X#X###X###X
+#2-D Lookup Table#X#X##X#X###X###X
+#Cosine#X#X#X#X#X###X###X
+#Direct Lookup Table (n-D)#X#X#X#X# (9)#X##X#X##
+#Interpolation Using Prelookup#X#X##X#X###X#X##X
+#Lookup Table Dynamic#X#X#X#X#X###X#X##
+#Prelookup#X#X##X#X###X###X
+#Sine#X#X#X#X#X###X###X
+#n-D Lookup Table#X#X##X#X###X###X
+Sublibrary#Block#Double#Single#Boolean#Base Integer#Fixed-Point#Enumerated#Bus#Code Generation Support#Multidimension Support#Variable-Size Support#For Each Subsystem Support
+Math Operations#Abs#X#X##X#X###X#X#X#X
+#Add#X#X#X#X#X###X#X#X#X
+#Algebraic Constraint#X##########X
+#Assignment#X#X#X#X#X#X##X#X#X#X
+#Bias#X#X##X#X###X##X#X
+#Complex to Magnitude-Angle#X#X######X#X#X#X
+#Complex to Real-Imag#X#X#X#X#X###X#X#X#X
+#Divide (Element-wise(.*))#X#X#X#X#X###X#X#X#X
+#Divide (Matrix(*))#X#X#X#X#X###X###X
+#Dot Product#X#X#X#X#X###X#X##X
+#Find Nonzero Elements#X#X#X#X#X###X#X#X#
+#Gain#X#X#X#X#X###X#X#X#X
+#Magnitude-Angle to Complex#X#X### (10)###X#X#X#X
+#Math Function (exp)#X#X######X#X#X#X
+#Math Function (log)#X#X######X#X#X#X
+#Math Function (10^u)#X#X######X#X#X#X
+#Math Function (log10)#X#X######X#X#X#X
+#Math Function (magnitude^2)#X#X##X#X###X#X#X#X
+#Math Function (square)#X#X##X#X###X#X#X#X
+#Math Function (pow)#X#X######X#X#X#X
+#Math Function (conj)#X#X##X#X###X#X#X#X
+#Math Function (reciprocal)#X#X##X (11)#X (11)###X#X#X#X
+#Math Function (hypot)#X#X######X#X#X#X
+#Math Function (rem)#X#X##X####X#X#X#X
+#Math Function (mod)#X#X##X####X#X#X#X
+#Math Function (transpose)#X#X#X#X#X###X##X#X
+#Math Function (hermitian)#X#X##X#X###X##X#X
+#Matrix Concatenate#X#X#X#X#X#X##X#X#X#X
+#MinMax#X#X##X#X###X#X#X#X
+#MinMax Running Resettable#X#X##X#X###X###X
+#Permute Dimensions#X#X#X#X#X#X#X#X##X#X
+#Polynomial#X#X######X###X
+#Product (Element-wise(.*))#X#X#X#X#X###X#X#X#X
+#Product (Matrix(*))#X#X#X#X#X###X###X
+#Product of Elements (Element-wise(.*))#X#X#X#X#X###X#X#X#X
+#Product of Elements (Matrix(*))#X#X#X#X#X###X###X
+#Real-Imag to Complex#X#X##X#X###X#X#X#X
+#Reciprocal Sqrt#X#X## (12)# (12)###X#X#X#X
+#Reshape#X#X#X#X#X#X#X#X#X#X#X
+#Rounding Function#X#X######X##X#X
+#Sign#X#X#X#X#X###X###X
+#Signed Sqrt#X#X##X#X###X#X#X#X
+#Sine Wave Function#X#######X (13, 7)###X
+#Slider Gain#X#X#X#X#X###X#X#X#X
+#Sqrt#X#X##X#X###X#X#X#X
+#Squeeze#X#X#X#X#X#X##X#X##X
+#Subtract#X#X#X#X#X###X#X#X#X
+#Sum#X#X#X#X#X###X#X#X#X
+#Sum of Elements#X#X#X#X#X###X#X#X#X
+#Trigonometric Function#X#X## (10)# (10)###X#X#X#X
+#Unary Minus#X#X##X#X###X#X##X
+#Vector Concatenate#X#X#X#X#X#X##X##X#X
+#Weighted Sample Time Math#X#X#X#X#X###X###X
+Sublibrary#Block#Double#Single#Boolean#Base Integer#Fixed-Point#Enumerated#Bus#Code Generation Support#Multidimension Support#Variable-Size Support#For Each Subsystem Support
+Model Verification#Assertion#X#X#X#X#X###X#X##X
+#Check Discrete Gradient#X#X##X#X###X (4)#X##
+#Check Dynamic Gap#X#X#X#X#X#X##X#X##
+#Check Dynamic Range#X#X#X#X#X#X##X#X##
+#Check Static Gap#X#X#X#X#X#X##X (4)#X##
+#Check Static Range#X#X#X#X#X#X##X (4)#X##
+#Check Dynamic Lower Bound#X#X#X#X#X#X##X#X##
+#Check Dynamic Upper Bound#X#X#X#X#X#X##X#X##
+#Check Input Resolution#X#######X (4)#X##
+#Check Static Lower Bound#X#X#X#X#X#X##X (4)#X##
+#Check Static Upper Bound#X#X#X#X#X#X##X (4)#X##
+Sublibrary#Block#Double#Single#Boolean#Base Integer#Fixed-Point#Enumerated#Bus#Code Generation Support#Multidimension Support#Variable-Size Support#For Each Subsystem Support
+Model-Wide Utilities#Block Support Table########X###
+#DocBlock########X###
+#Model Info########X###
+#Timed-Based Linearization###########
+#Trigger-Based Linearization#X#X#X#X#X######
+Sublibrary#Block#Double#Single#Boolean#Base Integer#Fixed-Point#Enumerated#Bus#Code Generation Support#Multidimension Support#Variable-Size Support#For Each Subsystem Support
+Ports & Subsystems#Atomic Subsystem#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)
+#CodeReuseSubsystem#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)
+#Configurable Subsystem#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)
+#Enable#X#X#X#X#X###X#X##
+#Enabled Subsystem#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)
+#Enabled and Triggered Subsystem#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)
+#For Each Subsystem#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)
+#For Iterator Subsystem#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)
+#Function-Call Feedback Latch#X#X#X#X#X#X#X#X#X##X
+#Function-Call Generator########X###X
+#Function-Call Split#X#######X###X
+#Function-Call Subsystem#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)
+#If#X#X#X#X####X###X
+#If Action Subsystem#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)
+#In1 (Inport)#X#X#X#X#X#X#X#X#X#X#X
+#Model#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)
+#Model Variants#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)
+#Out1 (Outport)#X#X#X#X#X#X#X#X#X#X#X
+#Resettable Subsystem#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)
+#Subsystem#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)
+#Switch Case#X#X##X##X##X###X
+#Switch Case Action Subsystem#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)
+#Trigger#X#X#X#X#X#X##X#X##
+#Triggered Subsystem#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)
+#Variant Subsystem#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)
+#While Iterator Subsystem#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)
+Sublibrary#Block#Double#Single#Boolean#Base Integer#Fixed-Point#Enumerated#Bus#Code Generation Support#Multidimension Support#Variable-Size Support#For Each Subsystem Support
+Signal Attributes#Bus to Vector#X#X#X#X#X#X#X#X###X
+#Data Type Conversion Inherited#X#X#X#X#X#X##X#X#X#X
+#Data Type Duplicate#X#X#X#X#X#X#X#X#X#X#X
+#Data Type Propagation#X#X#X#X#X###X#X#X#X
+#Data Type Scaling Strip#X#X#X#X#X###X#X#X#X
+#Data Type Conversion#X#X#X#X#X#X##X#X#X#X
+#IC#X#X#X#X#X#X##X (4)#X##X
+#Probe#X#X#X#X#X#X#X#X#X#X#X
+#Rate Transition#X#X#X#X#X#X#X#X (5, 2)#X#X#X
+#Signal Conversion#X#X#X#X#X#X##X#X#X#X
+#Signal Specification#X#X#X#X#X#X#X#X#X#X#X
+#Weighted Sample Time#X#X#X#X#X###X###X
+#Width#X#X#X#X#X#X#X#X#X#X#X
+Sublibrary#Block#Double#Single#Boolean#Base Integer#Fixed-Point#Enumerated#Bus#Code Generation Support#Multidimension Support#Variable-Size Support#For Each Subsystem Support
+Signal Routing#Bus Assignment#X#X#X#X#X#X#X#X#X#X#X
+#Bus Creator#X#X#X#X#X#X#X#X#X#X#X
+#Bus Selector#X#X#X#X#X#X#X#X#X#X#X
+#Data Store Memory#X#X#X#X#X#X#X#X#X##
+#Data Store Read#X#X#X#X#X#X#X#X#X##
+#Data Store Write#X#X#X#X#X#X#X#X#X##
+#Demux#X#X#X#X#X#X##X###X
+#Environment Controller#X#X#X#X#X#X#X#X (4)#X##X
+#From#X#X#X#X#X#X#X#X#X#X#X
+#Goto#X#X#X#X#X#X#X#X#X#X#X
+#Goto Tag Visibility#X#X#X#X#X#X#X#X###
+#Index Vector#X#X#X#X#X#X#X#X#X#X#X
+#Manual Switch#X#X#X#X#X#X#X#X (4)#X#X#X
+#Merge#X#X#X#X#X#X#X#X#X##X
+#Multiport Switch#X#X#X#X#X#X#X#X#X#X#X
+#Mux#X#X#X#X#X#X##X###X
+#Selector#X#X#X#X#X#X##X#X#X#X
+#Switch#X#X#X#X#X#X#X#X (2)#X#X#X
+#Vector Concatenate#X#X#X#X#X#X##X##X#X
+Sublibrary#Block#Double#Single#Boolean#Base Integer#Fixed-Point#Enumerated#Bus#Code Generation Support#Multidimension Support#Variable-Size Support#For Each Subsystem Support
+Sinks#Display#X#X#X#X#X#X## (15)##X#X
+#Floating Scope#X#X#X#X#X#X## (15)#X#X#
+#Out1 (Outport)#X#X#X#X#X#X#X#X#X#X#X
+#Scope#X#X#X#X#X#X## (15)#X#X#
+#Stop Simulation#X##X#####X (4)###X
+#Terminator#X#X#X#X#X#X#X#X#X##X
+#To File#X#X#X#X#X (16)#X#X#X (17, 4)#X##
+#To Workspace#X#X#X#X#X#X#X# (15)#X#X#
+#XY Graph#X#X#X#X#X#X## (15)###
+Sublibrary#Block#Double#Single#Boolean#Base Integer#Fixed-Point#Enumerated#Bus#Code Generation Support#Multidimension Support#Variable-Size Support#For Each Subsystem Support
+Sources#Band-Limited White Noise#X#######X (5)###X
+#Chirp Signal#X#######X (4)###X
+#Clock#X#######X (4)###X
+#Constant#X#X#X#X#X#X#X#X#X##X
+#Counter Free-Running# (18)# (18)##X#X###X (4)###X
+#Counter Limited# (18)# (18)#X#X#X###X (4)###X
+#Digital Clock#X#######X (4)###X
+#Enumerated Constant######X##X###X
+#From Workspace#X#X#X#X#X (19)#X#X# (15)#X#X#X (20)
+#From File#X#X#X#X#X (16)#X#X#X (17, 4)#X##X
+#Ground#X#X#X#X#X#X#X#X#X##X
+#In1 (Inport)#X#X#X#X#X#X#X#X#X#X#X
+#Pulse Generator#X#X#X#X#X###X (5, 13)###X (21)
+#Ramp#X#######X (4)###X
+#Random Number#X#######X#X##X
+#Repeating Sequence#X#######X (22, 4)###
+#Repeating Sequence Interpolated#X#X#X#X#X###X (5)###X
+#Repeating Sequence Stair#X#X#X#X#X###X###X
+#Signal Generator#X#######X (4)#X##X
+#Signal Builder#X#######X (4)###X
+#Sine Wave#X#######X (13, 7)###X
+#Step#X#######X (4)###X
+#Uniform Random Number#X#######X#X##X
+Sublibrary#Block#Double#Single#Boolean#Base Integer#Fixed-Point#Enumerated#Bus#Code Generation Support#Multidimension Support#Variable-Size Support#For Each Subsystem Support
+User-Defined Functions#Fcn#X#X######X###X
+#Function Caller#X#X#X#X#X#X#X#X#X##
+#Interpreted MATLAB Function#X####### (23)###X
+#Level-2 MATLAB S-Function#X (24)#X (24)#X (24)#X (24)#X (24)####X#X#X
+#MATLAB Function#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)
+#MATLAB System#X#X#X#X#X###X#X#X (25)#X (26)
+#S-Function#X (14)#X (14)#X (14)#X (14)#X (27, 14)###X (28, 14)#X (14)#X (14)#X (14)
+#S-Function Builder#X#X#X#X#X###X#X##
+#Simulink Function#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)#X (14)##

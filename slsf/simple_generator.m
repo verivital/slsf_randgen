@@ -5,7 +5,9 @@ classdef simple_generator < handle
     properties(Constant = true)
        DEBUG = true;
        LIST_BLOCK_PARAMS = false;    % Will list all dialog parameters of a block which is chosen for current chart
-       LIST_CONN = false;            % If true will print info when connecting blocks
+       LIST_CONN = true;            % If true will print info when connecting blocks
+       
+       blk_construction = mymap('Simulink/User-Defined Functions/S-Function', 'bcsfunction');
        
     end
     
@@ -13,6 +15,7 @@ classdef simple_generator < handle
         NUM_BLOCKS;                 % These many blocks will be placed in chart
         record_runtime = true;
         num_log_len_mismatch_attempt = 5;
+        skip_after_creation = false;    % Skip rest of the experiments with this model after creating it. Reason: it crashed before
         
         slb;                        % Object of class slblocks
         
@@ -33,7 +36,7 @@ classdef simple_generator < handle
         inner_model_num_blocks = 4;     % Number of blocks for models whose `current_hierarchy_level` is > 1 % TODO
         
 %         simul;                      % Instance of simulator class
-        max_simul_attempt = 10;
+        max_simul_attempt = 15;
         
         close_model = true;         % Close after simulation
         
@@ -91,6 +94,7 @@ classdef simple_generator < handle
         function ret = go(obj)
             % Call this function to start
             obj.p('--- Starting ---');
+            fprintf('CyFuzz::NewRun\n');
             
             ret = false;
             
@@ -100,10 +104,8 @@ classdef simple_generator < handle
             
                 obj.get_candidate_blocks();
                 
-%                 ret = true;
-%                 return;
-
                 obj.draw_blocks();
+               
 
                 obj.chk_compatibility();
                 
@@ -114,9 +116,9 @@ classdef simple_generator < handle
                 
                 fprintf('--Done Connecting!--\n');
 
-    %             disp('Returning abruptly');
-    %             ret = true;
-    %             return;
+%                 disp('Returning abruptly');
+%                 ret = true;
+%                 return;
 
             else
                 % Use pre-generated model
@@ -125,6 +127,13 @@ classdef simple_generator < handle
                 
                 obj.sys = obj.use_pre_generated_model;
                 open_system(obj.sys);
+            end
+            
+            if obj.skip_after_creation
+                fprintf('Skip_After_Creation: Skipping rest of the experiments after creating the model.\n');
+                obj.my_result.exc = MException('RandGen:SL:SkippedAfterCreation', 'Skipped experiment after model creation.');
+                ret = false;
+                return;
             end
             
             % Set up signal logging even before the simulation
@@ -492,7 +501,7 @@ classdef simple_generator < handle
             
             fprintf('[~] Simulating...\n');
             simul = simulator(obj, obj.max_simul_attempt);
-            ret =  simul.simulate();
+            ret =  simul.simulate(obj.slb);
             
 %             simul.alg_loop_eliminator();
         end
@@ -544,14 +553,13 @@ classdef simple_generator < handle
         
         function ret = get_all_simulink_blocks(obj)
 %             ret = {'simulink/Sources/Constant', 'simulink/Sinks/Scope', 'simulink/Sources/Constant', 'simulink/Sinks/Display', 'simulink/Math Operations/Add'};
-            bc = obj.blkchooser;
-            
-            if isempty(bc)
-                bc = blockchooser();
+
+            if isempty(obj.blkchooser)
+                obj.blkchooser = blockchooser();
             end
             
-            ret = bc.get(obj.current_hierarchy_level, obj.max_hierarchy_level, obj.NUM_BLOCKS);
-            obj.my_result.block_sel_stat = bc.selection_stat;
+            ret = obj.blkchooser.get(obj.current_hierarchy_level, obj.max_hierarchy_level, obj.NUM_BLOCKS);
+            obj.my_result.block_sel_stat = obj.blkchooser.selection_stat;
         end
         
         
@@ -561,6 +569,18 @@ classdef simple_generator < handle
             if condition && obj.DEBUG
                 disp(str);
             end
+        end
+        
+        function obj = bcsfunction(obj, h)
+            fprintf('BLOCK CONSTRUCTION S FUNCTION..... !!!!!\n');
+            sfcreator = sfuncreator();
+            sfname = sfcreator.go(obj.skip_after_creation);
+            if obj.current_hierarchy_level == 1
+                obj.my_result.sfuns.add(sfname);
+            else
+                obj.root_result.sfuns.add(sfname);
+            end
+            set_param(h, 'FunctionName', sfname)
         end
         
         
@@ -579,7 +599,7 @@ classdef simple_generator < handle
             
             while_it = 0;
             
-            while num_inp_ports > 0 || num_oup_ports > 0
+            while num_inp_ports > 0
                 
                 fprintf('-----\n');
                 
@@ -629,7 +649,6 @@ classdef simple_generator < handle
                         else
                             % Can not use this output block. pick another
                             % in later code
-                            
                         end
                     end
                         
@@ -641,6 +660,8 @@ classdef simple_generator < handle
                 if r_i_port == 0 || r_i_blk == 0
                    
                     obj.c_p('No new inputs available!', obj.LIST_CONN);
+                    
+                    throw(MException('SL:RandGen:UnexpectedBehavior', 'No Inputs were chosen!'));
                     
                     [r_i_blk, r_i_port] = obj.choose_bp(obj.slb.inp.len, obj.slb.inp.blocks, obj.slb.inp_ports);
                 end
@@ -663,10 +684,14 @@ classdef simple_generator < handle
                 try
                     add_line(obj.sys, t_o, t_i, 'autorouting','on')
                 catch e
-                    fprintf('Error while connecting: %s\n', e.identifier);
+                    fprintf('Error while connecting. Exception: %s\n', e.identifier);
+                    fprintf('add_line(''%s\'', ''%s'', ''%s'', ''autorouting'', ''on'')\n', obj.sys, t_o, t_i);
                     fprintf('[!] Giving up... RETURNGING FROM BLOCK CONNECTION...\n');
+                    throw(MException('SL:RandGen:UnexpectedBehavior', 'Unexpected err while connecting line'));
                     break;
                 end
+                
+                obj.slb.connect_nodes(r_o_blk, r_o_port, r_i_blk, r_i_port);
                 
                 % Mark used blocks/ports
                 
@@ -674,7 +699,7 @@ classdef simple_generator < handle
                     obj.slb.inp_ports{r_i_blk}{r_i_port} = 1;
                     
                     if obj.is_all_ports_used(obj.slb.inp_ports{r_i_blk})
-                        fprintf('ALL inp PORTS OF BLOCK IS USED: %d\n', r_i_blk);
+%                         fprintf('ALL inp PORTS OF BLOCK IS USED: %d\n', r_i_blk);
                         [num_inp_blocks, inp_blocks] = obj.del_from_cell(r_i_blk, num_inp_blocks, inp_blocks);
                     end
                     
@@ -685,7 +710,7 @@ classdef simple_generator < handle
                     obj.slb.oup_ports{r_o_blk}{r_o_port} = 1;
                     
                     if obj.is_all_ports_used(obj.slb.oup_ports{r_o_blk})
-                        fprintf('ALL oup PORTS OF BLOCK IS USED: %d\n', r_o_blk);
+%                         fprintf('ALL oup PORTS OF BLOCK IS USED: %d\n', r_o_blk);
                         [num_oup_blocks, oup_blocks] = obj.del_from_cell(r_o_blk, num_oup_blocks, oup_blocks);
                     end
                     
@@ -791,6 +816,21 @@ classdef simple_generator < handle
         end
         
         
+        function obj = set_sample_time_for_discrete_blk(obj, h, blk)
+            if ~ blk{2}
+                disp('NOT A DISCRETE BLOCK. RETURN');
+                return;
+            end
+            
+            disp('DISCRETE BLK!');
+            
+            try
+                set_param(h, 'SampleTime', '1');  % TODO random choose sample time?
+            catch e
+            end
+                
+        end
+        
         
         function obj = draw_blocks(obj)
             % Draw blocks in the screen
@@ -806,6 +846,11 @@ classdef simple_generator < handle
             disp(obj.candi_blocks);
 
             for block_name = obj.candi_blocks
+                % Warning: block_name could be a string or a cell. This is
+                % a string if the block is pre-added. Cell otherwise, where
+                % first element of the cell is the block name and 2nd
+                % element is boolean: whether the block is discrete.
+                
                 cur_blk = cur_blk + 1;          % Create block name
                 
                 is_preadded_block = cur_blk <= obj.num_preadded_blocks;
@@ -831,7 +876,8 @@ classdef simple_generator < handle
                     h = get_param([obj.sys this_blk_name], 'handle');
                     set_param(h,'Position',pos);
                 else
-                    h = add_block(block_name{1}, [obj.sys, this_blk_name], 'Position', pos);
+                    h = add_block(block_name{1}{1}, [obj.sys, this_blk_name], 'Position', pos);
+                    obj.set_sample_time_for_discrete_blk(h, block_name{1});
                 end
                 
                 % Save the handle of this new block. Accessing a block by
@@ -844,10 +890,18 @@ classdef simple_generator < handle
                 if is_preadded_block
                     blk_type = get_param(h, 'blocktype');
                 else
-                    blk_type = block_name{1};
+                    blk_type = block_name{1}{1};
                 end
+                                
+                if obj.blk_construction.contains(blk_type)
+%                     disp('matched!');
+                    obj.(obj.blk_construction.get(blk_type))(h)
+%                 else
+%                     disp('not matched!')
+                end
+                    
                 
-                if blockchooser().is_hierarchy_block(blk_type)
+                if obj.blkchooser.is_hierarchy_block(blk_type)
                     fprintf('Hierarchy block %s found.\n', this_blk_name);
 
                     mdl_name = obj.handle_hierarchy_blocks();
@@ -856,26 +910,24 @@ classdef simple_generator < handle
                     set_param(h, 'ModelNameDialog', mdl_name);
                 end
 
-                if blockchooser().is_submodel_block(blk_type)
+                if obj.blkchooser.is_submodel_block(blk_type)
                     fprintf('Submodel block %s found.\n', this_blk_name);
                     obj.handle_submodel_creation(this_blk_name, obj.sys);
                 end
                 
-
-                % Get its inputs and outputs
-                ports = get_param(h, 'Ports');
-
-                obj.slb.new_block_added(cur_blk, ports);
-                
                 % Configure block parameters
                 
-                if is_preadded_block
-                    obj.config_block(h, get_param(h, 'blocktype'), this_blk_name);
-                else
-                    obj.config_block(h, block_name{1}, this_blk_name);
-                end
+                
+                obj.config_block(h, blk_type, this_blk_name);
+                
                 
                 %%%%%%% Done configuring block %%%%%%%%%
+                
+                % Get its inputs and outputs
+                ports = get_param(h, 'Ports');
+                obj.slb.new_block_added(cur_blk, ports);
+                
+                obj.slb.create_node(cur_blk, ports, block_name{1}{1}, h);
 
                 % Update x
                 x = h_len;
@@ -936,8 +988,8 @@ classdef simple_generator < handle
         
         
         function ret=handle_hierarchy_blocks(obj)
-            ret = 'nil';
-            return;                                                             % TODO
+%             ret = 'nil';
+%             return;                                                             % TODO
             model_name = ['hier' int2str(util.rand_int(1, 10000, 1))]; % TODO fix Max number
             
             SIMULATE_MODELS = false;
@@ -947,6 +999,7 @@ classdef simple_generator < handle
             COMPARE_SIM_RESULTS = false;
             
             hg = hier_generator(obj.inner_model_num_blocks, model_name, SIMULATE_MODELS, CLOSE_MODEL, LOG_SIGNALS, SIMULATION_MODE, COMPARE_SIM_RESULTS);
+            hg.skip_after_creation = obj.skip_after_creation;
             hg.max_hierarchy_level = obj.max_hierarchy_level;
             hg.current_hierarchy_level = obj.current_hierarchy_level + 1;
             
@@ -990,9 +1043,8 @@ classdef simple_generator < handle
             
             full_model_name = [parent_model blk_name];
             
-            hg = submodel_generator(1, full_model_name, SIMULATE_MODELS, CLOSE_MODEL, LOG_SIGNALS, SIMULATION_MODE, COMPARE_SIM_RESULTS);                      
-%             hg = submodel_generator(obj.inner_model_num_blocks, full_model_name, SIMULATE_MODELS, CLOSE_MODEL, LOG_SIGNALS, SIMULATION_MODE, COMPARE_SIM_RESULTS);
-
+            hg = submodel_generator(obj.inner_model_num_blocks, full_model_name, SIMULATE_MODELS, CLOSE_MODEL, LOG_SIGNALS, SIMULATION_MODE, COMPARE_SIM_RESULTS);                      
+            hg.skip_after_creation = obj.skip_after_creation;
             hg.max_hierarchy_level = obj.max_hierarchy_level;
             hg.current_hierarchy_level = obj.current_hierarchy_level + 1;
             
@@ -1019,6 +1071,33 @@ classdef simple_generator < handle
             end
         end
         
+        function obj = random_config_block(obj, h, blk_type, blk_name)
+%             fprintf(' --> Random config %s\n', blk_name);
+            
+            bp_data = get_param(h, 'DialogParameters');
+            try
+                bp_names = fieldnames(bp_data);
+            catch e
+                % TODO
+                return;
+            end
+
+            % Enumerating all parameters of a block
+            for j=1:numel(bp_names)
+                cur_param_name = bp_names{j};
+                cur_param_all = bp_data.(cur_param_name);
+
+                if strcmp(cur_param_all.Type, 'enum')
+                    % enum
+%                     fprintf('Enum found\n');
+                    try
+                        set_param(h, cur_param_name, cur_param_all.Enum{1}); % TODO
+                    catch e
+                    end
+                end
+            end
+        end
+        
         
         
         function obj=config_block(obj, h, blk_type, blk_name)
@@ -1032,6 +1111,8 @@ classdef simple_generator < handle
                 bp = get_param(h, 'DialogParameters');
                 disp(bp);
             end
+            
+%             obj.random_config_block(h, blk_type, blk_name);
             
             if isempty(found)
                 disp(['[!] Did not find config db for block ', blk_type]);

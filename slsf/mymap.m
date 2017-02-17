@@ -1,5 +1,5 @@
 classdef mymap < handle
-    %UNTITLED2 HashMap
+    %MYMAP HashMap
     %   Detailed explanation goes here
     
     properties
@@ -7,9 +7,43 @@ classdef mymap < handle
         data_keys = [];                  % WARNING Value of this field is valid ONLY after calling keys() method.
     end
     
+    
+    methods (Static)
+      function ret = create_from_cell(data)
+         ret = mymap();
+         
+         for i=1:numel(data)
+            ret.put(data{i}, 1);
+         end
+      end
+   end
+    
     methods
-        function obj = mymap()
+        function obj = mymap(varargin)
             obj.data = struct;
+            
+            if nargin >0
+%                 disp('MyMap called with argument!');
+                for i = 1:2:numel(varargin)
+                    obj.put(varargin{i}, varargin{i+1});
+                end
+%             else
+%                 disp('MyMap with NO arguments');
+            end
+            
+        end
+        
+%         function obj = test(obj, a, b)
+%             fprintf('varargin: %d\n', nargin);
+%          end
+        
+        function ret =  create_if_not_exists(obj, k, classn)
+            if obj.contains(k)
+                ret = obj.get(k);
+            else
+                ret = feval(classn);
+                obj.put(k, ret);
+            end
         end
         
         
