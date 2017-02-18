@@ -68,6 +68,7 @@ classdef singleresult < handle
              
              obj.hier_models = mycell(-1);
              obj.sfuns = mycell();
+             obj.block_sel_stat = mymap();
          end
          
          function obj = set_mode(obj, p, m)

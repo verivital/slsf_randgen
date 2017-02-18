@@ -87,7 +87,7 @@ classdef comparator < handle
                     t_1 = data_1.Time(numel(data_1.Time));
                     t_2 = data_2.Time(numel(data_2.Time));
                     
-                    if d_1 == d_2
+                    if (isnan(d_1) && isnan(d_2)) || (d_1 == d_2)
 %                         fprintf('Data No Mismatch\n');
                     else
                         fprintf('Data Mismatch!\n');
