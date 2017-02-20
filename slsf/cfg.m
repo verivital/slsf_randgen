@@ -3,7 +3,7 @@ classdef cfg
     %   Detailed explanation goes here
     
     properties(Constant = true)
-        NUM_TESTS = 100;                          % Number of test models to generate
+        NUM_TESTS = 1;                          % Number of test models to generate
         CSMITH_CREATE_C = false;                % Will call Csmith to create C files. Set to False if reproducing.
         
         SIMULATE_MODELS = true;                 % Simulate generated model
@@ -15,8 +15,8 @@ classdef cfg
         % If following is non-empty and a string, then instead of generating a model, will use value of this variable as an already generated model. 
         % Put empty ``[]'' to randomly generate models.
 
-        USE_PRE_GENERATED_MODEL = [];           
-%          USE_PRE_GENERATED_MODEL = 'staticmodel';  % Instead of randomly
+%         USE_PRE_GENERATED_MODEL = [];           
+         USE_PRE_GENERATED_MODEL = 'sampleModel16';  % Instead of randomly
 %          generating model will use this particular model for further
 %          phases of CyFuzz
 
@@ -27,16 +27,17 @@ classdef cfg
         STOP_IF_ERROR = false;                  % Stop the script when meet the first simulation error
         STOP_IF_OTHER_ERROR = true;             % Stop the script for errors not related to simulation e.g. unhandled exceptions or code bug. ALWAYS KEEP IT TRUE to detect my own bugs.
 
-        CLOSE_MODEL = true;                    % Close models after simulation
+        CLOSE_MODEL = false;                    % Close models after simulation
         CLOSE_OK_MODELS = true;                % Close models for which simulation ran OK
         
         FINAL_CLEAN_UP = true;                 % Will delete models and related artifacts (e.g. binaries) for the model
 
         GENERATE_TYPESMART_MODELS = false;      % Will create models that respects data-type compatibility
         
-        NUM_BLOCKS = 50;
+        NUM_BLOCKS = [30 50];
+        CHILD_MODEL_NUM_BLOCKS = [10 20];
         
-        MAX_HIERARCHY_LEVELS = 1;               % Minimum value is 1 indicating a flat model with no hierarchy.
+        MAX_HIERARCHY_LEVELS = 3;               % Minimum value is 1 indicating a flat model with no hierarchy.
 
         SAVE_ALL_ERR_MODELS = true;             % Save the models which we can not simulate 
         LOG_ERR_MODEL_NAMES = true;             % Log error model names keyed by their errors
@@ -57,13 +58,14 @@ classdef cfg
         % library, set `is_blk` false. Set true for blocks.
         
         SL_BLOCKLIBS = {
-           struct('name', 'Discrete', 'is_blk', false, 'num', 0.35)
-             struct('name', 'Continuous', 'is_blk', false,  'num', 0.35)
+           struct('name', 'Discrete', 'is_blk', false, 'num', 0.25)
+             struct('name', 'Continuous', 'is_blk', false,  'num', 0.25)
 %             struct('name', 'Math Operations', 'is_blk', false, 'num', 10)
 %             struct('name', 'Logic and Bit Operations', 'is_blk', false, 'num', 0.15)
-            struct('name', 'Sinks', 'is_blk', false, 'num', 0.15)
-            struct('name', 'Sources', 'is_blk', false, 'num', 0.15)
-%             struct('name', 'Simulink/User-Defined Functions/S-Function', 'is_blk', true, 'num', 0.10)
+            struct('name', 'Sinks', 'is_blk', false, 'num', 0.2)
+            struct('name', 'Sources', 'is_blk', false, 'num', 0.2)
+%             struct('name', 'simulink/User-Defined Functions/S-Function', 'is_blk', true, 'num', 0.10)
+            struct('name', 'simulink/Ports & Subsystems/Model', 'is_blk', true, 'num', 0.1)
         };
     
         % Won't use following SL blocks in generated models:
@@ -82,8 +84,7 @@ classdef cfg
     
         % ALLOW LIST: LOOKS LIKE ALLOW_LIST IS NOT IMPLEMENTED.
     
-        SL_HIERARCHY_BLOCKS = {'simulink/Ports & Subsystems/Model'};                    % Blocks used to create child models
-        SL_SUBSYSTEM_BLOCKS = {'simulink/Ports & Subsystems/For Each Subsystem'};       % Blocks used to create subsystem
+
 
         SAVE_SIGLOG_IN_DISC = true; % Persistently save logged signals in dic
 
@@ -94,6 +95,21 @@ classdef cfg
         STOP_IF_LISTED_ERRORS = true;  % If any of the errors from the list below occurs, break even if STOP_IF_ERROR == true.
         STOP_ERRORS_LIST = {};
 %         STOP_ERRORS_LIST = {'Simulink:Engine:SolverConsecutiveZCNum', 'Simulink:blocks:SumBlockOutputDataTypeIsBool'};
+    
+    
+        % Subsystem/hierarchy model related
+        
+        HIERARCHY_NEW_MAX_ATTEMPT = 5;
+        HIERARCHY_NEW_OLD_RATIO = {struct('name', 'new', 'num', 0.5)
+            struct('name', 'old', 'num', 0.5)
+        };
+
+
+        % Debugging Related
+        
+        PRINT_BLOCK_CONNECTION = false;
+        PRINT_BLOCK_CONFIG = false;
+    
     end
     
     

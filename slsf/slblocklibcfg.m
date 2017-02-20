@@ -4,8 +4,8 @@ classdef (Sealed) slblocklibcfg < handle
     
         categories;
         blocklist = struct;
-        hierarchy_blocks;
-        submodel_blocks;
+%         hierarchy_blocks;
+%         submodel_blocks;
     
     end
     
@@ -15,11 +15,11 @@ classdef (Sealed) slblocklibcfg < handle
             obj.categories = cfg.SL_BLOCKLIBS;  % Seems like this performs a deep copy
           
             for i=1:numel(cfg.SL_BLOCKS_BLACKLIST)
-            obj.blocklist.(util.mvn(cfg.SL_BLOCKS_BLACKLIST{i})) = 1;
+                obj.blocklist.(util.mvn(cfg.SL_BLOCKS_BLACKLIST{i})) = 1;
             end
 
-            obj.hierarchy_blocks = mymap.create_from_cell(cfg.SL_HIERARCHY_BLOCKS);
-            obj.submodel_blocks = mymap.create_from_cell(cfg.SL_SUBSYSTEM_BLOCKS);
+%             obj.hierarchy_blocks = mymap.create_from_cell(cfg.SL_HIERARCHY_BLOCKS);
+%             obj.submodel_blocks = mymap.create_from_cell(cfg.SL_SUBSYSTEM_BLOCKS);
         end
         
     end

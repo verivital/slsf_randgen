@@ -83,14 +83,14 @@ classdef (Sealed) slblockdocparser < handle
                 while true
                     
                     %%%%%% Read next line %%%%%%
-                    fprintf('New LIne:\n');
+%                     fprintf('New LIne:\n');
                     tline = fgetl(fid);
                     
                     if ~ ischar(tline)
                         break;
                     end
                     
-                    disp(tline)
+%                     disp(tline)
                     
                     tokens = strsplit(tline, {'#'}, 'CollapseDelimiters', false);
                     
@@ -236,7 +236,7 @@ classdef (Sealed) slblockdocparser < handle
                         try
                             get_param(['simulink/' libname '/' blname], 'name');
                             skip_block = false;
-                            fprintf('New SL Block: %s\n', blname);
+%                             fprintf('New SL Block: %s\n', blname);
                             blobj = libmap.create_if_not_exists(blname, 'slblockdata');
                         catch e
                             skip_block = true;

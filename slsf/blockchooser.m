@@ -19,13 +19,18 @@ classdef blockchooser < handle
 %         };
         allowlist = {};
 
-        all_cats = [];                       % Will be processed later
+        all_cats = [];                       % Not all elementes of `categories` will not be considered. 
+        % This list is the ultimately selected candidate list.
     
         blocklist; 
-        hierarchy_blocks;
-        submodel_blocks;
+%         hierarchy_blocks;
+%         submodel_blocks;
         
         selection_stat = [];
+        
+        docfixed = [];
+        
+        hier_block_count = 0;
     end
     
     methods
@@ -40,37 +45,60 @@ classdef blockchooser < handle
             
             obj.categories = helper.categories;
             obj.blocklist = helper.blocklist;
-            obj.hierarchy_blocks = helper.hierarchy_blocks;
-            obj.submodel_blocks = helper.submodel_blocks;
+%             obj.hierarchy_blocks = helper.hierarchy_blocks;
+%             obj.submodel_blocks = helper.submodel_blocks;
+            
+            obj.docfixed = slblockdocfixed.getInstance();
         end
         
         
         function ret = is_hierarchy_block(obj, bname)
-            ret = obj.hierarchy_blocks.contains(bname);
+            ret = obj.docfixed.get(bname, slblockdocfixed.HIER);
+            if isempty(ret)
+                ret = false;
+            end
         end
         
         function ret = is_submodel_block(obj, bname)
-            ret = obj.submodel_blocks.contains(bname);
+            ret = obj.docfixed.get(bname, slblockdocfixed.SUBSYS);
+            if isempty(ret)
+                ret = false;
+            end
         end
+        
+        
         
         
         function obj = process_cats(obj, can_not_choose_hierarchy_blocks)
             fprintf('PROCESSING ALL CATEGORIES...\n');
-            obj.all_cats = obj.categories;
-            num_all_cats = numel(obj.categories);
+            obj.all_cats = {};
+            num_all_cats = 0;
             
-            for i = 1:numel(obj.allowlist)
-                c = obj.allowlist{i};
+            for i = 1:numel(obj.categories)
+                c = obj.categories{i};
                 
-                if can_not_choose_hierarchy_blocks && (obj.hierarchy_blocks.contains(c.name) || obj.submodel_blocks.contains(c.name))
+                if can_not_choose_hierarchy_blocks && (obj.is_hierarchy_block(c.name) || obj.is_submodel_block(c.name))
                     fprintf('Can not add %s: max level reached.\n', c.name);
                     continue;
                 end
                 
                 num_all_cats = num_all_cats + 1;
                 obj.all_cats{num_all_cats} = c;
-%                 obj.all_cats{num_all_cats} = struct('name', c.name, 'num', c.num, 'is_scalar', true);
+                
             end
+            
+%             for i = 1:numel(obj.allowlist)
+%                 c = obj.allowlist{i};
+%                 
+%                 if can_not_choose_hierarchy_blocks && (obj.hierarchy_blocks.contains(c.name) || obj.submodel_blocks.contains(c.name))
+%                     fprintf('Can not add %s: max level reached.\n', c.name);
+%                     continue;
+%                 end
+%                 
+%                 num_all_cats = num_all_cats + 1;
+%                 obj.all_cats{num_all_cats} = c;
+% %                 obj.all_cats{num_all_cats} = struct('name', c.name, 'num', c.num, 'is_scalar', true);
+%             end
         end
         
         function obj = do_selection_stat(obj, counter, num_choose)
@@ -84,6 +112,10 @@ classdef blockchooser < handle
         
         function ret = get(obj, cur_hierarchy_level, max_hierarchy_level, num_choose)
             % Selects block names randomly
+            % WARNING: Doesn't identify hierarchy models completely. Only
+            % looks for them if obj.category element is block instead of a
+            % library.
+            
             ret = mycell(-1);
             can_not_choose_hierarchy_blocks = cur_hierarchy_level >= max_hierarchy_level;
             
@@ -100,8 +132,8 @@ classdef blockchooser < handle
             
 %             is_discrete = false;
             
-            for i=1:numel(obj.categories)
-                c = obj.categories{i};
+            for i=1:numel(obj.all_cats)
+                c = obj.all_cats{i};
                 
                 is_discrete = strcmpi(c.name, 'Discrete');
                 
@@ -111,8 +143,13 @@ classdef blockchooser < handle
                     for index = 1:counts(i)
                         ret.add({c.name, is_discrete});
                     end 
+                    
+                    if obj.is_hierarchy_block(c.name)
+                        % WARNING: Not doing following in the else block. TODO
+                        obj.hier_block_count = obj.hier_block_count + counts(i);
+                    end
                 else
-                    all_blocks = find_system(['Simulink/' c.name]);
+                    all_blocks = find_system(['simulink/' c.name]);
                     num_all_blocks = numel(all_blocks) - 1; % Skip the first
 
                     rand_vals = randi([2, num_all_blocks], 1, counts(i)); % Generates starting at 2
@@ -131,19 +168,19 @@ classdef blockchooser < handle
              
             end
             
-            fprintf('Now adding must-have blocks... \n');
-            counts_counter = numel(obj.all_cats) - numel(obj.allowlist) + 1;
-            
-            for i=counts_counter:numel(obj.all_cats)
-                cur = obj.all_cats{i}.name;
-                
-                fprintf('About to add BLOCK %s FROM ALLOWLIST %d times\n', cur, counts(i));
-                
-                for j=1:counts(i)
-                    ret.add({cur, false}); % 2nd element is boolean: is the block discrete
-                end
-
-            end
+%             fprintf('Now adding must-have blocks... \n');
+%             counts_counter = numel(obj.all_cats) - numel(obj.allowlist) + 1;
+%             
+%             for i=counts_counter:numel(obj.all_cats)
+%                 cur = obj.all_cats{i}.name;
+%                 
+%                 fprintf('About to add BLOCK %s FROM ALLOWLIST %d times\n', cur, counts(i));
+%                 
+%                 for j=1:counts(i)
+%                     ret.add({cur, false}); % 2nd element is boolean: is the block discrete
+%                 end
+% 
+%             end
         end
         
         

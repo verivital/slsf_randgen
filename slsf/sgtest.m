@@ -361,7 +361,7 @@ function sgtest(skip_first)
         % Delete sub-models
         sg.my_result.hier_models.print_all('Printing sub models...');
         for i = 1:sg.my_result.hier_models.len
-            if cfg.CLOSE_MODEL
+            if cfg.CLOSE_MODEL || (sim_res && cfg.CLOSE_OK_MODELS)
                 close_system(sg.my_result.hier_models.get(i));  % TODO closing subsystem, so will not be visible for inspection if desired.
             end
             delete([sg.my_result.hier_models.get(i) '.slx']);

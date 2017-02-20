@@ -3,6 +3,8 @@ classdef innerblkchooser < blockchooser
     %   Detailed explanation goes here
     
     properties
+        source_proportion = 0.15;  % Will be updated
+        sink_proportion = 0.15;     % Will be updated
     end
     
     methods
@@ -12,27 +14,39 @@ classdef innerblkchooser < blockchooser
             % Handle obj.categories property
             
             new_cats = cell(1, numel(obj.categories));
+            new_cats_num = 0;
             
             for i=1:numel(obj.categories)
                 c = obj.categories{i};
-                if strcmpi(c.name, 'Sinks') || strcmpi(c.name, 'Sources')
+                
+                if strcmpi(c.name, 'Sources')
                     new_s = c;
-                    new_s.num = c.num - 1;
+                    new_s.num = c.num/2;
+                    obj.source_proportion = new_s.num;
                     
-                    new_cats{i} = new_s;
+                    new_cats_num = new_cats_num + 1;
+                    new_cats{new_cats_num} = new_s;
+                elseif strcmpi(c.name, 'Sinks') 
+                    % Don't add any sink -- most of them are blacklisted
+                    obj.sink_proportion = c.num;
                 else
-                    new_cats{i} = c;
+                    new_cats_num = new_cats_num + 1;
+                    new_cats{new_cats_num} = c;
                 end
             end
-            
+
             obj.categories = new_cats;
+            
+            obj.categories{new_cats_num + 1} = ...
+                struct('name', 'simulink/Sources/In1', 'is_blk', true, 'num', obj.source_proportion);
+            obj.categories{new_cats_num + 2} = ...
+                struct('name', 'simulink/Sinks/Out1', 'is_blk', true, 'num', obj.sink_proportion);
             
             % Handle obj.allowlist
             
-            len_allowlist = numel(obj.allowlist);
-            
-            obj.allowlist{len_allowlist + 1} = struct('name', 'simulink/Sources/In1');
-            obj.allowlist{len_allowlist + 2} = struct('name', 'simulink/Sinks/Out1');
+%             len_allowlist = numel(obj.allowlist);
+%             obj.allowlist{len_allowlist + 1} = struct('name', 'simulink/Sources/In1');
+%             obj.allowlist{len_allowlist + 2} = struct('name', 'simulink/Sinks/Out1');
             
             % Blacklist
             

@@ -33,7 +33,7 @@ classdef simple_generator < handle
         
         max_hierarchy_level = [];
         current_hierarchy_level = [];
-        inner_model_num_blocks = 4;     % Number of blocks for models whose `current_hierarchy_level` is > 1 % TODO
+%         inner_model_num_blocks = 4;     % Number of blocks for models whose `current_hierarchy_level` is > 1 % TODO
         
 %         simul;                      % Instance of simulator class
         max_simul_attempt = 15;
@@ -75,6 +75,10 @@ classdef simple_generator < handle
 
         blk_in_line = 5;
         
+        % hierarchy related
+        hierarchy_new_old = []; % Ratio of new and old submodels
+        hierarchy_new_count = 0;
+        hierarchy_old_models;
         
     end
     
@@ -88,6 +92,7 @@ classdef simple_generator < handle
             obj.log_signals = log_signals;
             obj.simulation_mode = simulation_mode;
             obj.compare_results = compare_results;
+            obj.hierarchy_old_models = mycell();
         end
         
         
@@ -548,6 +553,14 @@ classdef simple_generator < handle
             end
             
             obj.NUM_BLOCKS = obj.NUM_BLOCKS + obj.num_preadded_blocks;
+            
+            % Calculate new-old ratio for hierarchy models
+            obj.hierarchy_new_old = util.roulette_wheel(cfg.HIERARCHY_NEW_OLD_RATIO, obj.blkchooser.hier_block_count);
+            if obj.hierarchy_new_old(1) == 0
+                % If choosing zero NEW blocks.
+                obj.hierarchy_new_old = [ceil(obj.blkchooser.hier_block_count/2), floor(obj.blkchooser.hier_block_count/2)];
+            end
+            fprintf('Hierarchy blocks ratio: New %d; Old %d\n', obj.hierarchy_new_old(1), obj.hierarchy_new_old(2));
         end
         
         
@@ -601,11 +614,15 @@ classdef simple_generator < handle
             
             while num_inp_ports > 0
                 
+                if cfg.PRINT_BLOCK_CONNECTION
                 fprintf('-----\n');
+                end
                 
                 while_it = while_it + 1;
     
+                if cfg.PRINT_BLOCK_CONNECTION
                 fprintf('Num Input port: %d; num output port: %d\n', num_inp_ports, num_oup_ports);
+                end
                 
                 r_i_blk = 0;
                 r_i_port = 0;
@@ -618,7 +635,7 @@ classdef simple_generator < handle
 
                 if num_inp_ports > 0
                    % choose an input port
-                   if obj.LIST_CONN
+                   if cfg.PRINT_BLOCK_CONNECTION
                     fprintf('(d) num_inp_blk: %d\n', num_inp_blocks);
                    end
                    [r_i_blk, r_i_port] = obj.choose_bp(num_inp_blocks, inp_blocks, obj.slb.inp_ports);
@@ -632,7 +649,7 @@ classdef simple_generator < handle
                     
                     % Choose block not already taken for input.
                     
-                    if obj.LIST_CONN
+                    if cfg.PRINT_BLOCK_CONNECTION
                         fprintf('(d) num_oup_blk: %d\n', num_oup_blocks);  
                     end
 
@@ -644,7 +661,7 @@ classdef simple_generator < handle
                         % iteration.
                         
                         if num_inp_blocks > 1
-                            fprintf('SKIPPING THIS ITERATION...\n');
+%                             fprintf('SKIPPING THIS ITERATION...\n');
                             continue;
                         else
                             % Can not use this output block. pick another
@@ -659,7 +676,7 @@ classdef simple_generator < handle
                 
                 if r_i_port == 0 || r_i_blk == 0
                    
-                    obj.c_p('No new inputs available!', obj.LIST_CONN);
+                    obj.c_p('No new inputs available!', cfg.PRINT_BLOCK_CONNECTION);
                     
                     throw(MException('SL:RandGen:UnexpectedBehavior', 'No Inputs were chosen!'));
                     
@@ -667,11 +684,11 @@ classdef simple_generator < handle
                 end
                 
                 if r_o_port == 0 || r_o_blk == 0
-                    obj.c_p('No new outputs available!', obj.LIST_CONN);
+                    obj.c_p('No new outputs available!', cfg.PRINT_BLOCK_CONNECTION);
                     [r_o_blk, r_o_port] = obj.choose_bp_without_chosen(obj.slb.oup.len, obj.slb.oup.blocks, obj.slb.oup_ports, r_i_blk);
                 end
                 
-                if obj.LIST_CONN
+                if cfg.PRINT_BLOCK_CONNECTION
                     fprintf('Input: Blk %d Port %d chosen.\n', r_i_blk, r_i_port);
                     fprintf('Output: Blk %d Port %d chosen.\n', r_o_blk, r_o_port);
                 end
@@ -688,7 +705,7 @@ classdef simple_generator < handle
                     fprintf('add_line(''%s\'', ''%s'', ''%s'', ''autorouting'', ''on'')\n', obj.sys, t_o, t_i);
                     fprintf('[!] Giving up... RETURNGING FROM BLOCK CONNECTION...\n');
                     throw(MException('SL:RandGen:UnexpectedBehavior', 'Unexpected err while connecting line'));
-                    break;
+%                     break;
                 end
                 
                 obj.slb.connect_nodes(r_o_blk, r_o_port, r_i_blk, r_i_port);
@@ -772,7 +789,7 @@ classdef simple_generator < handle
             % Choose a block and pointer
             
             % choose a block
-           num_blocks
+%            num_blocks
            rand_num = randi([1, num_blocks], 1, 1);
            r_blk = blocks{rand_num(1)};
 
@@ -818,11 +835,11 @@ classdef simple_generator < handle
         
         function obj = set_sample_time_for_discrete_blk(obj, h, blk)
             if ~ blk{2}
-                disp('NOT A DISCRETE BLOCK. RETURN');
+%                 disp('NOT A DISCRETE BLOCK. RETURN');
                 return;
             end
             
-            disp('DISCRETE BLK!');
+%             disp('DISCRETE BLK!');
             
             try
                 set_param(h, 'SampleTime', '1');  % TODO random choose sample time?
@@ -842,8 +859,9 @@ classdef simple_generator < handle
             x = obj.pos_x;
             y = obj.pos_y;
             
-            disp('Candidate Blocks:');
-            disp(obj.candi_blocks);
+%             disp('Candidate Blocks:');
+%             disp(obj.candi_blocks); % Doesn't work: only mentions that
+%             elements are cell
 
             for block_name = obj.candi_blocks
                 % Warning: block_name could be a string or a cell. This is
@@ -985,52 +1003,80 @@ classdef simple_generator < handle
             
         end
         
+%         function ret = handle_hierachy_or_submodel(obj, mytype)
+%         end
+        
         
         
         function ret=handle_hierarchy_blocks(obj)
-%             ret = 'nil';
-%             return;                                                             % TODO
-            model_name = ['hier' int2str(util.rand_int(1, 10000, 1))]; % TODO fix Max number
             
-            SIMULATE_MODELS = false;
-            CLOSE_MODEL = true;
-            LOG_SIGNALS = false;
-            SIMULATION_MODE = [];
-            COMPARE_SIM_RESULTS = false;
-            
-            hg = hier_generator(obj.inner_model_num_blocks, model_name, SIMULATE_MODELS, CLOSE_MODEL, LOG_SIGNALS, SIMULATION_MODE, COMPARE_SIM_RESULTS);
-            hg.skip_after_creation = obj.skip_after_creation;
-            hg.max_hierarchy_level = obj.max_hierarchy_level;
-            hg.current_hierarchy_level = obj.current_hierarchy_level + 1;
-            
-            if obj.current_hierarchy_level == 1
-                disp('CURR HIER: 1');
-                hg.root_result = obj.my_result;
-            else
-                disp('CURR HIER: NOT 1');
-                hg.root_result = obj.root_result;
-            end
-            
-            hg.root_result.hier_models
-            
-            hg.blkchooser = innerblkchooser();
+            if obj.hierarchy_new_count < obj.hierarchy_new_old(1)
+                fprintf('Choosing from NEW hierarchy models...\n');                 
+                model_name = ['hier' int2str(util.rand_int(1, 10000, 1))]; % TODO fix Max number
+                
+                fprintf('--x-- New Child Model Creation for %s --x-- \n', model_name);
 
-            hg.init();
-            
-            try
-                hg.go();
-            catch e
-                fprintf('Exception in Inner block simulation: \n' );
-                getReport(e)
+                SIMULATE_MODELS = true;
+                CLOSE_MODEL = true;
+                LOG_SIGNALS = false;
+                SIMULATION_MODE = [];
+                COMPARE_SIM_RESULTS = false;
+                
+                for new_mdl_i = 1:cfg.HIERARCHY_NEW_MAX_ATTEMPT
+                    
+                    fprintf('New model creation attempt: %d\n', new_mdl_i);
+
+                    hg = hier_generator(cfg.CHILD_MODEL_NUM_BLOCKS, model_name, SIMULATE_MODELS, CLOSE_MODEL, LOG_SIGNALS, SIMULATION_MODE, COMPARE_SIM_RESULTS);
+                    hg.skip_after_creation = obj.skip_after_creation;
+                    hg.max_hierarchy_level = obj.max_hierarchy_level;
+                    hg.current_hierarchy_level = obj.current_hierarchy_level + 1;
+
+                    if obj.current_hierarchy_level == 1
+                        disp('CURR HIER: 1');
+                        hg.root_result = obj.my_result;
+                    else
+                        disp('CURR HIER: NOT 1');
+                        hg.root_result = obj.root_result;
+                    end
+
+        %             hg.root_result.hier_models
+
+                    hg.blkchooser = innerblkchooser();
+
+                    hg.init();
+
+                    try
+                        hg.go();
+                        break;
+                    catch e
+                        fprintf('Exception in hierarchy model simulation: \n' );
+                        getReport(e)
+                        if new_mdl_i ~= cfg.HIERARCHY_NEW_MAX_ATTEMPT
+                            close_system(model_name);
+                        end
+                    end
+                end
+
+                % Save this model?
+                
+                if new_mdl_i == cfg.HIERARCHY_NEW_MAX_ATTEMPT && obj.hierarchy_old_models.len > 0
+                    fprintf('New Model creation unsuccessful but old models available.\n');
+                else
+                    save_system(model_name);
+                    disp('SAVING SUB SYSTEM...');
+                    hg.root_result.hier_models.add(model_name);
+
+                    obj.hierarchy_new_count = obj.hierarchy_new_count + 1;
+                    obj.hierarchy_old_models.add(model_name);
+
+                    ret = model_name;
+                    return;
+                end
             end
+
+            fprintf('Choosing from old hierarchy models...\n');
+            ret = obj.hierarchy_old_models.get(randi([1, obj.hierarchy_old_models.len], 1, 1));
             
-            % Save this model?
-            
-            save_system(model_name);
-            disp('SAVING SUB SYSTEM...');
-            hg.root_result.hier_models.add(model_name);
-            
-            ret = model_name;
         end
         
         
@@ -1043,7 +1089,7 @@ classdef simple_generator < handle
             
             full_model_name = [parent_model blk_name];
             
-            hg = submodel_generator(obj.inner_model_num_blocks, full_model_name, SIMULATE_MODELS, CLOSE_MODEL, LOG_SIGNALS, SIMULATION_MODE, COMPARE_SIM_RESULTS);                      
+            hg = submodel_generator(cfg.CHILD_MODEL_NUM_BLOCKS, full_model_name, SIMULATE_MODELS, CLOSE_MODEL, LOG_SIGNALS, SIMULATION_MODE, COMPARE_SIM_RESULTS);                      
             hg.skip_after_creation = obj.skip_after_creation;
             hg.max_hierarchy_level = obj.max_hierarchy_level;
             hg.current_hierarchy_level = obj.current_hierarchy_level + 1;
@@ -1102,12 +1148,13 @@ classdef simple_generator < handle
         
         function obj=config_block(obj, h, blk_type, blk_name)
             
-            
-            disp(['(' blk_name ') Attempting to config block ', blk_type]);
+            if cfg.PRINT_BLOCK_CONFIG
+                disp(['(' blk_name ') Attempting to config block ', blk_type]);
+            end
             
             found = obj.blkcfg.get_block_configs(blk_type);
             
-            if obj.LIST_BLOCK_PARAMS
+            if cfg.PRINT_BLOCK_CONFIG
                 bp = get_param(h, 'DialogParameters');
                 disp(bp);
             end
@@ -1115,14 +1162,20 @@ classdef simple_generator < handle
 %             obj.random_config_block(h, blk_type, blk_name);
             
             if isempty(found)
-                disp(['[!] Did not find config db for block ', blk_type]);
+                if cfg.PRINT_BLOCK_CONFIG
+                    disp(['[!] Did not find config db for block ', blk_type]);
+                end
                 return;
             end
             
-            disp(['[i] Will config block type ', blk_type]);
+            if cfg.PRINT_BLOCK_CONFIG
+            	disp(['[i] Will config block type ', blk_type]);
+            end
             
             for i=found
-                disp(['Configuring ', i{1}.p()]);
+                if cfg.PRINT_BLOCK_CONFIG
+                    disp(['Configuring ', i{1}.p()]);
+                end
                 set_param(h, i{1}.p(), i{1}.get());
             end           
             
