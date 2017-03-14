@@ -59,6 +59,9 @@ classdef singleresult < handle
         
         runtime = [];               % To count runtime of various phases of DT framework
         
+        dc_analysis = 0;     % data-type conversions added during pre-simulation analysis phase
+        dc_sim = 0;             % data-type conversions added during simulation (Fix Errors) phase
+        
     end
     
     methods

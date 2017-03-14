@@ -14,6 +14,9 @@ classdef simulator < handle
         % Data type fixer related
         last_handle = [];
         last_at_output = [];
+        
+        visited_nodes;
+        num_visited;
     end
     
     
@@ -76,104 +79,185 @@ classdef simulator < handle
             
         end
         
-        function obj = df_analysis_all_nodes(obj, slb, fxd)
-            fprintf('DF Analysis for All Nodes\n');
-            
-            for i=1:numel(slb.nodes)
-                n = slb.nodes{i};
-                n.is_direct_feedthrough(fxd.df.get(n.search_name));
+%         function obj = df_analysis_all_nodes(obj, slb, fxd)
+%             fprintf('DF Analysis for All Nodes\n');
+%             
+%             for i=1:numel(slb.nodes)
+%                 n = slb.nodes{i};
+%                 n.is_direct_feedthrough(fxd.df.get(n.search_name));
+%             end
+%             
+%             fprintf('END F Analysis for All Nodes\n');
+%         end
+        
+        function obj = do_data_type_analysis(obj, dfs, fxd)
+            while true
+                
+                if dfs.isempty()
+%                     if second_stack.isempty()
+%                         fprintf('Both stacks empty. Done!\n');
+                        break;
+%                     else
+%                         fprintf('--- Processing 2nd stack ---\n');
+%                         temp_s = dfs;
+%                         dfs = second_stack;
+%                         second_stack = temp_s;
+%                     end
+                end
+
+                c = dfs.pop();
+                fprintf('\t\t\t\t\t\t\t\t\t\t\t\tPopped %d\n', c.n.my_id);
+
+                if c.n.is_visited
+                    fprintf('%d is already visited\n', c.n.my_id);
+                    continue;
+                end
+
+
+                fprintf('\t\t\t\tVisiting %d\n', c.n.my_id);
+                c.n.is_visited = true;
+                obj.num_visited = obj.num_visited + 1;  
+                obj.visited_nodes(c.n.my_id) = 1;
+
+                % Get my output type
+                my_out_type = c.n.get_output_type(fxd);
+
+
+                for i=1:numel(c.n.out_nodes)
+                    for j=1:numel(c.n.out_nodes{i})
+                        chld = c.n.out_nodes{i}{j};
+
+                        % Get In type
+
+                        is_compatible = chld.is_out_in_types_compatible(my_out_type);
+
+                        if ~ is_compatible
+                            fprintf('Input Output not compatible! Out: %s ||| In: %s\n', c.n.search_name, chld.search_name);
+%                             error('Input output types are not compatible');
+
+                            obj.add_data_type_converter(c.n.handle);
+                            obj.generator.my_result.dc_analysis = obj.generator.my_result.dc_analysis + 1;
+                        end
+
+
+                        if c.n.out_nodes_otherport{i}{j} == 1
+                            chld_tagged = slbnodetags(chld);
+                            fprintf('pushing %d\n', chld.my_id);
+                            chld.in_type = my_out_type;
+                            dfs.push(chld_tagged);
+                        else
+                            fprintf('Not Pushing %d; not pushed %d\n', chld.my_id, chld.in_node_first.my_id);
+%                             second_stack.push(slbnodetags(chld.in_node_first));
+                        end
+
+
+                    end
+                end
             end
-            
-            fprintf('END F Analysis for All Nodes\n');
         end
-        
-        
+
+
         function obj = pre_sim_analysis(obj, slb)
             fprintf('@@@@@@@@@@@@@@@ PRE SIMULATION ANALYSIS @@@@@@@@@@@@@@@\n');
             
             fxd = slblockdocfixed.getInstance();
             
-            obj.df_analysis_all_nodes(slb, fxd);
+%             obj.df_analysis_all_nodes(slb, fxd);
             
             
             dfs = CStack();
-            second_stack = CStack();
+%             second_stack = CStack();
             
-            for i=1:slb.sources.len
-                c_s = slb.sources.get(i);
-                fprintf('pushing %d\n', c_s.my_id);
+            
+            for i=1:slb.nondfts.len
+                c_s = slb.nondfts.get(i);
+                fprintf('pushing non-DFT %d\n', c_s.my_id);     % TODO handle conditionally DFTs
                 dfs.push(slbnodetags(c_s));
             end
             
-            num_visited = 0;
             
-            
-            
-            while true
-                
-                if dfs.isempty()
-                    if second_stack.isempty()
-                        fprintf('Both stacks empty. Done!\n');
-                        break;
-                    else
-                        fprintf('--- Processing 2nd stack ---\n');
-                        temp_s = dfs;
-                        dfs = second_stack;
-                        second_stack = temp_s;
-                    end
-                end
-                
-                c = dfs.pop();
-                fprintf('\t\t\t\t\t\t\t\t\t\t\t\tPopped %d\n', c.n.my_id);
-                
-                if c.n.is_visited
-                    fprintf('%d is already visited\n', c.n.my_id);
-                    continue;
-                end
-                
-                
-                fprintf('\t\t\t\tVisiting %d\n', c.n.my_id);
-                c.n.is_visited = true;
-                num_visited = num_visited + 1;                
-                
-                % Get my output type
-                my_out_type = c.n.get_output_type(fxd);
-                
-
-                for i=1:numel(c.n.out_nodes)
-                    for j=1:numel(c.n.out_nodes{i})
-                        chld = c.n.out_nodes{i}{j};
-                        
-                        % Get In type
-                        
-                        chld_in_types = chld.get_input_type();
-                        
-                        is_compatible = chld.is_out_in_types_compatible(my_out_type, chld_in_types);
-                        
-                        if ~ is_compatible
-                            fprintf('Out: %s ||| In: %s\n', c.n.search_name, chld.search_name);
-                        end
-                        
-                        if c.n.out_nodes_otherport{i}{j} == 1
-                            chld_tagged = slbnodetags(chld);
-                            fprintf('pushing %d\n', chld.my_id);
-                            dfs.push(chld_tagged);
-                        else
-                            fprintf('Not Pushing %d; pushed %d\n', chld.my_id, chld.in_node_first.my_id);
-                            second_stack.push(slbnodetags(chld.in_node_first));
-                        end
-                        
-                        
-                    end
-                end
+            for i=1:slb.sources.len
+                c_s = slb.sources.get(i);
+                fprintf('pushing source %d\n', c_s.my_id);
+                dfs.push(slbnodetags(c_s));
             end
             
-%             if num_visited ~= numel(slb.all)
-%                 num_visited
-%                 error('Num visited is not equal to all blocks.');
-%             end
+            obj.num_visited = 0;
+            obj.visited_nodes = zeros(1, numel(slb.all));
+            
+            obj.do_data_type_analysis(dfs, fxd);
+            
+            % secondary analysis
+            
+            obj.secondary_analysis(slb, fxd);
             
             fprintf('@@@@@@@@@@@@@@@ END PRE SIMULATION ANALYSIS @@@@@@@@@@@@@@@\n');
+        end
+        
+        function obj = secondary_analysis(obj, slb, fxd)
+            fprintf('~~ Secondary Analysis ~~\n');
+            if obj.num_visited ~= slb.num_reachable_nodes
+              
+                slb.num_reachable_nodes
+                fprintf('Unvisited Nodes:\n');
+                
+                unvisited = mycell(numel(slb.all) - obj.num_visited);
+                
+                for vi = 1:numel(obj.visited_nodes)
+                    if obj.visited_nodes(vi) == 0
+                        fprintf('\t%d', vi);
+                        unvisited.add(vi);
+                    end
+                end
+                fprintf('\n');
+                
+                is_loop_found = false;
+               
+                for i = 1:unvisited.len
+                    c = slb.nodes{unvisited.get(i)};
+                    [is_loop_found, c_t] = c.check_loop(slb.NUM_BLOCKS);
+
+                    if is_loop_found
+                        
+                        new_node = obj.pre_fix_loop(c_t, slb);
+                        
+                        dfs = CStack();
+                        dfs.push(slbnodetags(new_node));
+                        obj.do_data_type_analysis(dfs, fxd);
+                        
+                        break;
+                    else
+                        fprintf('\t No loop found!\n');
+                    end
+                end
+                
+                if ~ is_loop_found
+                    error('Weird Behavior: no loop found.');
+                end
+                
+            end
+        end
+        
+        
+        function new_block_node = pre_fix_loop(obj, tn, slb)
+            % Add Delay block at a specific input port of tn. tn is the
+            % Node (tagged node)
+            
+            new_block_type = 'simulink/Discrete/Delay';
+            
+            new_delay_blocks = obj.add_block_in_the_middle(tn.n.handle, new_block_type, false, true, int2str(tn.which_input_port));
+            
+            assert(new_delay_blocks.len == 1); % There will be only one such block
+            
+            h = new_delay_blocks.get(1);  
+            set_param(h, 'SampleTime', '1');                  %       TODO sample time
+            
+            % Register new block
+            new_block_node = slb.register_new_block(h, new_block_type, get_param(h, 'name'));
+          
+            old_parent = tn.which_parent_block;
+            old_parent.replace_child(tn.which_parent_port, new_block_node);
+            new_block_node.add_child(tn.n, 1, tn.which_input_port);
         end
         
         
@@ -193,8 +277,8 @@ classdef simulator < handle
                 fprintf('TypeSmart generation analysis is turned off\n');
             end
             
-%             warning('Returning abruptly before simulating \n');
-%             return;
+            warning('Returning abruptly before simulating \n');
+            return;
             
             for i=1:obj.max_try
                 disp(['(s) Simulation attempt ' int2str(i)]);
@@ -438,6 +522,14 @@ classdef simulator < handle
         end
         
         
+        function new_blocks = add_data_type_converter(obj, h)
+           
+            disp('Adding DATA TYPE conversion block...');
+            new_blocks = obj.add_block_in_the_middle(h, 'Simulink/Signal Attributes/Data Type Conversion', true, false);
+                 
+        end
+        
+        
         function done = fix_data_type_mismatch(obj, e, loc, blk_params)
             
             if nargin < 4
@@ -483,6 +575,8 @@ classdef simulator < handle
                     end
                 end
             end
+            
+            obj.generator.my_result.dc_sim = obj.generator.my_result.dc_sim + new_blocks.len;
                  
         end
         
@@ -539,7 +633,13 @@ classdef simulator < handle
         
         
         
-        function ret = add_block_in_the_middle(obj, h, replacement, ignore_in, ignore_out)
+        function ret = add_block_in_the_middle(obj, h, replacement, ignore_in, ignore_out, specific_port)
+            
+            if nargin == 5
+                specific_port = [];
+            else
+                fprintf('Specific Port to use: %d\n', specific_port);
+            end
   
             ret = mycell(-1);
             
@@ -564,6 +664,12 @@ classdef simulator < handle
 
             for j = 1:numel(ports)
                 p = ports(j);
+                
+                if ~isempty(specific_port) && ~strcmp(specific_port, p.Type)
+                    fprintf('Skipping due to specific port. current: %s\n', p.Type);
+                    continue;
+                end
+                
                 is_inp = [];
                 
                 % Detect if current port is Input or Output

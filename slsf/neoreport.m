@@ -21,6 +21,8 @@ function [big_total, big_timedout] = neoreport(datefrom)
     big_timedout = [];
     big_compare = [];
     
+    big_dc = mycell();
+    
     
     rt_bs = 0;
     rt_pc = 0;
@@ -36,10 +38,10 @@ function [big_total, big_timedout] = neoreport(datefrom)
 
     for i = 1:numel(file_list)
         
-        cur_file = file_list(i).name
+        cur_file = file_list(i).name;
         
         if ~file_list(i).isdir || strcmp(cur_file, '.') || strcmp(cur_file, '..')
-            disp('Not a directory.... ignoring.');
+%             disp('Not a directory.... ignoring.');
             continue;
         end
         
@@ -69,6 +71,8 @@ function [big_total, big_timedout] = neoreport(datefrom)
             big_total(cur_file_index) = num_total_sim;
             big_timedout(cur_file_index) = num_timedout_sim;
             big_compare(cur_file_index) = num_compare_error;
+            
+            big_dc.add(dtc_stat);
             
             for j = 1:all_models.len
                 cur = all_models.get(j);
@@ -100,7 +104,7 @@ function [big_total, big_timedout] = neoreport(datefrom)
                     rt_sl = rt_sl + d(singleresult.SIGNAL_LOGGING);
                     rt_comp = rt_comp + d(singleresult.COMPARISON);
                 else
-                    fprintf('NOT SUCCESSFUL! Skipping...\N');
+%                     fprintf('NOT SUCCESSFUL! Skipping...\n');
                 end
 
             end
@@ -150,4 +154,15 @@ function [big_total, big_timedout] = neoreport(datefrom)
     fprintf('Avg. Blocks: %.2f\n', num_blocks/num_sim);
     
     fprintf('Total files: %d\n', cur_file_index);
+    
+    fprintf('Data Conversion statistics\n');
+    
+    for i = 1:big_dc.len
+        c = big_dc.get(i);
+        for j=1:c.len
+            x = c.get(j);
+            fprintf('%d-%d \t %d \t %d \n', i, j, x{1}, x{2})
+        end
+    end
+    
 end

@@ -1,6 +1,6 @@
-% This is entry point to the Random Generator.
+% This is entry-point to all CyFuzz experiments.
 % Run this script from the command line. Change configurations in cfg.m
-% class.
+% class. 
 
 function sgtest(skip_first)
 
@@ -107,7 +107,8 @@ function sgtest(skip_first)
 
     l_logged = [];
     all_siglog = mycell(cfg.NUM_TESTS);
-    all_models = mycell(cfg.NUM_TESTS);             % Store some stats regarding all models e.g. number of blocks in the model
+    all_models = mycell(cfg.NUM_TESTS);             % Store some stats before running simulation for all models e.g. number of blocks in the model
+    dtc_stat = mycell(cfg.NUM_TESTS); % data-type conversion stats
 
     block_selection = mymap();                  % Stats on library selection
     total_time = [];                            % Time elapsed so far since the start of the experiment
@@ -186,6 +187,8 @@ function sgtest(skip_first)
             % Runtime
 
             runtime.add(sg.my_result.runtime);
+            
+            dtc_stat.add({sg.my_result.dc_analysis, sg. my_result.dc_sim});
 
             if ~ sim_res
 
@@ -256,10 +259,14 @@ function sgtest(skip_first)
                 e_map = util.map_inc(e_map, e.identifier);
 
                 if cfg.STOP_IF_ERROR
-                    disp('BREAKING FROM MAIN LOOP AS ERROR OCCURRED IN SIMULATION');
-                    break_main_loop = true;
+                    if util.cell_str_in(cfg.CONTINUE_ERRORS_LIST, e.identifier)
+                        fprintf('An error occured, but SGTEST is not stopping even STOP_IF_ERROR is set to true. You asked me to do this for this specific error in cfg.m file.\n');
+                    else
+                        disp('BREAKING FROM MAIN LOOP AS ERROR OCCURRED IN SIMULATION');
+                        break_main_loop = true;
+                    end
                 elseif cfg.STOP_IF_LISTED_ERRORS && util.cell_str_in(cfg.STOP_ERRORS_LIST, e.identifier)
-                    disp('BREAKING FROM MAIN LOOP --- ERROR IS LISTED IN cfg.m FILE.');
+                    disp('BREAKING FROM MAIN LOOP --- You asked me to stop for this specific error in the cfg.m FILE.');
                     break_main_loop = true;
                 end
 
@@ -289,9 +296,10 @@ function sgtest(skip_first)
 
             end
         catch e
+            %%%%%%%%%%%%% "OTHER ERROR" %%%%%%%%%%%
             % Exception occurred when simulating, but the error was not caught.
             % Reason: code bug/unhandled errors. ALWAYS INSPECT THESE ERRORS!!
-            disp('EEEEEEEEEEEEEEEEEEEE Unhandled Error In Simulation EEEEEEEEEEEEEEEEEEEEEEEEEE');
+            warning('EEEEEEEEEEEEEEEEEEEE Unhandled Error In YOUR CODE! EEEEEEEEEEEEEEEEEEEEEEEEEE');
     %         e
     %         e.message
     %         e.cause
@@ -315,9 +323,13 @@ function sgtest(skip_first)
             util.cond_save_model(true, model_name, OTHER_ERR_MODEL_STORAGE, sg.my_result);
 
             if cfg.STOP_IF_OTHER_ERROR
-                disp('Stopping: STOP_IF_OTHER_ERROR=True. WARNING: This will not be saved in reports.');
-                break_main_loop = true;
-    %             break;
+                
+                if util.cell_str_in(cfg.CONTINUE_ERRORS_LIST, e.identifier)
+                    fprintf('Continuing SGTEST script, although an "other error" occured. This is specified in cfg.m file.\n');
+                else
+                    disp('Stopping: STOP_IF_OTHER_ERROR=True. WARNING: This will not be saved in reports.');
+                    break_main_loop = true;
+                end
             end
 
             if cfg.CLOSE_MODEL
@@ -351,6 +363,7 @@ function sgtest(skip_first)
             'num_compare_error', 'num_other_error', 'num_timedout_sim', 'e_map', ... 
             'err_model_names', 'compare_err_model_names', 'other_err_model_names', ...
             'e_later', 'log_len_mismatch_count', 'log_len_mismatch_names', 'all_siglog', 'all_models', 'block_selection', 'runtime',...
+            'dtc_stat',...
             '-append');
 
         if cfg.DELETE_MODEL && isempty(cfg.USE_PRE_GENERATED_MODEL)

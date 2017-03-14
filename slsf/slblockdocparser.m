@@ -69,7 +69,7 @@ classdef (Sealed) slblockdocparser < handle
         end
         
         function obj = parse_block_data_type_support(obj)
-            fprintf('Reading block data type supports...\n');
+            fprintf('Reading block data type supports (Input data-types support info)...\n');
             
             fid = [];
             
@@ -125,7 +125,10 @@ classdef (Sealed) slblockdocparser < handle
                         continue;
                     end
                     
-                    blname = tokens{2};
+                    blname = strsplit(tokens{2}, {' ('});
+                    
+                    blname = blname{1};
+                    
                     bl_obj = slblockdata();
 %                     bl_obj.myname = blname;
 
@@ -133,6 +136,15 @@ classdef (Sealed) slblockdocparser < handle
                         if util.starts_with(tokens{i}, 'X')
                             bl_obj.in_dtypes.add(obj.DTYPES{i});
 %                             fprintf('Block %s: %s\n', blname, obj.DTYPES{i});
+
+                            special_attributes = regexp(tokens{i}, '[\d]+', 'match');
+                            
+                            for sp_at_i = 1:numel(special_attributes)
+                                if strcmp(special_attributes{sp_at_i}, '6')
+                                    bl_obj.is_signed_only = true;
+                                end
+                            end
+                            
                         end
                     end
                     
@@ -260,6 +272,8 @@ classdef (Sealed) slblockdocparser < handle
                         dtypes = strsplit(tokens{3}, '|');
                         
                         int_added = false;
+                        uint_added = false;
+                        
                         for j=1:numel(dtypes)
                             cur_d = strtrim(dtypes{j});
                             if cur_d(1) == '{'
@@ -275,10 +289,14 @@ classdef (Sealed) slblockdocparser < handle
                                         blobj.out_dtypes.add('single');
                                     elseif strcmp(cur_d_stripped, 'boolean')
                                         blobj.out_dtypes.add('boolean');
-                                    elseif ~int_added && (util.starts_with(cur_d_stripped, 'int') || util.starts_with(cur_d_stripped, 'uint'))
+                                    elseif ~int_added && util.starts_with(cur_d_stripped, 'int')
                                         blobj.out_dtypes.add('int');
                                         int_added = true;
+                                    elseif ~uint_added && util.starts_with(cur_d_stripped, 'uint')
+                                        blobj.out_dtypes.add('uint');
+                                        uint_added = true;
                                     end
+                                    
                                 end
                             end
                         end

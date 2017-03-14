@@ -8,15 +8,15 @@ classdef cfg
         
         SIMULATE_MODELS = true;                 % Simulate generated model
 
-        LOG_SIGNALS = true;                     % Log all block-output signals for comparison. Note: it disregards `USE_PRE_GENERATED_MODEL` setting.
+        LOG_SIGNALS = false;                     % Log all block-output signals for comparison. Note: it disregards `USE_PRE_GENERATED_MODEL` setting.
 
-        COMPARE_SIM_RESULTS = true;             % Compare simulation results obtained by logging signals.
+        COMPARE_SIM_RESULTS = false;             % Compare simulation results obtained by logging signals.
 
         % If following is non-empty and a string, then instead of generating a model, will use value of this variable as an already generated model. 
         % Put empty ``[]'' to randomly generate models.
 
-%         USE_PRE_GENERATED_MODEL = [];           
-         USE_PRE_GENERATED_MODEL = 'sampleModel16';  % Instead of randomly
+        USE_PRE_GENERATED_MODEL = [];           
+%          USE_PRE_GENERATED_MODEL = 'sampleModel16';  % Instead of randomly
 %          generating model will use this particular model for further
 %          phases of CyFuzz
 
@@ -32,12 +32,12 @@ classdef cfg
         
         FINAL_CLEAN_UP = true;                 % Will delete models and related artifacts (e.g. binaries) for the model
 
-        GENERATE_TYPESMART_MODELS = false;      % Will create models that respects data-type compatibility
+        GENERATE_TYPESMART_MODELS = true;      % Will create models that respects data-type compatibility
         
-        NUM_BLOCKS = [30 50];
+        NUM_BLOCKS = 40;
         CHILD_MODEL_NUM_BLOCKS = [10 20];
         
-        MAX_HIERARCHY_LEVELS = 3;               % Minimum value is 1 indicating a flat model with no hierarchy.
+        MAX_HIERARCHY_LEVELS = 1;               % Minimum value is 1 indicating a flat model with no hierarchy.
 
         SAVE_ALL_ERR_MODELS = true;             % Save the models which we can not simulate 
         LOG_ERR_MODEL_NAMES = true;             % Log error model names keyed by their errors
@@ -58,14 +58,14 @@ classdef cfg
         % library, set `is_blk` false. Set true for blocks.
         
         SL_BLOCKLIBS = {
-           struct('name', 'Discrete', 'is_blk', false, 'num', 0.25)
-             struct('name', 'Continuous', 'is_blk', false,  'num', 0.25)
+           struct('name', 'Discrete', 'is_blk', false, 'num', 0.6)
+%              struct('name', 'Continuous', 'is_blk', false,  'num', 0.3)
 %             struct('name', 'Math Operations', 'is_blk', false, 'num', 10)
 %             struct('name', 'Logic and Bit Operations', 'is_blk', false, 'num', 0.15)
             struct('name', 'Sinks', 'is_blk', false, 'num', 0.2)
             struct('name', 'Sources', 'is_blk', false, 'num', 0.2)
 %             struct('name', 'simulink/User-Defined Functions/S-Function', 'is_blk', true, 'num', 0.10)
-            struct('name', 'simulink/Ports & Subsystems/Model', 'is_blk', true, 'num', 0.1)
+%             struct('name', 'simulink/Ports & Subsystems/Model', 'is_blk', true, 'num', 0.1)
         };
     
         % Won't use following SL blocks in generated models:
@@ -75,6 +75,7 @@ classdef cfg
             'simulink/Sources/FromWorkspace'
             'simulink/Sources/EnumeratedConstant'
             'simulink/Discrete/Discrete Derivative'
+            'simulink/Discrete/Resettable Delay'                        % For testing DFT analysis
             'simulink/Math Operations/FindNonzeroElements'
             'simulink/Continuous/VariableTransport Delay'
             'simulink/Continuous/VariableTime Delay'
@@ -95,6 +96,8 @@ classdef cfg
         STOP_IF_LISTED_ERRORS = true;  % If any of the errors from the list below occurs, break even if STOP_IF_ERROR == true.
         STOP_ERRORS_LIST = {};
 %         STOP_ERRORS_LIST = {'Simulink:Engine:SolverConsecutiveZCNum', 'Simulink:blocks:SumBlockOutputDataTypeIsBool'};
+
+        CONTINUE_ERRORS_LIST = {'SL:RandGen:TestTerminatedWithoutExceptions'};                      % Don't stop sgtest if these errors occur.
     
     
         % Subsystem/hierarchy model related
@@ -115,7 +118,7 @@ classdef cfg
     
     methods(Static)
       function print_warnings
-          
+                    
          if ~ cfg.SIMULATE_MODELS
             warning('Generated models were Not Simulated!');
          end

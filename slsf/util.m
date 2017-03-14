@@ -360,6 +360,18 @@ classdef util < handle
             fprintf('\n===================\n');
         end
         
+        function ret = is_type_equivalent(out_type, in_type, in_signed_only)
+            fprintf('Called type equivalence check: out: %s; in: %s\n', out_type, in_type);
+            ret = false;
+            
+            if strcmp(out_type, 'uint') && strcmp(in_type, 'int') && ~in_signed_only
+                ret = true;
+            elseif strcmp(out_type, 'int') && strcmp(in_type, 'uint') 
+                ret = true;
+            end
+            
+        end
+        
     end
     
 end

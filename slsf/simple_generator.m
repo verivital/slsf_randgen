@@ -1,5 +1,5 @@
 classdef simple_generator < handle
-    %Main Random Generator Class
+    % Random Generator. Generates a random model (and also runs comparison framework)
     %   Detailed explanation goes here
     
     properties(Constant = true)
