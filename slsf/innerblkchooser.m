@@ -1,10 +1,11 @@
 classdef innerblkchooser < blockchooser
-    %INNERBLKCHOOSER Block Chooser for models which are children models
-    %   Detailed explanation goes here
+    %INNERBLKCHOOSER Block Chooser for child models
+    %   Models generated using this chooser will be inserted as child
+    %   models in parent models, using the Model_Reference block.
     
     properties
-        source_proportion = 0.15;  % Will be updated
-        sink_proportion = 0.15;     % Will be updated
+        source_proportion = 0.15;  % Will be updated later
+        sink_proportion = 0.15;     % Will be updated later
     end
     
     methods
@@ -20,12 +21,14 @@ classdef innerblkchooser < blockchooser
                 c = obj.categories{i};
                 
                 if strcmpi(c.name, 'Sources')
-                    new_s = c;
-                    new_s.num = c.num/2;
-                    obj.source_proportion = new_s.num;
-                    
-                    new_cats_num = new_cats_num + 1;
-                    new_cats{new_cats_num} = new_s;
+                    % Uncomment the following code to use Sources. 
+%                     new_s = c;
+%                     new_s.num = c.num/2;
+%                     obj.source_proportion = new_s.num;
+%                     
+%                     new_cats_num = new_cats_num + 1;
+%                     new_cats{new_cats_num} = new_s;
+                    obj.source_proportion = c.num;
                 elseif strcmpi(c.name, 'Sinks') 
                     % Don't add any sink -- most of them are blacklisted
                     obj.sink_proportion = c.num;

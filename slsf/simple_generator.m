@@ -79,6 +79,7 @@ classdef simple_generator < handle
         hierarchy_new_old = []; % Ratio of new and old submodels
         hierarchy_new_count = 0;
         hierarchy_old_models;
+        descendant_generators;   % a hashmap, key is descendant child model name, value is the generator object
         
     end
     
@@ -93,6 +94,7 @@ classdef simple_generator < handle
             obj.simulation_mode = simulation_mode;
             obj.compare_results = compare_results;
             obj.hierarchy_old_models = mycell();
+            obj.descendant_generators = mymap();
         end
         
         
@@ -708,7 +710,9 @@ classdef simple_generator < handle
 %                     break;
                 end
                 
-                obj.slb.connect_nodes(r_o_blk, r_o_port, r_i_blk, r_i_port);
+                if cfg.GENERATE_TYPESMART_MODELS
+                    obj.slb.connect_nodes(r_o_blk, r_o_port, r_i_blk, r_i_port);
+                end
                 
                 % Mark used blocks/ports
                 
@@ -945,7 +949,9 @@ classdef simple_generator < handle
                 ports = get_param(h, 'Ports');
                 obj.slb.new_block_added(cur_blk, ports);
                 
-                obj.slb.create_node(cur_blk, ports, block_name{1}{1}, h);
+                if cfg.GENERATE_TYPESMART_MODELS
+                    obj.slb.create_node(cur_blk, ports, block_name{1}{1}, h);
+                end
 
                 % Update x
                 x = h_len;
@@ -1034,9 +1040,11 @@ classdef simple_generator < handle
                     if obj.current_hierarchy_level == 1
                         disp('CURR HIER: 1');
                         hg.root_result = obj.my_result;
+                        hg.root_generator = obj;
                     else
                         disp('CURR HIER: NOT 1');
                         hg.root_result = obj.root_result;
+                        hg.root_generator = obj.root_generator;
                     end
 
         %             hg.root_result.hier_models
@@ -1068,6 +1076,8 @@ classdef simple_generator < handle
 
                     obj.hierarchy_new_count = obj.hierarchy_new_count + 1;
                     obj.hierarchy_old_models.add(model_name);
+                    
+                    hg.root_generator.descendant_generators.put(model_name, hg)
 
                     ret = model_name;
                     return;

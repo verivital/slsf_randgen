@@ -17,6 +17,9 @@ classdef simulator < handle
         
         visited_nodes;
         num_visited;
+        
+        active_sys = [];    % Instead of using the top-most model, use this field to provide the child model's name 
+        %when trying to fix child model from a parent model.
     end
     
     
@@ -277,8 +280,8 @@ classdef simulator < handle
                 fprintf('TypeSmart generation analysis is turned off\n');
             end
             
-            warning('Returning abruptly before simulating \n');
-            return;
+%             warning('Returning abruptly before simulating \n');
+%             return;
             
             for i=1:obj.max_try
                 disp(['(s) Simulation attempt ' int2str(i)]);
@@ -418,6 +421,10 @@ classdef simulator < handle
                             
                         case {'Simulink:Engine:SolverConsecutiveZCNum'}
                             done = obj.fix_solver_consecutive_zc(e);
+                            found = true;
+                            
+                        case {'Simulink:modelReference:RootInputTsError'}
+                            done = obj.fix_model_ref_rate_transitions(e);
                             found = true;
                             
                         otherwise
@@ -592,6 +599,39 @@ classdef simulator < handle
             end
         end
         
+        function done = fix_model_ref_rate_transitions(obj, e)
+            disp('FIXING Model reference rate transition errors...');
+            done = false;
+                        
+            for i = 1:numel(e.handles)
+                inner = e.handles{i};
+                
+                for j = 1:numel(inner)
+
+                    h = util.select_me_or_parent(inner(j));
+                    
+                    m_names = strsplit(getfullname(h), '/')
+                    if numel(m_names) > 1
+                        obj.active_sys = m_names{1};
+                    end
+                    
+%                     disp(get_param(h, 'name'));
+                    port_type = get_param(h, 'BlockType');
+                    if strcmpi(port_type, 'Inport')
+                        obj.add_block_in_the_middle(h, 'simulink/Signal Attributes/Rate Transition', true, false);
+                        save_system(obj.active_sys);        % Otherwise Simulink opens up a GUI dialogue asking whether to save or not
+                        obj.active_sys = [];
+                        break;  % Adding to the other block may result in error
+                    elseif strcmpi(port_type, 'Outport')
+                        obj.add_block_in_the_middle(h, 'simulink/Signal Attributes/Rate Transition', false, true);
+                        save_system(obj.active_sys);        % Otherwise Simulink opens up a GUI dialogue asking whether to save or not
+                        obj.active_sys = [];
+                        break;
+                    end
+                end
+            end
+        end
+        
         
         
         function obj = fix_alg_loop(obj, e)
@@ -642,6 +682,14 @@ classdef simulator < handle
             end
   
             ret = mycell(-1);
+            
+            if isempty(obj.active_sys)
+                sys = obj.generator.sys;
+                g = obj.generator;
+            else
+                sys = obj.active_sys;
+                g = obj.generator.descendant_generators.get(sys);
+            end
             
             my_name = get_param(h, 'Name');
 
@@ -735,7 +783,7 @@ classdef simulator < handle
 
                 % get a new block
 
-                [d_name, d_h] = obj.generator.add_new_block(replacement);
+                [d_name, d_h] = g.add_new_block(replacement);
                 ret.add(d_h);
 
                 %  delete and Connect
@@ -751,9 +799,16 @@ classdef simulator < handle
                     b_b = other_b_p;
                 end
                 
-                delete_line( obj.generator.sys, b_a , b_b);
-                add_line(obj.generator.sys, b_a, new_blk_port , 'autorouting','on');
-                add_line(obj.generator.sys, new_blk_port, b_b , 'autorouting','on');
+
+%                 disp('Active Sys:');
+%                 sys
+%                 b_a
+%                 new_blk_port
+%                 b_b
+                
+                delete_line( sys, b_a , b_b);
+                add_line(sys, b_a, new_blk_port , 'autorouting','on');
+                add_line(sys, new_blk_port, b_b , 'autorouting','on');
                 
                 disp('Done adding block!');
 
