@@ -263,6 +263,15 @@ classdef simple_generator < handle
         end
         
         
+        function ret = get_root_generator(obj)
+            if isa(obj, 'hier_generator')
+                ret = obj.root_generator;
+            else
+                ret = obj;
+            end
+        end
+        
+        
         function create_and_open_system(obj)
             if isempty(obj.use_pre_generated_model)
                 new_system(obj.sys);

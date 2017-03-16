@@ -606,6 +606,9 @@ classdef simulator < handle
             for i = 1:numel(e.handles)
                 inner = e.handles{i};
                 
+                disp(numel(inner));
+                assert(numel(inner) == 2);
+                
                 for j = 1:numel(inner)
 
                     h = util.select_me_or_parent(inner(j));
@@ -645,6 +648,9 @@ classdef simulator < handle
             
             for ii = 1:numel(e.handles)
                 current = e.handles{ii};
+                
+%                 disp(numel(current));
+%                 assert(numel(current) == 2);
                 
                 for i=1:numel(current)
 %                     disp('in loop');
@@ -688,7 +694,8 @@ classdef simulator < handle
                 g = obj.generator;
             else
                 sys = obj.active_sys;
-                g = obj.generator.descendant_generators.get(sys);
+                g = obj.generator.get_root_generator().descendant_generators.get(sys);
+                assert(~isempty(g));
             end
             
             my_name = get_param(h, 'Name');
@@ -771,7 +778,7 @@ classdef simulator < handle
                     disp('Multiple src/ports Here');
                     other_name
                     other_port
-                    d_h = obj.add_block_in_middle_multi(my_b_p, other_name, other_port, replacement);
+                    d_h = obj.add_block_in_middle_multi(my_b_p, other_name, other_port, replacement, g);
                     ret.add(d_h);
                     return;
                 end
@@ -821,22 +828,26 @@ classdef simulator < handle
         
         
         
-        function d_h = add_block_in_middle_multi(obj,my_b_p, o_names, o_ports, replacement)
+        function d_h = add_block_in_middle_multi(obj,my_b_p, o_names, o_ports, replacement, generator, o_port)
+            
+            if numel(nargin == 6)
+                o_port = [];
+            end
             
             % get a new block
 
-            [d_name, d_h] = obj.generator.add_new_block(replacement);
+            [d_name, d_h] = generator.add_new_block(replacement);
 
             %  delete and Connect
 
             new_blk_port = [d_name '/1'];
-            add_line(obj.generator.sys, my_b_p, new_blk_port , 'autorouting','on');
+            add_line(generator.sys, my_b_p, new_blk_port , 'autorouting','on');
                         
             for i = 1:numel(o_ports)
                 other_b_p = [char(o_names(i)), '/', num2str(o_ports(i))];
                 
-                delete_line( obj.generator.sys, my_b_p , other_b_p);
-                add_line(obj.generator.sys, new_blk_port, other_b_p , 'autorouting','on');
+                delete_line( generator.sys, my_b_p , other_b_p);
+                add_line(generator.sys, new_blk_port, other_b_p , 'autorouting','on');
             end
             
         end

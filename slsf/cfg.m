@@ -3,7 +3,7 @@ classdef cfg
     %   Detailed explanation goes here
     
     properties(Constant = true)
-        NUM_TESTS = 1;                          % Number of test models to generate
+        NUM_TESTS = 10;                          % Number of test models to generate
         CSMITH_CREATE_C = false;                % Will call Csmith to create C files. Set to False if reproducing.
         
         SIMULATE_MODELS = true;                 % Simulate generated model
@@ -28,7 +28,7 @@ classdef cfg
         STOP_IF_OTHER_ERROR = true;             % Stop the script for errors not related to simulation e.g. unhandled exceptions or code bug. ALWAYS KEEP IT TRUE to detect my own bugs.
 
         CLOSE_MODEL = false;                    % Close models after simulation
-        CLOSE_OK_MODELS = false;                % Close models for which simulation ran OK
+        CLOSE_OK_MODELS = true;                % Close models for which simulation ran OK
         
         FINAL_CLEAN_UP = true;                 % Will delete models and related artifacts (e.g. binaries) for the model
 
@@ -97,14 +97,15 @@ classdef cfg
         STOP_ERRORS_LIST = {};
 %         STOP_ERRORS_LIST = {'Simulink:Engine:SolverConsecutiveZCNum', 'Simulink:blocks:SumBlockOutputDataTypeIsBool'};
 
-        CONTINUE_ERRORS_LIST = {'SL:RandGen:TestTerminatedWithoutExceptions'};                      % Don't stop sgtest if these errors occur.
+%         CONTINUE_ERRORS_LIST = {'SL:RandGen:TestTerminatedWithoutExceptions'};                      % Don't stop sgtest if these errors occur.
+        CONTINUE_ERRORS_LIST = {'Simulink:Engine:ExtraModelrefNoncontSignal'};                      % Don't stop sgtest if these errors occur.
     
     
         % Subsystem/hierarchy model related
         
         HIERARCHY_NEW_MAX_ATTEMPT = 5;
-        HIERARCHY_NEW_OLD_RATIO = {struct('name', 'new', 'num', 0.5)
-            struct('name', 'old', 'num', 0.5)
+        HIERARCHY_NEW_OLD_RATIO = {struct('name', 'new', 'num', 0.7)
+            struct('name', 'old', 'num', 0.3)
         };
 
 
