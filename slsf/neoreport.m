@@ -34,6 +34,8 @@ function [big_total, big_timedout] = neoreport(datefrom)
     big_block_sel = mymap();
     
     num_blocks = 0;
+    
+    later_errors = struct;
 
 
     for i = 1:numel(file_list)
@@ -108,6 +110,39 @@ function [big_total, big_timedout] = neoreport(datefrom)
                 end
 
             end
+            
+%             fprintf('Errors Listing \n');
+    
+           for am_i = 1:numel(all_models_sr)
+                if isempty(all_models_sr{am_i})
+                    continue;
+                end
+                                
+                c = all_models_sr{am_i};
+                
+                if c.is_err_after_normal_sim
+                    fprintf('Found Err aftder normal sim\n');
+                    e = c.errors;
+                    switch e.identifier
+                        case {'MATLAB:MException:MultipleErrors'}
+                           
+                            for ae_i = 1:numel(e.cause)
+                                ae = e.cause{ae_i};
+                                later_errors =  util.map_inc(later_errors,ae.identifier);
+                            end
+                            
+                        otherwise
+                            later_errors =  util.map_inc(later_errors,e.identifier);
+                    end
+                end
+                    
+           end
+
+%             fn = fieldnames(e_later)
+%             for eli=1:numel(fn)
+%                 k = fn{i};
+%                 fprintf('%s\t%d\n', e_later.(k));
+%             end
 
             if break_after_single
                 break;
@@ -165,4 +200,7 @@ function [big_total, big_timedout] = neoreport(datefrom)
         end
     end
     
+    fprintf('---- Errors after normal simulation---\n');
+    
+    later_errors
 end

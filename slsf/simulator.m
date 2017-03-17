@@ -864,6 +864,11 @@ classdef simulator < handle
         
         
         function obj = alg_loop_eliminator(obj)
+            
+%             if obj.generator.current_hierarchy_level == 1
+%                 fprintf('Returning at top level\n');
+%                 return;
+%             end
       
             num_max_attempts = 3;
             

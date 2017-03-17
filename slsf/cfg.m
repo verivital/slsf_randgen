@@ -3,14 +3,14 @@ classdef cfg
     %   Detailed explanation goes here
     
     properties(Constant = true)
-        NUM_TESTS = 10;                          % Number of test models to generate
+        NUM_TESTS = 1;                          % Number of test models to generate
         CSMITH_CREATE_C = false;                % Will call Csmith to create C files. Set to False if reproducing.
         
         SIMULATE_MODELS = true;                 % Simulate generated model
 
         LOG_SIGNALS = true;                     % Log all block-output signals for comparison. Note: it disregards `USE_PRE_GENERATED_MODEL` setting.
 
-        COMPARE_SIM_RESULTS = true;             % Compare simulation results obtained by logging signals.
+        COMPARE_SIM_RESULTS = false;             % Compare simulation results obtained by logging signals.
 
         % If following is non-empty and a string, then instead of generating a model, will use value of this variable as an already generated model. 
         % Put empty ``[]'' to randomly generate models.
@@ -24,11 +24,11 @@ classdef cfg
 
         SKIP_IF_LAST_CRASHED = false;            % Skip one model if last time Matlab crashed trying to run the same model.
         
-        STOP_IF_ERROR = true;                  % Stop the script when meet the first simulation error
+        STOP_IF_ERROR = false;                  % Stop the script when meet the first simulation error
         STOP_IF_OTHER_ERROR = true;             % Stop the script for errors not related to simulation e.g. unhandled exceptions or code bug. ALWAYS KEEP IT TRUE to detect my own bugs.
 
         CLOSE_MODEL = false;                    % Close models after simulation
-        CLOSE_OK_MODELS = true;                % Close models for which simulation ran OK
+        CLOSE_OK_MODELS = false;                % Close models for which simulation ran OK
         
         FINAL_CLEAN_UP = true;                 % Will delete models and related artifacts (e.g. binaries) for the model
 
@@ -89,7 +89,7 @@ classdef cfg
 
         SAVE_SIGLOG_IN_DISC = true; % Persistently save logged signals in dic
 
-        DELETE_MODEL = true;    % Delete the model from working directory after testing 
+        DELETE_MODEL = false;    % Delete the model from working directory after testing 
         
         REPORTSNEO_DIR = 'reportsneo';  % Reports will be stored in this directory
         

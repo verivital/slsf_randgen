@@ -108,6 +108,8 @@ function sgtest(skip_first)
     l_logged = [];
     all_siglog = mycell(cfg.NUM_TESTS);
     all_models = mycell(cfg.NUM_TESTS);             % Store some stats before running simulation for all models e.g. number of blocks in the model
+    all_models_sr = cell(1, cfg.NUM_TESTS);         % Store instance of savedresult class for each model
+    
     dtc_stat = mycell(cfg.NUM_TESTS); % data-type conversion stats
 
     block_selection = mymap();                  % Stats on library selection
@@ -133,6 +135,9 @@ function sgtest(skip_first)
 
         mdl_counter = mdl_counter + 1;
         model_name = strcat('sampleModel', int2str(mdl_counter));
+        
+        sr = savedresult(model_name);
+        all_models_sr{ind} = sr;
 
         sg = simple_generator(cfg.NUM_BLOCKS, model_name, cfg.SIMULATE_MODELS, cfg.CLOSE_MODEL, cfg.LOG_SIGNALS, cfg.SIMULATION_MODE, cfg.COMPARE_SIM_RESULTS);
         sg.max_hierarchy_level = cfg.MAX_HIERARCHY_LEVELS;
@@ -166,6 +171,9 @@ function sgtest(skip_first)
 
         try
             sim_res = sg.go();
+            
+            sg.my_result.update_saved_result(sr);
+            
     %         l_logged = sg.my_result.logdata;
 
     %         total_time = toc();
@@ -199,7 +207,7 @@ function sgtest(skip_first)
                 c = struct;
                 c.m_no = model_name;
                 e = sg.my_result.exc;
-                
+                                
                 if isempty(e)
                     abrupt_return = true;
                     throw(MException('SL:RandGen:TestTerminatedWithoutExceptions',... 
@@ -226,7 +234,12 @@ function sgtest(skip_first)
     %                     continue;
 
                     case {'RandGen:SL:ErrAfterNormalSimulation'}
+                        
+                        sr.errors = sg.my_result.main_exc;
+                        sr.is_err_after_normal_sim = true;
+                        
                         err_key = ['AfterError_' e.message];
+                        
                         e_later = util.map_inc(e_later, e.message);
 
                         if cfg.LOG_ERR_MODEL_NAMES
@@ -363,7 +376,7 @@ function sgtest(skip_first)
             'num_compare_error', 'num_other_error', 'num_timedout_sim', 'e_map', ... 
             'err_model_names', 'compare_err_model_names', 'other_err_model_names', ...
             'e_later', 'log_len_mismatch_count', 'log_len_mismatch_names', 'all_siglog', 'all_models', 'block_selection', 'runtime',...
-            'dtc_stat',...
+            'dtc_stat', 'all_models_sr',...
             '-append');
 
         if cfg.DELETE_MODEL && isempty(cfg.USE_PRE_GENERATED_MODEL)
@@ -371,13 +384,16 @@ function sgtest(skip_first)
             delete([sg.sys '.slx']);  % TODO Warning: when running a pre-generated model this will delete it! So keep the model in a different directory and add that directory in Matlab path.
         end
 
-        % Delete sub-models
+        % Close and/or Delete sub-models
         sg.my_result.hier_models.print_all('Printing sub models...');
         for i = 1:sg.my_result.hier_models.len
             if cfg.CLOSE_MODEL || (sim_res && cfg.CLOSE_OK_MODELS)
                 close_system(sg.my_result.hier_models.get(i));  % TODO closing subsystem, so will not be visible for inspection if desired.
             end
-            delete([sg.my_result.hier_models.get(i) '.slx']);
+            
+            if cfg.DELETE_MODEL
+                delete([sg.my_result.hier_models.get(i) '.slx']);
+            end
         end
 
         delete(sg);

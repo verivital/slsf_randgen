@@ -1,5 +1,5 @@
 classdef singleresult < handle
-    %SINGLERESULT Result of simulating/compiling a single random Model
+    %SINGLERESULT Result of experiment for a single random Model
     %   Detailed explanation goes here
     
      properties(Constant = true)
@@ -25,6 +25,8 @@ classdef singleresult < handle
        FAS = 3;         % Fix and Simulate
        SIGNAL_LOGGING = 4;
        COMPARISON = 5;
+       
+       
        
     end
     
@@ -61,7 +63,7 @@ classdef singleresult < handle
         
         dc_analysis = 0;     % data-type conversions added during pre-simulation analysis phase
         dc_sim = 0;             % data-type conversions added during simulation (Fix Errors) phase
-        
+                
     end
     
     methods
@@ -71,6 +73,11 @@ classdef singleresult < handle
              
              obj.hier_models = mycell(-1);
              obj.sfuns = mycell();
+             
+         end
+         
+         function sr = update_saved_result(obj, sr)
+            sr.errors = obj.exc;
          end
          
          function obj = set_mode(obj, p, m)
