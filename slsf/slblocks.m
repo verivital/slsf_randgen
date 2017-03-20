@@ -121,7 +121,7 @@ classdef slblocks < handle
                 obj.num_inp_ports = obj.num_inp_ports + ports(1);
             end
 
-            % Outputs
+            % Outpgit uts
 
             outputs_cell = cell(1, ports(2));
             [outputs_cell{:}] = deal(0);

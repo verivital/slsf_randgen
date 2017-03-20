@@ -6,9 +6,9 @@ classdef cfg
         NUM_TESTS = 1;                          % Number of test models to generate
         CSMITH_CREATE_C = false;                % Will call Csmith to create C files. Set to False if reproducing.
         
-        SIMULATE_MODELS = true;                 % Simulate generated model
+        SIMULATE_MODELS = false;                 % Simulate generated model
 
-        LOG_SIGNALS = true;                     % Log all block-output signals for comparison. Note: it disregards `USE_PRE_GENERATED_MODEL` setting.
+        LOG_SIGNALS = false;                     % Log all block-output signals for comparison. Note: it disregards `USE_PRE_GENERATED_MODEL` setting.
 
         COMPARE_SIM_RESULTS = false;             % Compare simulation results obtained by logging signals.
 
@@ -37,7 +37,7 @@ classdef cfg
         NUM_BLOCKS = 30;
         CHILD_MODEL_NUM_BLOCKS = [10 20];
         
-        MAX_HIERARCHY_LEVELS = 3;               % Minimum value is 1 indicating a flat model with no hierarchy.
+        MAX_HIERARCHY_LEVELS = 1;               % Minimum value is 1 indicating a flat model with no hierarchy.
 
         SAVE_ALL_ERR_MODELS = true;             % Save the models which we can not simulate 
         LOG_ERR_MODEL_NAMES = true;             % Log error model names keyed by their errors
@@ -65,7 +65,7 @@ classdef cfg
             struct('name', 'Sinks', 'is_blk', false, 'num', 0.2)
             struct('name', 'Sources', 'is_blk', false, 'num', 0.2)
 %             struct('name', 'simulink/User-Defined Functions/S-Function', 'is_blk', true, 'num', 0.10)
-            struct('name', 'simulink/Ports & Subsystems/Model', 'is_blk', true, 'num', 0.1)
+%             struct('name', 'simulink/Ports & Subsystems/Model', 'is_blk', true, 'num', 0.1)
         };
     
         % Won't use following SL blocks in generated models:
@@ -89,7 +89,7 @@ classdef cfg
 
         SAVE_SIGLOG_IN_DISC = true; % Persistently save logged signals in dic
 
-        DELETE_MODEL = false;    % Delete the model from working directory after testing 
+        DELETE_MODEL = true;    % Delete the model from working directory after testing 
         
         REPORTSNEO_DIR = 'reportsneo';  % Reports will be stored in this directory
         
