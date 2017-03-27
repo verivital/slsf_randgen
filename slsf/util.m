@@ -193,7 +193,7 @@ classdef util < handle
             for i = 1:numel(hay)
                 if strcmp(needle, hay{i}) == 1
                     found = true;
-                    return
+                    return;
                 end
             end
         end
@@ -205,10 +205,11 @@ classdef util < handle
             for i = 1:numel(hay)
                 if needle == hay{i}
                     found = true;
-                    return
+                    return;
                 end
             end
         end
+        
         
         function inspect_parameters(elem)
             x = get_param(elem, 'ObjectParameters');

@@ -64,6 +64,17 @@ classdef slblocks < handle
             
             obj.nodes{cur_blk} = n;
             
+            n.out_nodes = cell(1, ports(2));
+            n.out_nodes_otherport = cell(1, ports(2));
+            
+            if ports(1) > 0 || ports(2) > 0
+                obj.num_reachable_nodes = obj.num_reachable_nodes + 1;
+            end
+            
+            if ~ cfg.GENERATE_TYPESMART_MODELS
+                return;
+            end
+            
             sldoc = slblockdocparser.getInstance();
             docref = sldoc.get(search_names{2});
                         
@@ -89,12 +100,7 @@ classdef slblocks < handle
             end
             
             
-            n.out_nodes = cell(1, ports(2));
-            n.out_nodes_otherport = cell(1, ports(2));
             
-            if ports(1) > 0 || ports(2) > 0
-                obj.num_reachable_nodes = obj.num_reachable_nodes + 1;
-            end
         end
         
         function obj = connect_nodes(obj, o_b, o_p, i_b, i_p)

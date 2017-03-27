@@ -516,8 +516,13 @@ classdef simple_generator < handle
             end
             
             fprintf('[~] Simulating...\n');
+            
+            set_param(obj.sys, 'BlockReduction', 'off');
+            
             simul = simulator(obj, obj.max_simul_attempt);
             ret =  simul.simulate(obj.slb);
+            
+            set_param(obj.sys, 'BlockReduction', 'on');
             
 %             simul.alg_loop_eliminator();
         end
@@ -719,9 +724,9 @@ classdef simple_generator < handle
 %                     break;
                 end
                 
-                if cfg.GENERATE_TYPESMART_MODELS
-                    obj.slb.connect_nodes(r_o_blk, r_o_port, r_i_blk, r_i_port);
-                end
+%                 if cfg.GENERATE_TYPESMART_MODELS
+                obj.slb.connect_nodes(r_o_blk, r_o_port, r_i_blk, r_i_port);
+%                 end
                 
                 % Mark used blocks/ports
                 
@@ -958,9 +963,9 @@ classdef simple_generator < handle
                 ports = get_param(h, 'Ports');
                 obj.slb.new_block_added(cur_blk, ports);
                 
-                if cfg.GENERATE_TYPESMART_MODELS
-                    obj.slb.create_node(cur_blk, ports, block_name{1}{1}, h);
-                end
+%                 if cfg.GENERATE_TYPESMART_MODELS
+                obj.slb.create_node(cur_blk, ports, block_name{1}{1}, h);
+%                 end
 
                 % Update x
                 x = h_len;

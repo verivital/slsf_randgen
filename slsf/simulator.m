@@ -1,6 +1,6 @@
 classdef simulator < handle
     %SIMULATOR Try to simulate a constructed model
-    %   Detailed explanation goes here
+    %   Performs the "Fix Error" Phase of CyFuzz
     
     properties
         generator;
@@ -20,6 +20,8 @@ classdef simulator < handle
         
         active_sys = [];    % Instead of using the top-most model, use this field to provide the child model's name 
         %when trying to fix child model from a parent model.
+        
+        fxd = [];      
     end
     
     
@@ -160,10 +162,10 @@ classdef simulator < handle
         end
 
 
-        function obj = pre_sim_analysis(obj, slb)
+        function obj = ts_datatype_analysis(obj, slb)
             fprintf('@@@@@@@@@@@@@@@ PRE SIMULATION ANALYSIS @@@@@@@@@@@@@@@\n');
             
-            fxd = slblockdocfixed.getInstance();
+            
             
 %             obj.df_analysis_all_nodes(slb, fxd);
             
@@ -263,6 +265,40 @@ classdef simulator < handle
             new_block_node.add_child(tn.n, 1, tn.which_input_port);
         end
         
+        function obj = remove_cycles(obj, slb)
+            cc = obj.get_connected_components(slb);
+            
+            for out_i = 1:cc.len
+                
+                c = cc.get(out_i);
+                
+%                 fprintf('\n-- CC %d --\n', out_i);
+%                 for out_j = 1:c.len
+%                     v = c.get(out_j);
+%                     fprintf('bl%d ---> \t', v);
+%                 end
+                
+                first = c.get(1);
+                v = slb.nodes{first};
+                
+                 for i=1:numel(v.out_nodes)
+                    for j=1:numel(v.out_nodes{i})
+                        chld = v.out_nodes{i}{j};
+                        if util.cell_in(c.data, chld.my_id)
+                            tn = slbnodetags(chld);
+                            tn.which_input_port = v.out_nodes_otherport{i}{j};
+                            tn.which_parent_block = v;
+                            tn.which_parent_port = [i, j];
+                            obj.pre_fix_loop(tn, slb);
+                            break;
+                        end
+                    end
+                 end
+                
+            end
+            
+        end
+        
         
         function ret = simulate(obj, slb)
             % Returns true if simulation did not raise any error.
@@ -270,15 +306,17 @@ classdef simulator < handle
             done = false;
             ret = false;
             
-            if isempty(slb)
-                throw(MException('SL:RandGen:Unexpected', 'SLB ref is empty!'));
-            end
+            obj.fxd = slblockdocfixed.getInstance();
+            
+            obj.remove_cycles(slb);
             
             if cfg.GENERATE_TYPESMART_MODELS
-                obj.pre_sim_analysis(slb);
+                obj.ts_datatype_analysis(slb);
             else
                 fprintf('TypeSmart generation analysis is turned off\n');
             end
+            
+            
             
 %             warning('Returning abruptly before simulating \n');
 %             return;
@@ -638,6 +676,8 @@ classdef simulator < handle
         
         
         function obj = fix_alg_loop(obj, e)
+%             throw(MException('RandGen:SL:AlgebraicLoopDiscovered', 'By construction, there should be no algebraic loops!'));
+            
             % Fix Algebraic Loop 
 %             handles = e.handles{1}
 
@@ -877,6 +917,8 @@ classdef simulator < handle
                 fprintf('Starting alg. loop eliminator... attempt %d\n', gc);
                 
                 aloops = Simulink.BlockDiagram.getAlgebraicLoops(obj.generator.sys);
+                
+%                 assert(numel(aloops) == 0);
             
                 if numel(aloops) == 0
                     fprintf('No Algebraic loop. Returning...\n');
@@ -914,6 +956,75 @@ classdef simulator < handle
             end
         end
         
+        
+        function ret = get_connected_components(obj, slb)
+            
+            ret = mycell();
+            
+            assert(numel(slb.nodes) == slb.NUM_BLOCKS);
+            
+            visit_index = cell(1, slb.NUM_BLOCKS);
+            low_link = cell(1, slb.NUM_BLOCKS);
+            on_stack = zeros(1, slb.NUM_BLOCKS);
+            
+            index = 0;
+            s = CStack();
+            
+            for out_i=1:slb.NUM_BLOCKS
+                if isempty(visit_index{out_i})
+                    strongconnect(slb.nodes{out_i});
+                end
+            end
+            
+            
+            function strongconnect(v)
+                visit_index{v.my_id} = index;
+                low_link{v.my_id} = index;
+                index = index + 1;
+         
+                s.push(v);
+                on_stack(v.my_id) = true;
+                
+                % onsider successors of v
+                
+                for i=1:numel(v.out_nodes)
+                    for j=1:numel(v.out_nodes{i})
+                        chld = v.out_nodes{i}{j};
+                        
+                        if isempty(visit_index{chld.my_id})
+                            strongconnect(chld);
+                            low_link{v.my_id} = min(low_link{v.my_id} , low_link{chld.my_id});
+                        elseif on_stack(chld.my_id)
+                            low_link{v.my_id} = min(low_link{v.my_id} , low_link{chld.my_id});
+                        end
+                        
+                    end
+                end
+                
+                % If v is a root node, pop the stack and generate an SCC
+                
+                if low_link{v.my_id} == visit_index{v.my_id}
+                    % start a new strongly connected component
+                    cc = mycell();
+                    while true
+                        w = s.pop();
+                        on_stack(w.my_id) = false;
+                        cc.add(w.my_id);
+                        
+                        if w.my_id == v.my_id
+                            break;
+                        end
+                    end
+                    
+                    if cc.len > 1
+                        ret.add(cc);
+                    end
+                end
+                
+            end
+            
+            
+        end
         
         
     end
