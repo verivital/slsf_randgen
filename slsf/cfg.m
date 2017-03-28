@@ -3,14 +3,14 @@ classdef cfg
     %   Detailed explanation goes here
     
     properties(Constant = true)
-        NUM_TESTS = 100;                          % Number of test models to generate
+        NUM_TESTS = 50;                          % Number of test models to generate
         CSMITH_CREATE_C = false;                % Will call Csmith to create C files. Set to False if reproducing.
         
         SIMULATE_MODELS = true;                 % Simulate generated model
 
         LOG_SIGNALS = true;                     % Log all block-output signals for comparison. Note: it disregards `USE_PRE_GENERATED_MODEL` setting.
 
-        COMPARE_SIM_RESULTS = true;             % Compare simulation results obtained by logging signals.
+        COMPARE_SIM_RESULTS = false;             % Compare simulation results obtained by logging signals.
 
         % If following is non-empty and a string, then instead of generating a model, will use value of this variable as an already generated model. 
         % Put empty ``[]'' to randomly generate models.

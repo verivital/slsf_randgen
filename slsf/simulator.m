@@ -266,6 +266,10 @@ classdef simulator < handle
         end
         
         function obj = remove_cycles(obj, slb)
+            % TODO only finds strongly connected components, not all
+            % cycles. use Johnson's algo to find all cycles
+            
+            fprintf('-- Starting cycle remover--\n');
             cc = obj.get_connected_components(slb);
             
             for out_i = 1:cc.len
@@ -294,6 +298,8 @@ classdef simulator < handle
                         end
                     end
                  end
+                 
+                 fprintf('-- End cycle remover. Found %d STRONGLY CONNECTED COMPONENTS --\n', cc.len);
                 
             end
             
@@ -651,7 +657,7 @@ classdef simulator < handle
 
                     h = util.select_me_or_parent(inner(j));
                     
-                    m_names = strsplit(getfullname(h), '/')
+                    m_names = strsplit(getfullname(h), '/');
                     if numel(m_names) > 1
                         obj.active_sys = m_names{1};
                     end
@@ -724,7 +730,7 @@ classdef simulator < handle
             if nargin == 5
                 specific_port = [];
             else
-                fprintf('Specific Port to use: %d\n', specific_port);
+%                 fprintf('Specific Port to use: %d\n', specific_port);
             end
   
             ret = mycell(-1);
@@ -742,18 +748,18 @@ classdef simulator < handle
 
             disp(['Add Block in the middle: For ' my_name '; handle ' num2str(h)]);
             
-            if ignore_in
-                disp('INGORE INPUTS');
-            end
-            
-            if ignore_out
-                disp('IGNORE OUTPUTS');
-            end
+%             if ignore_in
+%                 disp('INGORE INPUTS');
+%             end
+%             
+%             if ignore_out
+%                 disp('IGNORE OUTPUTS');
+%             end
 
             try
                 ports = get_param(h,'PortConnectivity');
             catch e
-                disp('~ Skipping, not a block');
+%                 disp('~ Skipping, not a block');
                 return;
             end
 
@@ -761,7 +767,7 @@ classdef simulator < handle
                 p = ports(j);
                 
                 if ~isempty(specific_port) && ~strcmp(specific_port, p.Type)
-                    fprintf('Skipping due to specific port. current: %s\n', p.Type);
+%                     fprintf('Skipping due to specific port. current: %s\n', p.Type);
                     continue;
                 end
                 
@@ -786,7 +792,7 @@ classdef simulator < handle
                 
                 if(is_inp)
                     if ignore_in
-                        disp(['Skipping input port ' int2str(j)]);
+%                         disp(['Skipping input port ' int2str(j)]);
                         continue;
                     end
                     other_name = get_param(p.SrcBlock, 'Name');
@@ -794,7 +800,7 @@ classdef simulator < handle
                     dir = 'from';
                 else
                     if ignore_out
-                        disp(['Skipping output port ' int2str(j)]);
+%                         disp(['Skipping output port ' int2str(j)]);
                         continue;
                     end
                     dir = 'to';
@@ -857,7 +863,7 @@ classdef simulator < handle
                 add_line(sys, b_a, new_blk_port , 'autorouting','on');
                 add_line(sys, new_blk_port, b_b , 'autorouting','on');
                 
-                disp('Done adding block!');
+%                 disp('Done adding block!');
 
                
 

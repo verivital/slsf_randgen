@@ -1032,7 +1032,7 @@ classdef simple_generator < handle
             
             if obj.hierarchy_new_count < obj.hierarchy_new_old(1)
                 fprintf('Choosing from NEW hierarchy models...\n');                 
-                model_name = ['hier' int2str(util.rand_int(1, 10000, 1))]; % TODO fix Max number
+                model_name = ['hier' int2str(util.rand_int(1, 10000000, 1))]; % TODO fix Max number
                 
                 fprintf('--x-- New Child Model Creation for %s --x-- \n', model_name);
 
@@ -1068,8 +1068,14 @@ classdef simple_generator < handle
                     hg.init();
 
                     try
-                        hg.go();
-                        break;
+                        res = hg.go();
+                        if res
+                            fprintf('Success in child model creation \n');
+                            break;
+                        else
+                            fprintf('Child model generation UNsuccessful. Will try again\n');
+                            close_system(model_name, 0);
+                        end
                     catch e
                         fprintf('Exception in hierarchy model simulation: \n' );
                         getReport(e)
@@ -1081,8 +1087,12 @@ classdef simple_generator < handle
 
                 % Save this model?
                 
-                if new_mdl_i == cfg.HIERARCHY_NEW_MAX_ATTEMPT && obj.hierarchy_old_models.len > 0
-                    fprintf('New Model creation unsuccessful but old models available.\n');
+                if new_mdl_i == cfg.HIERARCHY_NEW_MAX_ATTEMPT
+                    if obj.hierarchy_old_models.len > 0
+                        fprintf('New Model creation unsuccessful but old models available.\n');
+                    else
+                        throw(MException('RandGen:SL:ChildModelCreationAttemptExhausted', 'Could not create a valid child model'));
+                    end
                 else
                     save_system(model_name);
                     disp('SAVING SUB SYSTEM...');
