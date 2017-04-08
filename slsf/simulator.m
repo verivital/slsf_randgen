@@ -367,8 +367,7 @@ classdef simulator < handle
                     
                     is_multi_exception = false;
                     
-                    if(strcmp(e.identifier, 'MATLAB:MException:MultipleErrors'))
-                        
+                    if(strcmp(e.identifier, 'MATLAB:MException:MultipleErrors')) 
                         for m_i = 1:numel(e.cause)
                             disp(['Multiple Errors. Solving ' int2str(m_i)]);
                             ei = e.cause{m_i}
@@ -386,9 +385,7 @@ classdef simulator < handle
                                 disp('Found at least one exception fixer. Breaking.');
                                 break;
                             end
-                            
                         end
-
                     else
                         [done, ret, found] = obj.look_for_solutions(e, false, done, ret);
                     end
@@ -613,6 +610,7 @@ classdef simulator < handle
                 
                 if  obj.is_block_fixed_before(e.identifier, getfullname(h), true)
                     fprintf('%s was already fixed for %s, so not trying this block again.\n', getfullname(h), e.identifier);
+                    done = true;
                     return;
                 else
                     found = true;
