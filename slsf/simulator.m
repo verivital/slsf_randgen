@@ -826,11 +826,8 @@ classdef simulator < handle
                     is_inp = true;
                 end
                 
-                assesrt(~ isempty(is_inp));
-                    
-                
-                
-                
+                assert(~ isempty(is_inp));
+   
                 if(is_inp)
                     if ignore_in
 %                         disp(['Skipping input port ' int2str(j)]);

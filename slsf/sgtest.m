@@ -388,7 +388,7 @@ function sgtest(skip_first)
         sg.my_result.hier_models.print_all('Printing sub models...');
         for i = 1:sg.my_result.hier_models.len
             if cfg.CLOSE_MODEL || (sim_res && cfg.CLOSE_OK_MODELS)
-                close_system(sg.my_result.hier_models.get(i));  % TODO closing subsystem, so will not be visible for inspection if desired.
+                close_system(sg.my_result.hier_models.get(i), 0);  % TODO closing subsystem, so will not be visible for inspection if desired.
             end
             
             if cfg.DELETE_MODEL
