@@ -868,7 +868,8 @@ classdef simulator < handle
                         obj.active_sys = [];
                     end
                     if save_active_sys
-                        save_system(sys);
+                        syss = strsplit(sys, '/');
+                        save_system(syss{1});
                     end
                     return;
                 end
@@ -917,7 +918,8 @@ classdef simulator < handle
                 obj.active_sys = [];
             end
             if save_active_sys
-                save_system(sys);
+                syss = strsplit(sys, '/');
+                save_system(syss{1});
             end
             
         end
