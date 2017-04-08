@@ -59,8 +59,8 @@ classdef slblocks < handle
         end
         
         function n = create_node(obj, cur_blk, ports, search_name, handle)
-            search_names = strsplit(search_name, 'simulink/');  % Stripping of the simulink tag
-            n = slbnode(handle, search_names{2}, cur_blk);
+            search_names = util.strip_simulink_prefix(search_name);  % Stripping of the simulink tag
+            n = slbnode(handle, search_names, cur_blk);
             
             obj.nodes{cur_blk} = n;
             
@@ -76,7 +76,7 @@ classdef slblocks < handle
             end
             
             sldoc = slblockdocparser.getInstance();
-            docref = sldoc.get(search_names{2});
+            docref = sldoc.get(search_names);
                         
             n.docref = docref;
             
@@ -90,7 +90,7 @@ classdef slblocks < handle
 %                 throw(MException('SL:RandGen:NoDocRefFound', 'no doc ref found'));
             end
             
-            dft_stat = obj.fixed_doc.get(search_names{2}, slblockdocfixed.DFT);
+            dft_stat = obj.fixed_doc.get(search_names, slblockdocfixed.DFT);
             if ~isempty(dft_stat)
                 fprintf('\tDFT status found for node %s\n', search_name);
                 n.dft_status = dft_stat;

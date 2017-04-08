@@ -109,6 +109,9 @@ classdef (Sealed) slblockdocfixed < handle
           obj.d.put('Ports & Subsystems/For Each Subsystem',...
               struct(obj.SUBSYS, true));
           
+          obj.d.put('Ports & Subsystems/Subsystem',...
+              struct(obj.SUBSYS, true));
+          
           
       end
       

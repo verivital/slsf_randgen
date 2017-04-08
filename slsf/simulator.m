@@ -38,6 +38,7 @@ classdef simulator < handle
         
         
         function found = is_block_fixed_before(obj, exc, blk, add)
+            % Will also add the block if `add` is set to true.
             found = false;
             d = obj.fixed_blocks.get(exc);
     
@@ -306,7 +307,7 @@ classdef simulator < handle
         end
         
         
-        function ret = simulate(obj, slb)
+        function ret = simulate(obj, slb, pre_analysis_only)
             % Returns true if simulation did not raise any error.
             
             done = false;
@@ -322,6 +323,11 @@ classdef simulator < handle
                 fprintf('TypeSmart generation analysis is turned off\n');
             end
             
+            if pre_analysis_only
+                fprintf('Returning from Fix Errors phase after pre_analysis only.\n');
+                return;
+            end
+            
             
             
 %             warning('Returning abruptly before simulating \n');
@@ -329,6 +335,11 @@ classdef simulator < handle
             
             for i=1:obj.max_try
                 disp(['(s) Simulation attempt ' int2str(i)]);
+                
+                if cfg.PAUSE_BETWEEN_FIX_ERROR_STEPS
+                    disp('Pausing before next Fix Error iteration attempt! Press any key to resume.');
+                    pause();
+                end
                 
                 found = false;
                 
@@ -436,23 +447,22 @@ classdef simulator < handle
                             done = true;                                    % TODO
                             found = true;
                         case {'Simulink:Engine:InvCompDiscSampleTime', 'Simulink:blocks:WSTimeContinuousSampleTime'}
-                            done = obj.fix_inv_comp_disc_sample_time(e, is_multi_exception);
+                            [done, found] = obj.fix_inv_comp_disc_sample_time(e, is_multi_exception);
                             ret = done;                             
-                            found = true;
+%                             found = true;
                         case{'Simulink:DataType:InputPortDataTypeMismatch', 'SimulinkBlock:Foundation:SignedOnlyPortDType', 'Simulink:DataType:InvDisagreeInternalRuleDType'}
-                            done = obj.fix_data_type_mismatch(e, 'both');
-                            found = true;
+                            [done, found] = obj.fix_data_type_mismatch(e, 'both');
+%                             found = true;
                         case {'Simulink:DataType:PropForwardDataTypeError', 'Simulink:blocks:DiscreteFirHomogeneousDataType', 'Simulink:blocks:SumBlockOutputDataTypeIsBool'}
-                            done = obj.fix_data_type_mismatch(e, 'both');
-                            found = true;
+                            [done, found] = obj.fix_data_type_mismatch(e, 'both');
+%                             found = true;
                         case {'Simulink:DataType:PropBackwardDataTypeError'}
-                            done = obj.fix_data_type_mismatch(e, 'both');
-                            found = true;
+                            [done, found] = obj.fix_data_type_mismatch(e, 'both');
+%                             found = true;
                         case {'SimulinkFixedPoint:util:fxpBitOpUnsupportedFloatType'}
-                            done = false;
                             obj.fix_data_type_mismatch(e, 'input', {{'OutDataTypeStr', 'boolean'}});
-                            obj.fix_data_type_mismatch(e, 'output');
-                            found = true;
+                            [done, found] = obj.fix_data_type_mismatch(e, 'output');
+                           
                             
                         case {'Simulink:SampleTime:BlkFastestTsNotGCDOfInTs'}
 %                             disp('HEREEEEE');
@@ -547,8 +557,8 @@ classdef simulator < handle
             
             for j = 1:numel(e.handles)
                 handles = e.handles{j};
-                blkFullName = getfullname(handles)
-                blkType = get_param(handles, 'blocktype')
+                blkFullName = getfullname(handles);
+                blkType = get_param(handles, 'blocktype');
                 if strcmp(blkType, 'CombinatorialLogic')
                     
                     if obj.is_block_fixed_before(e.identifier, blkFullName, true)
@@ -581,8 +591,8 @@ classdef simulator < handle
         end
         
         
-        function done = fix_data_type_mismatch(obj, e, loc, blk_params)
-            
+        function [done, found] = fix_data_type_mismatch(obj, e, loc, blk_params)
+            found = false;
             if nargin < 4
                 blk_params = []; % Parameters for the new block
             end
@@ -600,6 +610,14 @@ classdef simulator < handle
                 inner = e.handles{i};
 
                 h = util.select_me_or_parent(inner);
+                
+                if  obj.is_block_fixed_before(e.identifier, getfullname(h), true)
+                    fprintf('%s was already fixed for %s, so not trying this block again.\n', getfullname(h), e.identifier);
+                    return;
+                else
+                    found = true;
+                end
+                
 
 %                 if at_output
                 switch loc
@@ -966,6 +984,9 @@ classdef simulator < handle
         function ret = get_connected_components(obj, slb)
             
             ret = mycell();
+            
+%             disp(numel(slb.nodes));
+%             disp(slb.NUM_BLOCKS);
             
             assert(numel(slb.nodes) == slb.NUM_BLOCKS);
             

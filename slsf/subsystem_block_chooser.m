@@ -1,7 +1,6 @@
-classdef innerblkchooser < blockchooser
-    %INNERBLKCHOOSER Block Chooser for child models
-    %   Models generated using this chooser will be inserted as child
-    %   models in parent models, using the Model_Reference block.
+classdef subsystem_block_chooser < blockchooser
+    % Chooses blocks for submodels
+    %   Detailed explanation goes here
     
     properties
         source_proportion = 0.15;  % Will be updated later
@@ -9,7 +8,8 @@ classdef innerblkchooser < blockchooser
     end
     
     methods
-        function obj = innerblkchooser()
+        
+        function obj = subsystem_block_chooser()
             obj = obj@blockchooser();
             
             % Handle obj.categories property
@@ -28,10 +28,10 @@ classdef innerblkchooser < blockchooser
 %                     
 %                     new_cats_num = new_cats_num + 1;
 %                     new_cats{new_cats_num} = new_s;
-                    obj.source_proportion = c.num;
+                    obj.source_proportion = c.num/3;
                 elseif strcmpi(c.name, 'Sinks') 
                     % Don't add any sink -- most of them are blacklisted
-                    obj.sink_proportion = c.num;
+                    obj.sink_proportion = c.num/3;
                 else
                     new_cats_num = new_cats_num + 1;
                     new_cats{new_cats_num} = c;
@@ -60,6 +60,7 @@ classdef innerblkchooser < blockchooser
             obj.blocklist.(util.mvn('simulink/Sinks/Scope')) = 1;
             obj.blocklist.(util.mvn('simulink/Sinks/FloatingScope')) = 1;
         end
+        
     end
     
 end

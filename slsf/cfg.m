@@ -3,15 +3,16 @@ classdef cfg
     %   Detailed explanation goes here
     
     properties(Constant = true)
-        NUM_TESTS = 50;                          % Number of test models to generate
+        NUM_TESTS = 100;                          % Number of test models to generate
         CSMITH_CREATE_C = false;                % Will call Csmith to create C files. Set to False if reproducing.
         
         SIMULATE_MODELS = true;                 % Simulate generated model
 
         LOG_SIGNALS = true;                     % Log all block-output signals for comparison. Note: it disregards `USE_PRE_GENERATED_MODEL` setting.
 
-        COMPARE_SIM_RESULTS = false;             % Compare simulation results obtained by logging signals.
-
+        COMPARE_SIM_RESULTS = true;             % Compare simulation results obtained by logging signals.
+        
+        
         % If following is non-empty and a string, then instead of generating a model, will use value of this variable as an already generated model. 
         % Put empty ``[]'' to randomly generate models.
 
@@ -36,6 +37,7 @@ classdef cfg
         
         NUM_BLOCKS = 50;
         CHILD_MODEL_NUM_BLOCKS = [10 20];
+        SUBSYSTEM_NUM_BLOCKS = [10 20];
         
         MAX_HIERARCHY_LEVELS = 3;               % Minimum value is 1 indicating a flat model with no hierarchy.
 
@@ -44,7 +46,7 @@ classdef cfg
         SAVE_COMPARE_ERR_MODELS = true;         % Save models for which we got signal compare error after diff. testing
         SAVE_SUCC_MODELS = true;                % Save successful simulation models in a folder
 
-
+        PAUSE_BETWEEN_FIX_ERROR_STEPS = false;
 
         USE_SIGNAL_LOGGING_API = true;          % If true, will use Simulink's Signal Logging API, otherwise adds Outport blocks to each block of the top level model
         SIMULATION_MODE = {'accelerator'};      % See 'SimulationMode' parameter in http://bit.ly/1WjA4uE
@@ -64,8 +66,9 @@ classdef cfg
 %             struct('name', 'Logic and Bit Operations', 'is_blk', false, 'num', 0.15)
             struct('name', 'Sinks', 'is_blk', false, 'num', 0.2)
             struct('name', 'Sources', 'is_blk', false, 'num', 0.2)
-%             struct('name', 'simulink/User-Defined Functions/S-Function', 'is_blk', true, 'num', 0.10)
-            struct('name', 'simulink/Ports & Subsystems/Model', 'is_blk', true, 'num', 0.1)
+            struct('name', 'simulink/Ports & Subsystems/Subsystem', 'is_blk', true, 'num', 0.20)
+%             struct('name', 'simulink/User-Defined Functions/S-Function', 'is_blk', true, 'num', 0.20)
+%             struct('name', 'simulink/Ports & Subsystems/Model', 'is_blk', true, 'num', 0.1)
         };
     
         % Won't use following SL blocks in generated models:
