@@ -760,6 +760,8 @@ classdef simulator < handle
   
             ret = mycell(-1);
             
+            save_active_sys = false;
+            
             if isempty(obj.active_sys) && cfg.SUBSYSTEM_FIX
                 full_name = getfullname(h);
                 slash_pos = strfind(full_name, '/');
@@ -776,6 +778,10 @@ classdef simulator < handle
                 g = obj.generator.get_root_generator().descendant_generators.get(sys);
                 obj.generator.get_root_generator().descendant_generators.print_keys();
                 assert(~isempty(g));
+                
+                if util.starts_with(sys, 'hier')
+                    save_active_sys = true;
+                end
             end
             
             my_name = get_param(h, 'Name');
@@ -820,11 +826,9 @@ classdef simulator < handle
                     is_inp = true;
                 end
                 
-                if isempty(is_inp)
-                    % Could not determine input or output port. Throw error
-                    % for now
-                    throw(MException('RandGen:SL:BlockReplace', 'Could not determine input or output port'));
-                end
+                assesrt(~ isempty(is_inp));
+                    
+                
                 
                 
                 if(is_inp)
@@ -865,6 +869,9 @@ classdef simulator < handle
                     ret.add(d_h);
                     if cfg.SUBSYSTEM_FIX
                         obj.active_sys = [];
+                    end
+                    if save_active_sys
+                        save_system(sys);
                     end
                     return;
                 end
@@ -912,7 +919,9 @@ classdef simulator < handle
             if cfg.SUBSYSTEM_FIX
                 obj.active_sys = [];
             end
-            
+            if save_active_sys
+                save_system(sys);
+            end
             
         end
         

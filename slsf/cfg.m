@@ -66,10 +66,10 @@ classdef cfg
 %             struct('name', 'Logic and Bit Operations', 'is_blk', false, 'num', 0.15)
             struct('name', 'Sinks', 'is_blk', false, 'num', 0.2)
             struct('name', 'Sources', 'is_blk', false, 'num', 0.2)
-            struct('name', 'simulink/Ports & Subsystems/Subsystem', 'is_blk', true, 'num', 0.20)
+            struct('name', 'simulink/Ports & Subsystems/Subsystem', 'is_blk', true, 'num', 0.14)
 %             struct('name', 'simulink/Ports & Subsystems/If', 'is_blk', true, 'num', 1)
 %             struct('name', 'simulink/User-Defined Functions/S-Function', 'is_blk', true, 'num', 0.20)
-%             struct('name', 'simulink/Ports & Subsystems/Model', 'is_blk', true, 'num', 0.1)
+            struct('name', 'simulink/Ports & Subsystems/Model', 'is_blk', true, 'num', 0.6)
         };
     
         % Won't use following SL blocks in generated models:
