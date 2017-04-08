@@ -396,9 +396,16 @@ classdef simulator < handle
                     try
                         obj.alg_loop_eliminator();
                     catch e
-                        done = false;
-                        ret = false;
-                        fprintf('Error in algebraic loop elimination: %s. Will try simulating again. \n', e.identifier);
+                        fprintf('Error in algebraic loop elimination: %s\n', e.identifier);
+                        
+                        if strcmp(e.identifier, 'Simulink:utility:GetAlgebraicLoopFailed')
+                            obj.generator.my_result.exc = e;
+                            done = true;
+                            ret = false;
+                            fprintf('Giving up this model.\n');
+                        else
+                            error('FATAL: Unexpected Alg Loop Eliminator Error');
+                        end
                     end
                 end
                 
