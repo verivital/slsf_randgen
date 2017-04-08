@@ -6,9 +6,6 @@ classdef simple_generator < handle
        DEBUG = true;
        LIST_BLOCK_PARAMS = false;    % Will list all dialog parameters of a block which is chosen for current chart
        LIST_CONN = true;            % If true will print info when connecting blocks
-       
-       blk_construction = mymap('Simulink/User-Defined Functions/S-Function', 'bcsfunction');
-       
     end
     
     properties
@@ -83,6 +80,10 @@ classdef simple_generator < handle
         hierarchy_old_models;
         descendant_generators;   % a hashmap, key is descendant child model name, value is the generator object
         
+        % Block construction and constraint solving hooks
+        blk_construction;            % Hooks to run for specific blocks, inside `draw_blocks` function.
+        pre_block_connection;    % Hooks to run for specific blocks, just before `connect_blocks` function.
+        
     end
     
     methods
@@ -97,13 +98,18 @@ classdef simple_generator < handle
             obj.compare_results = compare_results;
             obj.hierarchy_old_models = mycell();
             obj.descendant_generators = mymap();
+            
+            obj.blk_construction = mymap('Simulink/User-Defined Functions/S-Function', 'bc_sfunction', 'simulink/Ports & Subsystems/If', 'bc_if');
+            obj.pre_block_connection = mycell();
         end
         
         
         function ret = go(obj)
             % Call this function to start
-            obj.p('--- Starting ---');
-            fprintf('CyFuzz::NewRun\n');
+            obj.p('--- Starting Simple Generator ---');
+            if obj.current_hierarchy_level == 1
+                fprintf('CyFuzz::NewRun\n');
+            end
             
             ret = false;
             
@@ -117,6 +123,8 @@ classdef simple_generator < handle
                
 
                 obj.chk_compatibility();
+                
+                obj.run_pbc_hooks();
                 
                 obj.my_result.store_runtime(singleresult.BLOCK_SEL);
 
@@ -334,6 +342,9 @@ classdef simple_generator < handle
             all_blocks = util.get_all_top_level_blocks(obj.sys);
             
             for i = 1:numel(all_blocks)
+                if strcmp(get_param(all_blocks(i), 'blocktype'), 'If')
+                    continue;
+                end
                 port_handles = get_param(all_blocks(i), 'PortHandles');
                 out_ports = port_handles.Outport;
                 
@@ -496,18 +507,13 @@ classdef simple_generator < handle
             end
         end
         
-        function obj = bcsfunction(obj, h)
-            fprintf('BLOCK CONSTRUCTION S FUNCTION..... !!!!!\n');
-            sfcreator = sfuncreator();
-            sfname = sfcreator.go(obj.skip_after_creation);
-            if obj.current_hierarchy_level == 1
-                obj.my_result.sfuns.add(sfname);
-            else
-                obj.root_result.sfuns.add(sfname);
+        function obj = run_pbc_hooks(obj)
+            fprintf('-- Calling Pre-Block-Connection Hooks --');
+            for i=1:obj.pre_block_connection.len
+                data = obj.pre_block_connection.get(i);
+                obj.(data{1})(data{2});
             end
-            set_param(h, 'FunctionName', sfname)
         end
-        
         
         
         function obj = connect_blocks(obj)
@@ -779,7 +785,7 @@ classdef simple_generator < handle
 %             disp(obj.candi_blocks); % Doesn't work: only mentions that
 %             elements are cell
 
-            for block_name = obj.candi_blocks
+            while true
                 % block_name is a cell, where
                 % first element of the cell is the block TYPE if this is
                 % NOT a pre-added block, and block NAME otherwise.
@@ -788,47 +794,40 @@ classdef simple_generator < handle
                 
                 cur_blk = cur_blk + 1;          % Create block name
                 
+                if cur_blk > numel(obj.candi_blocks)
+                    break;
+                end
+                
+                block_name = obj.candi_blocks{cur_blk};
+                
                 is_preadded_block = cur_blk <= obj.num_preadded_blocks;
                 
-                h_len = x + obj.width;
-
-                pos = [x, y, h_len, y + obj.height];
-                
                 if is_preadded_block
-                    this_blk_name = block_name{1}{1};
+                    this_blk_name = block_name{1};
                 else
                     this_blk_name = obj.create_blk_name(cur_blk);
                 end
+                
 
-
-                % Add this block name to list of all added blocks
+                % Add this block information in obj.slb registry
                 obj.slb.all{cur_blk} = this_blk_name;
-
+                
                 this_blk_name = strcat('/', this_blk_name);
-%                 disp('Pos array is:');
-%                 disp(pos);
+
+                h_len = x + obj.width;
+                pos = [x, y, h_len, y + obj.height];
+                
                 if is_preadded_block
                     h = get_param([obj.sys this_blk_name], 'handle');
                     set_param(h,'Position',pos);
-                else
-                    h = add_block(block_name{1}{1}, [obj.sys, this_blk_name], 'Position', pos);
-                    obj.set_sample_time_for_discrete_blk(h, block_name{1});
-                end
-                
-                % Save the handle of this new block. Accessing a block by
-                % its handle is faster than accessing by its name
-                
-                obj.slb.handles{cur_blk} = h;
-                
-                % Generate hierarchy and subsystem blocks
-                
-                if is_preadded_block
                     blk_type = get_param(h, 'blocktype');
                 else
-                    blk_type = block_name{1}{1};
+                    h = add_block(block_name{1}, [obj.sys, this_blk_name], 'Position', pos);
+                    obj.set_sample_time_for_discrete_blk(h, block_name);
+                    blk_type = block_name{1};
                 end
                 
-                % WARNING: pre-added and non-preadded blocks have different
+                 % WARNING: pre-added and non-preadded blocks have different
                 % blk_type. E.g. an input port if pre-added will have
                 % blk_type `Inport` whereas if not pre-added will have
                 % blk_type 'simulink/Sources/Inp...'. Thus, blk_type-based
@@ -838,11 +837,13 @@ classdef simple_generator < handle
 %                 disp(blk_type);
 %                 blk_type
                 
+                obj.slb.handles{cur_blk} = h;
+
                 % Do block-specific mandatory constructions, e.g. for
                 % S-functions have to ``construct'' the block.
                 if obj.blk_construction.contains(blk_type)
 %                     disp('matched!');
-                    obj.(obj.blk_construction.get(blk_type))(h)
+                    obj.(obj.blk_construction.get(blk_type))(h, cur_blk);
 %                 else
 %                     disp('not matched!')
                 end
@@ -865,12 +866,16 @@ classdef simple_generator < handle
                 
                 % Configure block parameters
                 obj.config_block(h, blk_type, this_blk_name);
-                
-                
+ 
                 %%%%%%% Done configuring block %%%%%%%%%
                 
                 % Get its inputs and outputs
                 ports = get_param(h, 'Ports');
+                
+                if strcmp(blk_type, 'simulink/Ports & Subsystems/If')
+                    ports(2) = 0;   % Output ports of IF block should not participate in connections
+                end
+                
                 obj.slb.new_block_added(cur_blk, ports);
                 
 %                 if cfg.GENERATE_TYPESMART_MODELS
@@ -1130,6 +1135,52 @@ classdef simple_generator < handle
             end           
             
         end
+        
+        % Block Construction Functions - these functions are used for
+        % constructing specific blocks and satisfying block-specific
+        % constraints
+        
+        function obj = bc_sfunction(obj, h, blk_id)
+            % Hook: block construction for S-functions
+            fprintf('BC HOOK: S FUNCTION..... \n');
+            sfcreator = sfuncreator();
+            sfname = sfcreator.go(obj.skip_after_creation);
+            if obj.current_hierarchy_level == 1
+                obj.my_result.sfuns.add(sfname);
+            else
+                obj.root_result.sfuns.add(sfname);
+            end
+            set_param(h, 'FunctionName', sfname)
+        end
+        
+        function bc_if(obj, h, blk_id)
+            % Hook: Block construction for If subsytems
+            fprintf('BC HOOK: IF SUBSYSTEM..... \n');
+            num_output = 2; % TODO make it dynamic
+            
+            obj.pre_block_connection.add({'pbc_if', {blk_id, num_output, obj.NUM_BLOCKS}});
+            
+            obj.candi_blocks{obj.NUM_BLOCKS + 1} = {sprintf('simulink/Ports &\nSubsystems/If Action\nSubsystem'), false};
+            obj.candi_blocks{obj.NUM_BLOCKS + 2} = {sprintf('simulink/Ports &\nSubsystems/If Action\nSubsystem'), false};
+            
+            obj.NUM_BLOCKS = obj.NUM_BLOCKS + num_output;
+            obj.slb.NUM_BLOCKS = obj.NUM_BLOCKS;
+
+        end
+        
+        function pbc_if(obj, data)
+            fprintf('PBC HOOK: IF SUBSYSTEM..... \n');
+            % Hook: Pre-block-connection for If Subsystems
+            id_if = data{1};
+            num_outputs = data{2};
+            output_base = data{3};  % ID of the block BEFORE the first output subsystem in the slb registry
+            
+            for i=1:num_outputs
+                add_line(obj.sys, [obj.slb.all{id_if} '/' int2str(i)], [obj.slb.all{output_base + i} '/Ifaction'], 'autorouting','on')
+            end
+        end
+        
+        
    
     end
     
