@@ -749,7 +749,7 @@ classdef simple_generator < handle
         
         
         function ret=create_blk_name(obj, num)
-            ret = strcat('bl', num2str(num));
+            ret = strcat(cfg.BLOCK_NAME_PREFIX, num2str(num));
         end
         
         
@@ -803,7 +803,8 @@ classdef simple_generator < handle
                 is_preadded_block = cur_blk <= obj.num_preadded_blocks;
                 
                 if is_preadded_block
-                    this_blk_name = block_name{1};
+                    this_blk_name = obj.create_blk_name(cur_blk);
+                    set_param([obj.sys '/' block_name{1}], 'name', this_blk_name);
                 else
                     this_blk_name = obj.create_blk_name(cur_blk);
                 end
@@ -821,6 +822,7 @@ classdef simple_generator < handle
                     h = get_param([obj.sys this_blk_name], 'handle');
                     set_param(h,'Position',pos);
                     blk_type = get_param(h, 'blocktype');
+                    
                 else
                     h = add_block(block_name{1}, [obj.sys, this_blk_name], 'Position', pos);
                     obj.set_sample_time_for_discrete_blk(h, block_name);
@@ -1019,7 +1021,7 @@ classdef simple_generator < handle
                     obj.hierarchy_new_count = obj.hierarchy_new_count + 1;
                     obj.hierarchy_old_models.add(model_name);
                     
-                    hg.root_generator.descendant_generators.put(model_name, hg)
+                    hg.root_generator.descendant_generators.put(model_name, hg);
 
                     ret = model_name;
                     return;
@@ -1059,6 +1061,10 @@ classdef simple_generator < handle
             end
             
 %             hg.root_result.hier_models
+
+            fprintf('Submodel before go: blk_name: %s; full name: %s\n', blk_name, full_model_name);
+
+            hg.root_generator.descendant_generators.put(full_model_name, hg);
             
             hg.blkchooser = subsystem_block_chooser();
             hg.init();

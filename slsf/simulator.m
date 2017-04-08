@@ -616,8 +616,15 @@ classdef simulator < handle
                     found = true;
                 end
                 
+%                 if cfg.SUBSYSTEM_FIX
+%                     full_name = getfullname(h);
+%                     slash_pos = strfind(full_name, '/');
+%                     
+%                     obj.active_sys = full_name(1:(slash_pos(numel(slash_pos)) - 1));
+%                     fprintf('Active sys: %s\n', obj.active_sys);
+%                 end
+                
 
-%                 if at_output
                 switch loc
                     case {'output'}
                         new_blocks = obj.add_block_in_the_middle(h, 'Simulink/Signal Attributes/Data Type Conversion', true, false);
@@ -634,6 +641,8 @@ classdef simulator < handle
                         throw(MException('RandGen:FixDataType:InvalidValForParamLOC', 'Invalid value for parameter loc'));
                 end
             end
+            
+%             obj.active_sys = [];
             
             if ~isempty(blk_params) 
                 for i=1:new_blocks.len
@@ -751,12 +760,21 @@ classdef simulator < handle
   
             ret = mycell(-1);
             
-            if isempty(obj.active_sys)
+            if isempty(obj.active_sys) && cfg.SUBSYSTEM_FIX
+                full_name = getfullname(h);
+                slash_pos = strfind(full_name, '/');
+
+                obj.active_sys = full_name(1:(slash_pos(numel(slash_pos)) - 1));
+                fprintf('Active sys: %s\n', obj.active_sys);
+            end
+            
+            if isempty(obj.active_sys) || strcmp(obj.active_sys, obj.generator.sys)
                 sys = obj.generator.sys;
                 g = obj.generator;
             else
                 sys = obj.active_sys;
                 g = obj.generator.get_root_generator().descendant_generators.get(sys);
+                obj.generator.get_root_generator().descendant_generators.print_keys();
                 assert(~isempty(g));
             end
             
@@ -776,6 +794,9 @@ classdef simulator < handle
                 ports = get_param(h,'PortConnectivity');
             catch e
 %                 disp('~ Skipping, not a block');
+                if cfg.SUBSYSTEM_FIX
+                    obj.active_sys = [];
+                end
                 return;
             end
 
@@ -842,6 +863,9 @@ classdef simulator < handle
                     other_port
                     d_h = obj.add_block_in_middle_multi(my_b_p, other_name, other_port, replacement, g);
                     ret.add(d_h);
+                    if cfg.SUBSYSTEM_FIX
+                        obj.active_sys = [];
+                    end
                     return;
                 end
 
@@ -883,6 +907,10 @@ classdef simulator < handle
 
                
 
+            end
+            
+            if cfg.SUBSYSTEM_FIX
+                obj.active_sys = [];
             end
             
             

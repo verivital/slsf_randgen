@@ -34,26 +34,84 @@ classdef util < handle
         function h = select_me_or_parent(inner, my_level)
             % If `inner` is a block inside a subsystem, then get the parent
             % block.
-            
+
             if nargin < 2
                 my_level = 1;
             end
             
-            disp('INSIDE: Select me or parent');
             my_full_name = getfullname(inner);
+            fprintf('Select Me Or Parent --> Subject: %s\n', my_full_name);
+            
+            if cfg.SUBSYSTEM_FIX
+                slash_pos = strfind(my_full_name, '/');
+                       
+                all = strsplit(my_full_name, '/');
+
+                i = numel(all) + 1;
+
+                if util.starts_with(all{i-1}, cfg.BLOCK_NAME_PREFIX)
+                    fprintf('select me\n');
+                    h = inner;
+                    return;
+                end
+                j = -1;
+                while i>0
+                    i = i - 1;
+                    j = j + 1;
+                    if util.starts_with(all{i}, cfg.BLOCK_NAME_PREFIX)
+                        break;
+                    end
+                end
+    %             numel(slash_pos)
+    %             j
+                h = my_full_name(1:slash_pos(numel(slash_pos) + 1 - j) - 1);
+                fprintf('select some parent: %s\n', h);
+                
+            else
+                slash_pos = strfind(my_full_name, '/');
+
+                desired_slash_pos = my_level + 1;
+
+                if numel(slash_pos) < desired_slash_pos
+                    disp('Not Fetching Parent!');
+                    h = inner;
+                else
+                    h = my_full_name(1: (slash_pos(desired_slash_pos) - 1));
+                    fprintf('Fetched this parent: %s\n', getfullname(h));
+                end
+            end
+        end
+        
+        function h = select_parent(my_full_name, my_level)
+            % If `inner` is a block inside a subsystem, then get the parent
+            % block.
+            
             fprintf('Subject: %s\n', my_full_name);
             
             slash_pos = strfind(my_full_name, '/');
+                       
+            all = strsplit(my_full_name, '/');
             
-            desired_slash_pos = my_level + 1;
+            i = numel(all) + 1;
             
-            if numel(slash_pos) < desired_slash_pos
-                disp('Not Fetching Parent!');
-                h = inner;
-            else
-                h = my_full_name(1: (slash_pos(desired_slash_pos) - 1));
-                fprintf('Fetched this parent: %s\n', getfullname(h));
+            if util.starts_with(all{i-1}, 'bl')
+                fprintf('select me\n');
+                return;
             end
+            j = -1;
+            while i>0
+                i = i - 1;
+                j = j + 1;
+                if util.starts_with(all{i}, 'bl')
+                    break;
+                end
+            end
+%             numel(slash_pos)
+%             j
+            
+            fprintf('select some parent:%s\n', my_full_name(1:slash_pos(numel(slash_pos) + 1 - j) - 1));
+            
+            
         end
         
         

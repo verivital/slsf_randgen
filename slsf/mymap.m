@@ -74,6 +74,24 @@ classdef mymap < handle
             %  otherwise you might not get updated values.
             ret = obj.data_keys{index};
         end
+        
+        function obj = print_all(obj)
+            fprintf('Printing MyMap -->\n');
+            for i=1:numel(obj.keys)
+                k = obj.keys{i};
+                fprintf('%s --> %s \t', k, obj.get(k));
+            end
+            fprintf('\n');
+        end
+        
+        function obj = print_keys(obj)
+             fprintf('Printing MyMap Keys -->\n');
+            for i=1:numel(obj.keys)
+                k = obj.keys{i};
+                fprintf('%s; \t', k);
+            end
+            fprintf('\n');
+        end
     end
     
 end
