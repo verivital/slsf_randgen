@@ -25,12 +25,12 @@ classdef subsystem_generator < hier_generator
             
             obj.num_preadded_blocks = 0;
             
-            obj.candi_blocks = cell(1, obj.NUM_BLOCKS + numel(my_children) - 1);    % 1 is for the system itself
+            obj.candi_blocks = cell(1, obj.NUM_BLOCKS); % Has less capacity, but that's fine.    
             
             for i=1:numel(my_children)
                 c = my_children{i};
                 
-                if strcmp(c, obj.sys)
+                if strcmp(c, obj.sys) || strcmp(get_param(c, 'blocktype'), 'ActionPort')
 %                     fprintf('Skipping %s\n', c);
                     continue;
                 end
@@ -47,7 +47,7 @@ classdef subsystem_generator < hier_generator
                 obj.candi_blocks{obj.num_preadded_blocks} = {portions{2}, is_discrete};
             end
             
-            assert(obj.num_preadded_blocks == (numel(my_children) - 1)); % 1 is for the system itself
+%             assert(obj.num_preadded_blocks == (numel(my_children) - 1)); % 1 is for the system itself
             
 %             obj.candi_blocks{1} = 'In1';
 %             obj.candi_blocks{2} = 'Out1';

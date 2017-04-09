@@ -66,7 +66,12 @@ classdef blockchooser < handle
             end
         end
         
-        
+        function ret = is_other_hier_block(obj, bname)
+            ret = obj.docfixed.get(bname, slblockdocfixed.OTHER_HIER);
+            if isempty(ret)
+                ret = false;
+            end
+        end
         
         
         function obj = process_cats(obj, can_not_choose_hierarchy_blocks)
@@ -77,7 +82,7 @@ classdef blockchooser < handle
             for i = 1:numel(obj.categories)
                 c = obj.categories{i};
                 
-                if can_not_choose_hierarchy_blocks && (obj.is_hierarchy_block(c.name) || obj.is_submodel_block(c.name))
+                if can_not_choose_hierarchy_blocks && (obj.is_hierarchy_block(c.name) || obj.is_submodel_block(c.name) || obj.is_other_hier_block(c.name))
                     fprintf('Can not add %s: max level reached.\n', c.name);
                     continue;
                 end

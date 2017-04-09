@@ -267,44 +267,92 @@ classdef simulator < handle
         end
         
         function obj = remove_cycles(obj, slb)
-            % TODO only finds strongly connected components, not all
-            % cycles. use Johnson's algo to find all cycles
-            
             fprintf('-- Starting cycle remover--\n');
-            cc = obj.get_connected_components(slb);
+            nodes_to_fix = mycell();
             
-            for out_i = 1:cc.len
-                
-                c = cc.get(out_i);
-                
-%                 fprintf('\n-- CC %d --\n', out_i);
-%                 for out_j = 1:c.len
-%                     v = c.get(out_j);
-%                     fprintf('bl%d ---> \t', v);
-%                 end
-                
-                first = c.get(1);
-                v = slb.nodes{first};
-                
-                 for i=1:numel(v.out_nodes)
-                    for j=1:numel(v.out_nodes{i})
-                        chld = v.out_nodes{i}{j};
-                        if util.cell_in(c.data, chld.my_id)
-                            tn = slbnodetags(chld);
-                            tn.which_input_port = v.out_nodes_otherport{i}{j};
-                            tn.which_parent_block = v;
-                            tn.which_parent_port = [i, j];
-                            obj.pre_fix_loop(tn, slb);
-                            break;
-                        end
-                    end
-                 end
-                 
-                 fprintf('-- End cycle remover. Found %d STRONGLY CONNECTED COMPONENTS --\n', cc.len);
-                
+            WHITE = 0;
+            GRAY = 1;
+            BLACK = 2;
+            
+            assert(numel(slb.nodes) == slb.NUM_BLOCKS);
+            colors = zeros(1, slb.NUM_BLOCKS);
+            
+            for out_i=1:slb.NUM_BLOCKS
+                n = slb.nodes{out_i};
+                if colors(n.my_id) == WHITE
+                    dfs_visit(n);
+                end
             end
             
+            fprintf('Total %d back-edges found\n,', nodes_to_fix.len);
+            
+            for out_i=1:nodes_to_fix.len
+                obj.pre_fix_loop(nodes_to_fix.get(out_i), slb);
+            end
+            
+            fprintf('--- End Cycle Remover -- \n');
+            
+            function dfs_visit(n)
+                colors(n.my_id) = GRAY;
+                for i=1:numel(n.out_nodes)
+                    for j=1:numel(n.out_nodes{i})
+                        chld = n.out_nodes{i}{j};
+                        
+                        if colors(chld.my_id) == WHITE
+                            dfs_visit(chld);
+                        elseif colors(chld.my_id) == GRAY
+                            fprintf('(!) Back edge: bl_%d::%d ---> bl_%d::%d\n', n.my_id, i, chld.my_id, n.out_nodes_otherport{i}{j});
+                            tn = slbnodetags(chld);
+                            tn.which_input_port = n.out_nodes_otherport{i}{j};
+                            tn.which_parent_block = n;
+                            tn.which_parent_port = [i, j];
+                            nodes_to_fix.add(tn);
+                        end
+                        colors(n.my_id) = BLACK;
+                    end
+                end
+            end
         end
+        
+%         function obj = remove_cycles(obj, slb)
+%             % TODO only finds strongly connected components, not all
+%             % cycles. use Johnson's algo to find all cycles
+%             
+%             fprintf('-- Starting cycle remover--\n');
+%             cc = obj.get_connected_components(slb);
+%             
+%             for out_i = 1:cc.len
+%                 
+%                 c = cc.get(out_i);
+%                 
+% %                 fprintf('\n-- CC %d --\n', out_i);
+% %                 for out_j = 1:c.len
+% %                     v = c.get(out_j);
+% %                     fprintf('bl%d ---> \t', v);
+% %                 end
+%                 
+%                 first = c.get(1);
+%                 v = slb.nodes{first};
+%                 
+%                  for i=1:numel(v.out_nodes)
+%                     for j=1:numel(v.out_nodes{i})
+%                         chld = v.out_nodes{i}{j};
+%                         if util.cell_in(c.data, chld.my_id)
+%                             tn = slbnodetags(chld);
+%                             tn.which_input_port = v.out_nodes_otherport{i}{j};
+%                             tn.which_parent_block = v;
+%                             tn.which_parent_port = [i, j];
+%                             obj.pre_fix_loop(tn, slb);
+%                             break;
+%                         end
+%                     end
+%                  end
+%                  
+%                  fprintf('-- End cycle remover. Found %d STRONGLY CONNECTED COMPONENTS --\n', cc.len);
+%                 
+%             end
+%             
+%         end
         
         
         function ret = simulate(obj, slb, pre_analysis_only)

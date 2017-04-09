@@ -5,6 +5,7 @@ classdef subsystem_block_chooser < blockchooser
     properties
         source_proportion = 0.15;  % Will be updated later
         sink_proportion = 0.15;     % Will be updated later
+
     end
     
     methods
@@ -32,6 +33,11 @@ classdef subsystem_block_chooser < blockchooser
                 elseif strcmpi(c.name, 'Sinks') 
                     % Don't add any sink -- most of them are blacklisted
                     obj.sink_proportion = c.num/3;
+                elseif strcmpi(c.name, 'simulink/Ports & Subsystems/If') 
+                    new_s = c;
+                    new_s.num = c.num/3;                    
+                    new_cats_num = new_cats_num + 1;
+                    new_cats{new_cats_num} = new_s;
                 else
                     new_cats_num = new_cats_num + 1;
                     new_cats{new_cats_num} = c;

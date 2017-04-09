@@ -38,8 +38,9 @@ classdef cfg
         NUM_BLOCKS = 50;
         CHILD_MODEL_NUM_BLOCKS = [10 20];
         SUBSYSTEM_NUM_BLOCKS = [10 20];
+        IF_ACTION_SUBSYS_NUM_BLOCKS = [5 10];
         
-        MAX_HIERARCHY_LEVELS = 3;               % Minimum value is 1 indicating a flat model with no hierarchy.
+        MAX_HIERARCHY_LEVELS =3;               % Minimum value is 1 indicating a flat model with no hierarchy.
 
         SAVE_ALL_ERR_MODELS = true;             % Save the models which we can not simulate 
         LOG_ERR_MODEL_NAMES = true;             % Log error model names keyed by their errors
@@ -60,16 +61,16 @@ classdef cfg
         % library, set `is_blk` false. Set true for blocks.
         
         SL_BLOCKLIBS = {
-           struct('name', 'Discrete', 'is_blk', false, 'num', 0.4)
-%              struct('name', 'Continuous', 'is_blk', false,  'num', 0.3)
+           struct('name', 'Discrete', 'is_blk', false, 'num', 0.25)
+             struct('name', 'Continuous', 'is_blk', false,  'num', 0.25)
 %             struct('name', 'Math Operations', 'is_blk', false, 'num', 10)
 %             struct('name', 'Logic and Bit Operations', 'is_blk', false, 'num', 0.15)
-            struct('name', 'Sinks', 'is_blk', false, 'num', 0.2)
-            struct('name', 'Sources', 'is_blk', false, 'num', 0.2)
+            struct('name', 'Sinks', 'is_blk', false, 'num', 0.15)
+            struct('name', 'Sources', 'is_blk', false, 'num', 0.15)
             struct('name', 'simulink/Ports & Subsystems/Subsystem', 'is_blk', true, 'num', 0.14)
-%             struct('name', 'simulink/Ports & Subsystems/If', 'is_blk', true, 'num', 1)
+%             struct('name', 'simulink/Ports & Subsystems/If', 'is_blk', true, 'num', .2)
 %             struct('name', 'simulink/User-Defined Functions/S-Function', 'is_blk', true, 'num', 0.20)
-            struct('name', 'simulink/Ports & Subsystems/Model', 'is_blk', true, 'num', 0.6)
+            struct('name', 'simulink/Ports & Subsystems/Model', 'is_blk', true, 'num', 0.06)
         };
     
         % Won't use following SL blocks in generated models:

@@ -459,11 +459,22 @@ classdef simple_generator < handle
             % model
             all = obj.get_all_simulink_blocks();  % does the random selection part
             
+            disp('all blocks:')
+            all
+            obj.candi_blocks
+            
             obj.process_preadded_blocks();
+            
+            disp('after processing preadded');
+            obj.candi_blocks
             
             if obj.num_preadded_blocks == 0
                 obj.candi_blocks = cell(1, obj.NUM_BLOCKS);
             end
+            
+            
+            obj.num_preadded_blocks
+            obj.NUM_BLOCKS
             
 %             rand_vals = randi([1, numel(all)], 1, obj.NUM_BLOCKS);
             
@@ -472,6 +483,9 @@ classdef simple_generator < handle
             end
             
             obj.NUM_BLOCKS = obj.NUM_BLOCKS + obj.num_preadded_blocks;
+            
+            disp('candi blocks in get_candi_blocks')
+            obj.candi_blocks
             
             
             % Calculate new-old ratio for hierarchy models
@@ -824,6 +838,7 @@ classdef simple_generator < handle
                     blk_type = get_param(h, 'blocktype');
                     
                 else
+                    block_name
                     h = add_block(block_name{1}, [obj.sys, this_blk_name], 'Position', pos);
                     obj.set_sample_time_for_discrete_blk(h, block_name);
                     blk_type = block_name{1};
@@ -863,7 +878,7 @@ classdef simple_generator < handle
                 % Construct the block if it is a subsystem block
                 if obj.blkchooser.is_submodel_block(blk_type)
                     fprintf('Submodel block %s found.\n', this_blk_name);
-                    obj.handle_submodel_creation(this_blk_name, obj.sys);
+                    obj.handle_subsystem_creation(this_blk_name, obj.sys, blk_type);
                 end
                 
                 % Configure block parameters
@@ -1034,7 +1049,7 @@ classdef simple_generator < handle
         end
         
         
-        function handle_submodel_creation(obj, blk_name, parent_model)
+        function handle_subsystem_creation(obj, blk_name, parent_model, blk_type)
             SIMULATE_MODELS = true; % pre-analysis only
             CLOSE_MODEL = true;
             LOG_SIGNALS = false;
@@ -1043,7 +1058,15 @@ classdef simple_generator < handle
             
             full_model_name = [parent_model blk_name];
             
-            hg = subsystem_generator(cfg.SUBSYSTEM_NUM_BLOCKS, full_model_name, SIMULATE_MODELS, CLOSE_MODEL, LOG_SIGNALS, SIMULATION_MODE, COMPARE_SIM_RESULTS);                      
+            if strcmp(blk_type, 'simulink/Ports & Subsystems/Subsystem')
+                num_blks =cfg.SUBSYSTEM_NUM_BLOCKS;
+            elseif strcmp(blk_type, sprintf('simulink/Ports &\nSubsystems/If Action\nSubsystem'))
+                num_blks = cfg.IF_ACTION_SUBSYS_NUM_BLOCKS;
+            else
+                fatal('subsystem type not matched: %s', blk_type);
+            end
+            
+            hg = subsystem_generator(num_blks, full_model_name, SIMULATE_MODELS, CLOSE_MODEL, LOG_SIGNALS, SIMULATION_MODE, COMPARE_SIM_RESULTS);                      
             hg.pre_analysis_only = true;
             hg.is_subsystem = true;
             hg.skip_after_creation = obj.skip_after_creation;
@@ -1062,7 +1085,7 @@ classdef simple_generator < handle
             
 %             hg.root_result.hier_models
 
-            fprintf('Submodel before go: blk_name: %s; full name: %s\n', blk_name, full_model_name);
+            fprintf('Subsystem before go: blk_name: %s; full name: %s\n', blk_name, full_model_name);
 
             hg.root_generator.descendant_generators.put(full_model_name, hg);
             

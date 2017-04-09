@@ -10,6 +10,8 @@ classdef (Sealed) slblockdocfixed < handle
         % First element is true if the block is CONDITIONALLY DFT. The
         % second element will list the condition.
         
+        OTHER_HIER = 'e';   % Some blocks indirectly cause hierarchy (e.g. IF blocks)
+        
         prefix = 'simulink/';
     end
     
@@ -110,6 +112,12 @@ classdef (Sealed) slblockdocfixed < handle
               struct(obj.SUBSYS, true));
           
           obj.d.put('Ports & Subsystems/Subsystem',...
+              struct(obj.SUBSYS, true));
+          
+            obj.d.put('Ports & Subsystems/If',...
+              struct(obj.OTHER_HIER, true));
+          
+          obj.d.put('Ports & Subsystems/If Action Subsystem',...
               struct(obj.SUBSYS, true));
           
           
