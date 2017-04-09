@@ -269,35 +269,39 @@ classdef simulator < handle
         function obj = remove_cycles(obj, slb)
             fprintf('-- Starting cycle remover--\n');
             nodes_to_fix = mycell();
-            
+           
             WHITE = 0;
             GRAY = 1;
             BLACK = 2;
-            
+           
             assert(numel(slb.nodes) == slb.NUM_BLOCKS);
             colors = zeros(1, slb.NUM_BLOCKS);
-            
+           
             for out_i=1:slb.NUM_BLOCKS
                 n = slb.nodes{out_i};
                 if colors(n.my_id) == WHITE
+%                     fprintf('[OUTER-DFS] visiting %d\n', n.my_id);
                     dfs_visit(n);
                 end
             end
-            
+           
             fprintf('Total %d back-edges found\n,', nodes_to_fix.len);
-            
+           
             for out_i=1:nodes_to_fix.len
                 obj.pre_fix_loop(nodes_to_fix.get(out_i), slb);
             end
-            
+           
             fprintf('--- End Cycle Remover -- \n');
-            
+           
             function dfs_visit(n)
+%                 fprintf('\t[DFS-GRAY] %d\n', n.my_id)
                 colors(n.my_id) = GRAY;
                 for i=1:numel(n.out_nodes)
                     for j=1:numel(n.out_nodes{i})
                         chld = n.out_nodes{i}{j};
-                        
+                       
+%                         fprintf('\t\t\t[Child] %d ---> %d, color %d\n',n.my_id, chld.my_id, colors(chld.my_id));
+                       
                         if colors(chld.my_id) == WHITE
                             dfs_visit(chld);
                         elseif colors(chld.my_id) == GRAY
@@ -308,9 +312,11 @@ classdef simulator < handle
                             tn.which_parent_port = [i, j];
                             nodes_to_fix.add(tn);
                         end
-                        colors(n.my_id) = BLACK;
                     end
                 end
+               
+%                 fprintf('\t[DFS-BLACK] %d\n', n.my_id);
+                colors(n.my_id) = BLACK;
             end
         end
         

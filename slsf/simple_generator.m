@@ -119,7 +119,12 @@ classdef simple_generator < handle
             
                 obj.get_candidate_blocks();
                 
-                obj.draw_blocks();
+                ret = obj.draw_blocks();
+                
+                if ~ ret
+                    fprintf('Drawing blocks failed, returning\n');
+                    return;
+                end
                
 
                 obj.chk_compatibility();
@@ -459,22 +464,22 @@ classdef simple_generator < handle
             % model
             all = obj.get_all_simulink_blocks();  % does the random selection part
             
-            disp('all blocks:')
-            all
-            obj.candi_blocks
+%             disp('all blocks:')
+%             all
+%             obj.candi_blocks
             
             obj.process_preadded_blocks();
             
-            disp('after processing preadded');
-            obj.candi_blocks
+%             disp('after processing preadded');
+%             obj.candi_blocks
             
             if obj.num_preadded_blocks == 0
                 obj.candi_blocks = cell(1, obj.NUM_BLOCKS);
             end
             
             
-            obj.num_preadded_blocks
-            obj.NUM_BLOCKS
+%             obj.num_preadded_blocks
+%             obj.NUM_BLOCKS
             
 %             rand_vals = randi([1, numel(all)], 1, obj.NUM_BLOCKS);
             
@@ -484,8 +489,8 @@ classdef simple_generator < handle
             
             obj.NUM_BLOCKS = obj.NUM_BLOCKS + obj.num_preadded_blocks;
             
-            disp('candi blocks in get_candi_blocks')
-            obj.candi_blocks
+%             disp('candi blocks in get_candi_blocks')
+%             obj.candi_blocks
             
             
             % Calculate new-old ratio for hierarchy models
@@ -783,8 +788,9 @@ classdef simple_generator < handle
         end
         
         
-        function obj = draw_blocks(obj)
+        function ret = draw_blocks(obj)
             % Draw blocks in the screen
+            ret = true;
             
             disp('DRAWING BLOCKS...');
             
@@ -868,8 +874,15 @@ classdef simple_generator < handle
                 % Construct the block if it is a hierarchy block
                 if obj.blkchooser.is_hierarchy_block(blk_type)
                     fprintf('Hierarchy block %s found.\n', this_blk_name);
-
-                    mdl_name = obj.handle_hierarchy_creation();
+                    try
+                        mdl_name = obj.handle_hierarchy_creation();
+                    catch e
+                        if strcmp(e.identifier, 'RandGen:SL:ChildModelCreationAttemptExhausted')
+                            obj.my_result.exc = e;
+                            ret = false;
+                            return;
+                        end
+                    end
                     fprintf('Generated this hierarchy model: %s\n', mdl_name);
 
                     set_param(h, 'ModelNameDialog', mdl_name);
@@ -880,7 +893,7 @@ classdef simple_generator < handle
                     fprintf('Submodel block %s found.\n', this_blk_name);
                     obj.handle_subsystem_creation(this_blk_name, obj.sys, blk_type);
                 end
-                
+
                 % Configure block parameters
                 obj.config_block(h, blk_type, this_blk_name);
  
@@ -1022,7 +1035,7 @@ classdef simple_generator < handle
 
                 % Save this model?
                 
-                if new_mdl_i == cfg.HIERARCHY_NEW_MAX_ATTEMPT
+                if ~res 
                     if obj.hierarchy_old_models.len > 0
                         fprintf('New Model creation unsuccessful but old models available.\n');
                     else
@@ -1099,6 +1112,11 @@ classdef simple_generator < handle
                 getReport(e)
                 error('FATAL: SUBSYSTEM creation error');
             end
+            
+%             if strcmp(full_model_name, 'sampleModel4118/cfblk44')
+%                 fprintf('Pausing after model %s\n', full_model_name);
+%                 pause
+%             end
         end
         
         function obj = random_config_block(obj, h, blk_type, blk_name)
