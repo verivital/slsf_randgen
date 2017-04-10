@@ -15,8 +15,8 @@ classdef analyze_complexity < handle
     properties
         base_dir = '';
         exptype = 'example';
-        examples = {'sldemo_fuelsys','sldemo_mdlref_variants_enum','sldemo_mdlref_basic'};
-        openSource = {'openSource/hyperloop_arc','staticmodel'};
+        examples = {'sldemo_fuelsys','sldemo_mdlref_variants_enum','sldemo_mdlref_basic','untitled2'};
+        openSource = {'hyperloop_arc','staticmodel'};
         cyFuzz = {'sampleModel30'};
         data = cell(1, 7);
         di = 1;
@@ -67,17 +67,17 @@ classdef analyze_complexity < handle
             for i = 1:numel(obj.examples)
                 s = obj.examples{i};
                 open_system(s);
-                sys = gcs;
+             
                 % initializing maps to store metrics
                 obj.map = mymap();
                 obj.blockTypeMap = mymap();
                 obj.childModelMap = mymap();
                 
                 % api function to obtain metrics
-                obj.do_single_model(sys);
+                obj.do_single_model(s);
                 
                 % recursive function to obtain metrics
-                obj.obtain_hierarchy_metrics(sys,1,false);
+                obj.obtain_hierarchy_metrics(s,1,false);
                 
                 % display metrics calculated
                 disp('Number of blocks Level wise:');
@@ -86,16 +86,16 @@ classdef analyze_complexity < handle
                 disp(obj.blockTypeMap.data);
                 disp('Number of child models with the number of times being reused:');
                 disp(obj.childModelMap.data);
-                close_system(sys);
+                close_system(s);
             end
         end
         
         function obtain_hierarchy_metrics(obj,sys,depth,isModelReference)
-            all_blocks = find_system(sys,'SearchDepth',depth);
+            all_blocks = find_system(sys,'SearchDepth',1);
             if isModelReference
                 mdlRefName = get_param(sys,'ModelName');
                 load_system(mdlRefName);
-                all_blocks = find_system(mdlRefName,'SearchDepth',depth);
+                all_blocks = find_system(mdlRefName,'SearchDepth',1);
                 all_blocks = all_blocks(2:end);
             end
             count=0;
