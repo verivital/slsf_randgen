@@ -9,19 +9,21 @@ classdef analyze_complexity < handle
         CYCLOMATIC = 4;
         SUBSYSTEM_COUNT_AGGR = 5;
         SUBSYSTEM_DEPTH_AGGR = 6;
+        LIBRARY_LINK_COUNT = 7;
     end
     
     properties
         base_dir = '';
-        
         exptype = 'example';
-        
-%         examples = {'sldemo_fuelsys'};
-        examples = {'untitled'};
-        
-        data = cell(1, 6);
+        examples = {'sldemo_fuelsys','sldemo_mdlref_variants_enum','sldemo_mdlref_basic'};
+        openSource = {'openSource/hyperloop_arc','staticmodel'};
+        cyFuzz = {'sampleModel30'};
+        data = cell(1, 7);
         di = 1;
-        
+        childModelList = {'SubSystem','ModelReference'};
+        map;
+        blockTypeMap;
+        childModelMap;
     end
     
     methods
@@ -33,6 +35,8 @@ classdef analyze_complexity < handle
             obj.data{1, obj.CYCLOMATIC} = 'CY';
             obj.data{1, obj.SUBSYSTEM_COUNT_AGGR} = 'Ss cnt';
             obj.data{1, obj.SUBSYSTEM_DEPTH_AGGR} = 'Ss dpt';
+            obj.data{1, obj.SUBSYSTEM_DEPTH_AGGR} = 'Ss dpt';
+            obj.data{1, obj.LIBRARY_LINK_COUNT} = 'LibLink cnt';
         end
         
         function  obj = analyze_complexity(exptype)
@@ -44,30 +48,112 @@ classdef analyze_complexity < handle
             switch obj.exptype
                 case 'example'
                     obj.analyze_examples();
+                case 'openSource'
+                    obj.examples = obj.openSource;
+                    obj.analyze_examples();
+                case 'cyfuzz'
+                    obj.examples = obj.cyFuzz;
+                    obj.analyze_examples();
                 otherwise
                     error('Invalid Argument');
             end
-            obj.write_excel();
+            %obj.write_excel();
             disp(obj.data);
         end
-        
+           
         function analyze_examples(obj)
             disp('Analyzing examples');
             
             for i = 1:numel(obj.examples)
                 s = obj.examples{i};
-                eval(s);
+                open_system(s);
                 sys = gcs;
+                % initializing maps to store metrics
+                obj.map = mymap();
+                obj.blockTypeMap = mymap();
+                obj.childModelMap = mymap();
+                
+                % api function to obtain metrics
                 obj.do_single_model(sys);
-%                 close_system(sys);
+                
+                % recursive function to obtain metrics
+                obj.obtain_hierarchy_metrics(sys,1,false);
+                
+                % display metrics calculated
+                disp('Number of blocks Level wise:');
+                disp(obj.map.data);
+                disp('Number specific blocks with their counts:');
+                disp(obj.blockTypeMap.data);
+                disp('Number of child models with the number of times being reused:');
+                disp(obj.childModelMap.data);
+                close_system(sys);
             end
         end
         
+        function obtain_hierarchy_metrics(obj,sys,depth,isModelReference)
+            all_blocks = find_system(sys,'SearchDepth',depth);
+            if isModelReference
+                mdlRefName = get_param(sys,'ModelName');
+                load_system(mdlRefName);
+                all_blocks = find_system(mdlRefName,'SearchDepth',depth);
+                all_blocks = all_blocks(2:end);
+            end
+            count=0;
+            [blockCount,~] =size(all_blocks);
+            
+            %skip the root model which always comes as the first model
+            for i=1:blockCount
+                currentBlock = all_blocks(i);
+                if strcmp(currentBlock, sys) ~=1
+                    blockType = get_param(currentBlock, 'blocktype');
+                    obj.addToBlockTypeMap(blockType{1,1});
+                    if util.cell_str_in(obj.childModelList,blockType)
+                        % child model found
+                        if strcmp(blockType,'ModelReference') == 1
+                            modelName = get_param(currentBlock,'ModelName');
+                            obj.addToChildModelMap(modelName{1,1});
+                            obj.obtain_hierarchy_metrics(currentBlock,depth+1,true);
+                        else
+                            obj.obtain_hierarchy_metrics(currentBlock,depth+1,false);
+                        end
+                        
+                    end
+                    count=count+1;
+                end
+            end
+            if count >0
+                mapKey = num2str(depth);
+                if obj.map.contains(mapKey)
+                    existingCount = obj.map.get(mapKey);
+                    obj.map.put(mapKey,existingCount + count);
+                else
+                    obj.map.put(mapKey,count);
+                end
+            end
+        end
         
+        function addToBlockTypeMap(obj,key)
+            if obj.blockTypeMap.contains(key)
+                existingCount = obj.blockTypeMap.get(key);
+                obj.blockTypeMap.put(key,existingCount + 1);
+            else
+                obj.blockTypeMap.put(key,1);
+            end
+        end
+        
+        function addToChildModelMap(obj,key)
+            if obj.childModelMap.contains(key)
+                existingCount = obj.childModelMap.get(key);
+                obj.childModelMap.put(key,existingCount + 1);
+            else
+                obj.childModelMap.put(key,1);
+            end
+        end
         
         function obj = write_excel(obj)
-            filename = 'MetricResults.xlsx';
-            xlswrite(filename,obj.data);
+            %filename = 'MetricResults.xlsx';
+            %disp(obj.data);
+            %xlswrite(filename,obj.data);
         end
         
         function do_single_model(obj, sys)
@@ -80,7 +166,7 @@ classdef analyze_complexity < handle
             metric_engine.AnalyzeModelReferences = 1;
             metric_engine.AnalyzeLibraries = 1;
             
-            metrics ={ 'mathworks.metrics.SimulinkBlockCount', 'mathworks.metrics.SubSystemCount', 'mathworks.metrics.SubSystemDepth', 'mathworks.metrics.CyclomaticComplexity'};
+            metrics ={ 'mathworks.metrics.SimulinkBlockCount', 'mathworks.metrics.SubSystemCount', 'mathworks.metrics.SubSystemDepth', 'mathworks.metrics.CyclomaticComplexity', 'mathworks.metrics.LibraryLinkCount'};
             
             setAnalysisRoot(metric_engine, 'Root',  sys);
             execute(metric_engine, metrics);
@@ -111,6 +197,10 @@ classdef analyze_complexity < handle
                                 if strcmp(result(m).ComponentPath, sys)
                                     obj.data{obj.di, obj.SUBSYSTEM_DEPTH_AGGR} = result(m).Value;
                                 end
+                            case 'mathworks.metrics.LibraryLinkCount'
+                                 if strcmp(result(m).ComponentPath, sys)
+                                    obj.data{obj.di, obj.LIBRARY_LINK_COUNT} = result(m).Value;
+                                end
                         end
                     end
                 else
@@ -119,7 +209,6 @@ classdef analyze_complexity < handle
                 disp(' ');
             end
         end
-        
     end
     
     methods(Static)
@@ -127,11 +216,6 @@ classdef analyze_complexity < handle
             disp('--- Complexity Analysis --');
             analyze_complexity(exptype).start();
         end
-        
-        
     end
-    
-    
-    
 end
 
