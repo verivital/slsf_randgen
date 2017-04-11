@@ -14,16 +14,27 @@ classdef analyze_complexity < handle
     
     properties
         base_dir = '';
+        % types of lists supported: example,cyfuzz,openSource
         exptype = 'example';
+        
+        % lists containing models
         examples = {'sldemo_fuelsys','sldemo_mdlref_variants_enum','sldemo_mdlref_basic','untitled2'};
         openSource = {'hyperloop_arc','staticmodel'};
-        cyFuzz = {'sampleModel30'};
+        cyfuzz = {'sldemo_mdlref_basic'};
+        
         data = cell(1, 7);
         di = 1;
+        
+        % array containing blockTypes to check for child models in a model
         childModelList = {'SubSystem','ModelReference'};
+        % maps for storing metrics per model
         map;
         blockTypeMap;
         childModelMap;
+        
+        % vectors storing data for box plot for displaying
+        boxPlotChildModelReuse;
+        boxPlotBlockCountHierarchyWise;
     end
     
     methods
@@ -52,18 +63,22 @@ classdef analyze_complexity < handle
                     obj.examples = obj.openSource;
                     obj.analyze_examples();
                 case 'cyfuzz'
-                    obj.examples = obj.cyFuzz;
+                    obj.examples = obj.cyfuzz;
                     obj.analyze_examples();
                 otherwise
                     error('Invalid Argument');
             end
             %obj.write_excel();
+            obj.calculate_number_of_blocks_aggregated();
+            disp('Metrics calculated by the API');
             disp(obj.data);
         end
            
         function analyze_examples(obj)
             disp('Analyzing examples');
-            
+            % intializing vector for box plot
+            obj.boxPlotChildModelReuse = zeros(numel(obj.examples),1);
+            obj.boxPlotBlockCountHierarchyWise = zeros(numel(obj.examples),5); % max hierarchy level we add to our box plot is 5.
             for i = 1:numel(obj.examples)
                 s = obj.examples{i};
                 open_system(s);
@@ -86,10 +101,73 @@ classdef analyze_complexity < handle
                 disp(obj.blockTypeMap.data);
                 disp('Number of child models with the number of times being reused:');
                 disp(obj.childModelMap.data);
+                
+                obj.calculate_child_model_ratio(obj.childModelMap,i);
+                obj.calculate_number_of_blocks_hierarchy(obj.map,i);
                 close_system(s);
+            end
+            
+            % rendering boxPlot for child model reuse %
+            figure
+            boxplot(obj.boxPlotChildModelReuse);
+            xlabel(obj.exptype);
+            ylabel('% Reuse');
+            title('Child Model Reuse(%)');
+            
+            % rendering boxPlot for block counts hierarchy wise
+            figure
+            boxplot(obj.boxPlotBlockCountHierarchyWise);
+            ylabel('Number Of Blocks');
+            title('Block Count across Hierarchy');
+        end
+        
+        function calculate_number_of_blocks_hierarchy(obj,m,modelCount)
+            m.keys();
+            keys = m.data_keys();
+            
+            for k = 1:min(numel(keys),5)
+                levelString = strsplit(keys{k},'x');
+                level = str2num(levelString{2});
+                obj.boxPlotBlockCountHierarchyWise(modelCount,level) = obj.boxPlotBlockCountHierarchyWise(modelCount,level) + m.data.(keys{k});
             end
         end
         
+        function calculate_number_of_blocks_aggregated(obj)
+            [row,~]=size(obj.data);
+            boxPlotVector = zeros(row-1,1);
+            
+            %skip the first row as it is the column name
+            for i=2:row 
+                boxPlotVector(i,1)=obj.data{i,2};
+            end
+            
+            %rendering boxPlot for block counts hierarchy wise
+            figure
+            boxplot(boxPlotVector);
+            xlabel(obj.exptype);
+            ylabel('Number Of Blocks');
+            title('Block Count Aggregated');
+        end
+        
+        function calculate_child_model_ratio(obj,m,modelCount)
+            m.keys();
+            keys = m.data_keys();
+            reusedModels = 0;
+            newModels = numel(keys);
+            
+            for k = 1:numel(keys)
+                x = m.data.(keys{k});
+                if x > 1
+                    reusedModels = reusedModels+x-1;
+                end
+            end
+            ratio = reusedModels/(newModels+reusedModels);
+            if ~isnan(ratio)
+                % formula to calculate the reused model ratio
+                obj.boxPlotChildModelReuse(modelCount) = reusedModels/(newModels+reusedModels);
+            end
+        end
+            
         function obtain_hierarchy_metrics(obj,sys,depth,isModelReference)
             all_blocks = find_system(sys,'SearchDepth',1);
             if isModelReference
