@@ -3,7 +3,7 @@ classdef cfg
     %   Detailed explanation goes here
     
     properties(Constant = true)
-        NUM_TESTS = 50;                          % Number of test models to generate
+        NUM_TESTS = 1;                          % Number of test models to generate
         CSMITH_CREATE_C = false;                % Will call Csmith to create C files. Set to False if reproducing.
         
         SIMULATE_MODELS = true;                 % Simulate generated model
@@ -28,14 +28,14 @@ classdef cfg
         STOP_IF_ERROR = false;                  % Stop the script when meet the first simulation error
         STOP_IF_OTHER_ERROR = true;             % Stop the script for errors not related to simulation e.g. unhandled exceptions or code bug. ALWAYS KEEP IT TRUE to detect my own bugs.
 
-        CLOSE_MODEL = true;                    % Close models after simulation
-        CLOSE_OK_MODELS = true;                % Close models for which simulation ran OK
+        CLOSE_MODEL = false;                    % Close models after simulation
+        CLOSE_OK_MODELS = false;                % Close models for which simulation ran OK
         
         FINAL_CLEAN_UP = true;                 % Will delete models and related artifacts (e.g. binaries) for the model
 
         GENERATE_TYPESMART_MODELS = false;      % Will create models that respects data-type compatibility
         
-        NUM_BLOCKS = 50;
+        NUM_BLOCKS = 20;
         CHILD_MODEL_NUM_BLOCKS = [10 20];
         SUBSYSTEM_NUM_BLOCKS = [10 20];
         IF_ACTION_SUBSYS_NUM_BLOCKS = [5 10];
@@ -55,22 +55,22 @@ classdef cfg
 
         BREAK_AFTER_COMPARE_ERR = true;
         
-        SL_SIM_TIMEOUT = 100;                   % After these many seconds give up testing the model and mark as Timed-Out model
+        SL_SIM_TIMEOUT = 200;                   % After these many seconds give up testing the model and mark as Timed-Out model
         
         % Will only use following SL libraries/blocks. If this is a
         % library, set `is_blk` false. Set true for blocks.
         
         SL_BLOCKLIBS = {
-           struct('name', 'Discrete', 'is_blk', false, 'num', 0.25)
-             struct('name', 'Continuous', 'is_blk', false,  'num', 0.25)
+           struct('name', 'Discrete', 'is_blk', false, 'num', 0.58)
+%             struct('name', 'Continuous', 'is_blk', false,  'num', 0.1)
 %             struct('name', 'Math Operations', 'is_blk', false, 'num', 10)
 %             struct('name', 'Logic and Bit Operations', 'is_blk', false, 'num', 0.15)
-            struct('name', 'Sinks', 'is_blk', false, 'num', 0.15)
-            struct('name', 'Sources', 'is_blk', false, 'num', 0.15)
-            struct('name', 'simulink/Ports & Subsystems/Subsystem', 'is_blk', true, 'num', 0.14)
-%             struct('name', 'simulink/Ports & Subsystems/If', 'is_blk', true, 'num', .2)
+            struct('name', 'Sinks', 'is_blk', false, 'num', 0.2)
+            struct('name', 'Sources', 'is_blk', false, 'num', 0.2)
+%             struct('name', 'simulink/Ports & Subsystems/Subsystem', 'is_blk', true, 'num', 0.14)
+            struct('name', 'simulink/Ports & Subsystems/If', 'is_blk', true, 'num', .2)
 %             struct('name', 'simulink/User-Defined Functions/S-Function', 'is_blk', true, 'num', 0.20)
-            struct('name', 'simulink/Ports & Subsystems/Model', 'is_blk', true, 'num', 0.06)
+%             struct('name', 'simulink/Ports & Subsystems/Model', 'is_blk', true, 'num', 0.06)
         };
     
         % Won't use following SL blocks in generated models:
@@ -86,6 +86,8 @@ classdef cfg
             'simulink/Continuous/VariableTime Delay'
             'simulink/Continuous/Transport Delay'
             'simulink/Sinks/StopSimulation'
+            'simulink/Discrete/First-OrderHold'
+            'simulink/Discrete/Memory'
         };
     
         % ALLOW LIST: LOOKS LIKE ALLOW_LIST IS NOT IMPLEMENTED.

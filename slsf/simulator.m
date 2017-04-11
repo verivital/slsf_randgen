@@ -251,12 +251,17 @@ classdef simulator < handle
             
             new_block_type = 'simulink/Discrete/Delay';
             
-            new_delay_blocks = obj.add_block_in_the_middle(tn.n.handle, new_block_type, false, true, int2str(tn.which_input_port));
+            [new_delay_blocks, g] = obj.add_block_in_the_middle(tn.n.handle, new_block_type, false, true, int2str(tn.which_input_port));
             
             assert(new_delay_blocks.len == 1); % There will be only one such block
             
             h = new_delay_blocks.get(1);  
-            set_param(h, 'SampleTime', '1');                  %       TODO sample time
+            
+            if g.assign_sampletime_for_discrete
+                set_param(h, 'SampleTime', '1');                  %       TODO sample time
+            else
+                set_param(h, 'SampleTime', '-1'); 
+            end
             
             % Register new block
             new_block_node = slb.register_new_block(h, new_block_type, get_param(h, 'name'));
@@ -281,7 +286,7 @@ classdef simulator < handle
                 n = slb.nodes{out_i};
                 if colors(n.my_id) == WHITE
 %                     fprintf('[OUTER-DFS] visiting %d\n', n.my_id);
-                    dfs_visit(n);
+                    dfs_visit(slbnodetags(n));
                 end
             end
            
@@ -293,30 +298,38 @@ classdef simulator < handle
            
             fprintf('--- End Cycle Remover -- \n');
            
-            function dfs_visit(n)
+            function dfs_visit(v)
 %                 fprintf('\t[DFS-GRAY] %d\n', n.my_id)
-                colors(n.my_id) = GRAY;
-                for i=1:numel(n.out_nodes)
-                    for j=1:numel(n.out_nodes{i})
-                        chld = n.out_nodes{i}{j};
+                colors(v.n.my_id) = GRAY;
+                for i=1:numel(v.n.out_nodes)
+                    for j=1:numel(v.n.out_nodes{i})
+                        chld = v.n.out_nodes{i}{j};
                        
 %                         fprintf('\t\t\t[Child] %d ---> %d, color %d\n',n.my_id, chld.my_id, colors(chld.my_id));
                        
+                        tn = slbnodetags(chld);
+                        tn.which_input_port = v.n.out_nodes_otherport{i}{j};
+                        tn.which_parent_block = v.n;
+                        tn.which_parent_port = [i, j];
+
                         if colors(chld.my_id) == WHITE
-                            dfs_visit(chld);
+                            dfs_visit(tn);
                         elseif colors(chld.my_id) == GRAY
-                            fprintf('(!) Back edge: bl_%d::%d ---> bl_%d::%d\n', n.my_id, i, chld.my_id, n.out_nodes_otherport{i}{j});
-                            tn = slbnodetags(chld);
-                            tn.which_input_port = n.out_nodes_otherport{i}{j};
-                            tn.which_parent_block = n;
-                            tn.which_parent_port = [i, j];
-                            nodes_to_fix.add(tn);
+                            fprintf('(!) Back edge: bl_%d::%d ---> bl_%d::%d\n', v.n.my_id, i, chld.my_id, v.n.out_nodes_otherport{i}{j});
+                            
+                            if v.n.is_outports_actionports
+                                assert(~ isempty(v.which_parent_block));
+                                nodes_to_fix.add(v);
+                                fprintf('\t(!) Will Fix this parent block instead of child block.\n');
+                            else
+                                nodes_to_fix.add(tn);
+                            end
                         end
                     end
                 end
                
 %                 fprintf('\t[DFS-BLACK] %d\n', n.my_id);
-                colors(n.my_id) = BLACK;
+                colors(v.n.my_id) = BLACK;
             end
         end
         
@@ -567,8 +580,9 @@ classdef simulator < handle
         end
         
         
-        function done = fix_inv_comp_disc_sample_time(obj, e, do_parent)
+        function [done, found] = fix_inv_comp_disc_sample_time(obj, e, do_parent)
             done = false;
+            found = false;
             MAX_TRY = 10;
             
             for i=1:MAX_TRY
@@ -586,7 +600,7 @@ classdef simulator < handle
                             end
                             
                             disp(['Current Block: ' get_param(h, 'Name')]);
-                            set_param(h, 'SampleTime', num2str(rand));
+                            set_param(h, 'SampleTime', '1'); % TODO sampletime
                         end
                         
                     end
@@ -596,6 +610,7 @@ classdef simulator < handle
 %                     sim(obj.generator.sys);
                     disp('Success in fixing inv-disc-comp-sample-time!');
                     done = true;
+                    found = true;
                     return;
                 catch e
                     if ~ strcmp(e.identifier, 'Simulink:Engine:InvCompDiscSampleTime')
@@ -768,6 +783,7 @@ classdef simulator < handle
         
         
         function obj = fix_alg_loop(obj, e)
+            assert(false);
 %             throw(MException('RandGen:SL:AlgebraicLoopDiscovered', 'By construction, there should be no algebraic loops!'));
             
             % Fix Algebraic Loop 
@@ -791,9 +807,13 @@ classdef simulator < handle
                         continue;
                     end
                     h = util.select_me_or_parent(current(i));
-                    new_delay_blocks = obj.add_block_in_the_middle(h, 'Simulink/Discrete/Delay', false, true);
+                    [new_delay_blocks, g] = obj.add_block_in_the_middle(h, 'Simulink/Discrete/Delay', false, true);
                     for xc = 1:new_delay_blocks.len
-                        set_param(new_delay_blocks.get(xc), 'SampleTime', '1');                  %       TODO sample time
+                        if g.assign_sampletime_for_discrete
+                            set_param(new_delay_blocks.get(xc), 'SampleTime', '1');                  %       TODO sample time
+                        else
+                            set_param(new_delay_blocks.get(xc), 'SampleTime', '-1');  
+                        end
     %                     disp(h);
                     end
                     
@@ -811,7 +831,7 @@ classdef simulator < handle
         
         
         
-        function ret = add_block_in_the_middle(obj, h, replacement, ignore_in, ignore_out, specific_port)
+        function [ret, g] = add_block_in_the_middle(obj, h, replacement, ignore_in, ignore_out, specific_port)
             
             if nargin == 5
                 specific_port = [];
@@ -1037,7 +1057,7 @@ classdef simulator < handle
                 
                 aloops = Simulink.BlockDiagram.getAlgebraicLoops(obj.generator.sys);
                 
-%                 assert(numel(aloops) == 0);
+                assert(numel(aloops) == 0);
             
                 if numel(aloops) == 0
                     fprintf('No Algebraic loop. Returning...\n');
@@ -1062,11 +1082,15 @@ classdef simulator < handle
                             visited_handles.add(effective_j_blk);
                             
                             fprintf('[AlgLoopEliminator] Adding new block....\n');
-                            new_delay_blocks = obj.add_block_in_the_middle(effective_j_blk, 'Simulink/Discrete/Delay', false, true);
+                            [new_delay_blocks, g] = obj.add_block_in_the_middle(effective_j_blk, 'Simulink/Discrete/Delay', false, true);
                             for xc = 1:new_delay_blocks.len
                                 new_delay_block = new_delay_blocks.get(xc);
                                 fprintf('[AlgLoopEliminator] Done adding block %s\n', get_param(new_delay_block, 'Name'));
-                                set_param(new_delay_block, 'SampleTime', '1'); 
+                                if g.assign_sampletime_for_discrete
+                                    set_param(new_delay_block, 'SampleTime', '1'); 
+                                else
+                                    set_param(new_delay_block, 'SampleTime', '-1'); 
+                                end
                                 fprintf('[AlgLoopEliminator] Handled sample time.\n');
                             end
                         end
@@ -1077,6 +1101,8 @@ classdef simulator < handle
         
         
         function ret = get_connected_components(obj, slb)
+            % This function is no longer needed. Was previously
+            % (incorrectly) used to remove all cycles.
             
             ret = mycell();
             

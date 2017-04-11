@@ -83,6 +83,9 @@ classdef simple_generator < handle
         % Block construction and constraint solving hooks
         blk_construction;            % Hooks to run for specific blocks, inside `draw_blocks` function.
         pre_block_connection;    % Hooks to run for specific blocks, just before `connect_blocks` function.
+        post_block_connection;  % Hooks to run for specific blocks, just after `connect_blocks` function.
+        
+        assign_sampletime_for_discrete = true;  % Assign sample time for discrete blocks
         
     end
     
@@ -101,6 +104,7 @@ classdef simple_generator < handle
             
             obj.blk_construction = mymap('Simulink/User-Defined Functions/S-Function', 'bc_sfunction', 'simulink/Ports & Subsystems/If', 'bc_if');
             obj.pre_block_connection = mycell();
+            obj.post_block_connection = mycell();
         end
         
         
@@ -129,11 +133,12 @@ classdef simple_generator < handle
 
                 obj.chk_compatibility();
                 
-                obj.run_pbc_hooks();
-                
                 obj.my_result.store_runtime(singleresult.BLOCK_SEL);
-
+                
+                obj.run_pre_block_connection_hooks();
                 obj.connect_blocks();
+                obj.run_post_block_connection_hooks();
+                
                 obj.my_result.store_runtime(singleresult.PORT_CONN);
                 
                 fprintf('--Done Connecting!--\n');
@@ -526,10 +531,18 @@ classdef simple_generator < handle
             end
         end
         
-        function obj = run_pbc_hooks(obj)
+        function obj = run_pre_block_connection_hooks(obj)
             fprintf('-- Calling Pre-Block-Connection Hooks --');
             for i=1:obj.pre_block_connection.len
                 data = obj.pre_block_connection.get(i);
+                obj.(data{1})(data{2});
+            end
+        end
+        
+        function obj = run_post_block_connection_hooks(obj)
+            fprintf('-- Calling Post-Block-Connection Hooks --');
+            for i=1:obj.post_block_connection.len
+                data = obj.post_block_connection.get(i);
                 obj.(data{1})(data{2});
             end
         end
@@ -772,7 +785,16 @@ classdef simple_generator < handle
         end
         
         
-        function obj = set_sample_time_for_discrete_blk(obj, h, blk)
+        function obj = set_sample_time_for_discrete_blk(obj, h, blk, blk_type)
+            
+            if strcmp(blk_type,  'simulink/Ports & Subsystems/If')
+                set_param(h, 'sampletime', '1'); % TODO
+                return;
+            end
+            
+            fprintf('[!!] Sample time for %s ----- \n', getfullname(h));
+            disp(obj.assign_sampletime_for_discrete);
+            
             if ~ blk{2}
 %                 disp('NOT A DISCRETE BLOCK. RETURN');
                 return;
@@ -781,8 +803,17 @@ classdef simple_generator < handle
 %             disp('DISCRETE BLK!');
             
             try
-                set_param(h, 'SampleTime', '1');  % TODO random choose sample time?
+                if obj.assign_sampletime_for_discrete
+                    sampletime = '1';
+                else
+                    sampletime = '-1';
+                end
+                set_param(h, 'SampleTime', sampletime);  % TODO random choose sample time?
             catch e
+                if strcmp(blk_type, sprintf('simulink/Discrete/First-Order\nHold'))
+                    set_param(h,'MaskValues',{'-1'})
+%                     fprintf('settt');
+                end
             end
                 
         end
@@ -844,10 +875,10 @@ classdef simple_generator < handle
                     blk_type = get_param(h, 'blocktype');
                     
                 else
-                    block_name
+%                     block_name
                     h = add_block(block_name{1}, [obj.sys, this_blk_name], 'Position', pos);
-                    obj.set_sample_time_for_discrete_blk(h, block_name);
                     blk_type = block_name{1};
+                    obj.set_sample_time_for_discrete_blk(h, block_name, blk_type);
                 end
                 
                  % WARNING: pre-added and non-preadded blocks have different
@@ -1070,11 +1101,13 @@ classdef simple_generator < handle
             COMPARE_SIM_RESULTS = false;
             
             full_model_name = [parent_model blk_name];
+            assign_sample_time_for_discrete = true;
             
             if strcmp(blk_type, 'simulink/Ports & Subsystems/Subsystem')
                 num_blks =cfg.SUBSYSTEM_NUM_BLOCKS;
             elseif strcmp(blk_type, sprintf('simulink/Ports &\nSubsystems/If Action\nSubsystem'))
                 num_blks = cfg.IF_ACTION_SUBSYS_NUM_BLOCKS;
+                assign_sample_time_for_discrete = false;
             else
                 fatal('subsystem type not matched: %s', blk_type);
             end
@@ -1085,6 +1118,7 @@ classdef simple_generator < handle
             hg.skip_after_creation = obj.skip_after_creation;
             hg.max_hierarchy_level = obj.max_hierarchy_level;
             hg.current_hierarchy_level = obj.current_hierarchy_level + 1;
+            hg.assign_sampletime_for_discrete = assign_sample_time_for_discrete;
             
             if obj.current_hierarchy_level == 1
 %                 disp('CURR HIER: 1');
@@ -1205,7 +1239,7 @@ classdef simple_generator < handle
             fprintf('BC HOOK: IF SUBSYSTEM..... \n');
             num_output = 2; % TODO make it dynamic
             
-            obj.pre_block_connection.add({'pbc_if', {blk_id, num_output, obj.NUM_BLOCKS}});
+            obj.post_block_connection.add({'post_bc_if', {blk_id, num_output, obj.NUM_BLOCKS}});
             
             obj.candi_blocks{obj.NUM_BLOCKS + 1} = {sprintf('simulink/Ports &\nSubsystems/If Action\nSubsystem'), false};
             obj.candi_blocks{obj.NUM_BLOCKS + 2} = {sprintf('simulink/Ports &\nSubsystems/If Action\nSubsystem'), false};
@@ -1215,15 +1249,23 @@ classdef simple_generator < handle
 
         end
         
-        function pbc_if(obj, data)
-            fprintf('PBC HOOK: IF SUBSYSTEM..... \n');
-            % Hook: Pre-block-connection for If Subsystems
+        function post_bc_if(obj, data)
+            fprintf('Post-BlockConnection HOOK: IF SUBSYSTEM..... \n');
+            % Hook: Pre-block-connection for If Subsystems. Connects output
+            % ports of the IF block to Action ports of the If-Action
+            % subsystems. Both draws and connect slbnodes objects.
+            
             id_if = data{1};
             num_outputs = data{2};
             output_base = data{3};  % ID of the block BEFORE the first output subsystem in the slb registry
             
+            if_blk_node = obj.slb.nodes{id_if};
+            if_blk_node.is_outports_actionports = true;
+            
             for i=1:num_outputs
-                add_line(obj.sys, [obj.slb.all{id_if} '/' int2str(i)], [obj.slb.all{output_base + i} '/Ifaction'], 'autorouting','on')
+                action_block_id = output_base + i;
+                add_line(obj.sys, [obj.slb.all{id_if} '/' int2str(i)], [obj.slb.all{action_block_id} '/Ifaction'], 'autorouting','on')
+                obj.slb.connect_nodes(id_if, i, action_block_id, slbnode.ACTION_PORT);
             end
         end
         

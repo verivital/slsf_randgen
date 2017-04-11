@@ -59,10 +59,19 @@ classdef slblocks < handle
         end
         
         function n = create_node(obj, cur_blk, ports, search_name, handle)
+            
+%             if strcmp(search_name, 'simulink/Ports & Subsystems/If')
+%                 is_outports_actionports = true;
+%             else
+%                 is_outports_actionports = false;
+%             end
+            
             search_names = util.strip_simulink_prefix(search_name);  % Stripping of the simulink tag
             n = slbnode(handle, search_names, cur_blk);
             
             obj.nodes{cur_blk} = n;
+            
+%             n.is_outports_actionports = is_outports_actionports;
             
             n.out_nodes = cell(1, ports(2));
             n.out_nodes_otherport = cell(1, ports(2));
@@ -104,6 +113,8 @@ classdef slblocks < handle
         end
         
         function obj = connect_nodes(obj, o_b, o_p, i_b, i_p)
+            % Warning: In the implementation of this function, do not do
+            % anything other than node-specific tasks.
             o_n = obj.nodes{o_b};
             i_n = obj.nodes{i_b};
             

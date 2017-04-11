@@ -2,6 +2,10 @@ classdef slbnode < handle
     %SLBNODE Represents a SL block in the generated model
     %   Detailed explanation goes here
     
+    properties(Constant=true)
+        ACTION_PORT = -1;
+    end
+    
     properties
         out_type = [];   % Output type. Assumes all ports have same output type
         in_type = [];    % Input type of the signal at first input port
@@ -22,6 +26,8 @@ classdef slbnode < handle
         
         is_source = false;
         dft_status = [];
+        
+        is_outports_actionports = false;    % Whether the output ports of this blocks are always connected to action ports (e.g. If blocks)
     end
     
     methods

@@ -6,8 +6,8 @@ classdef slbnodetags < handle
         n;
         
         which_input_port = [];
-        which_parent_block;
-        which_parent_port;
+        which_parent_block = [];
+        which_parent_port = [];
         
     end
     
