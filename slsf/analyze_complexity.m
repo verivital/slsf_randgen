@@ -35,6 +35,7 @@ classdef analyze_complexity < handle
         % vectors storing data for box plot for displaying
         boxPlotChildModelReuse;
         boxPlotBlockCountHierarchyWise;
+        
     end
     
     methods
@@ -69,8 +70,8 @@ classdef analyze_complexity < handle
                     error('Invalid Argument');
             end
             %obj.write_excel();
-            obj.calculate_number_of_blocks_aggregated();
             disp('Metrics calculated by the API');
+            %obj.calculate_metrics_using_api_data();
             disp(obj.data);
         end
            
@@ -79,26 +80,30 @@ classdef analyze_complexity < handle
             % intializing vector for box plot
             obj.boxPlotChildModelReuse = zeros(numel(obj.examples),1);
             obj.boxPlotBlockCountHierarchyWise = zeros(numel(obj.examples),5); % max hierarchy level we add to our box plot is 5.
+           
+            obj.blockTypeMap = mymap();
+            
+            % loop over all models in the list
             for i = 1:numel(obj.examples)
                 s = obj.examples{i};
                 open_system(s);
              
-                % initializing maps to store metrics
+                % initializing maps for storing metrics
                 obj.map = mymap();
-                obj.blockTypeMap = mymap();
+                
                 obj.childModelMap = mymap();
                 
-                % api function to obtain metrics
+                % API function to obtain metrics
                 obj.do_single_model(s);
                 
-                % recursive function to obtain metrics
+                % Our recursive function to obtain metrics that are not
+                % supported in API
                 obj.obtain_hierarchy_metrics(s,1,false);
                 
                 % display metrics calculated
                 disp('Number of blocks Level wise:');
                 disp(obj.map.data);
-                disp('Number specific blocks with their counts:');
-                disp(obj.blockTypeMap.data);
+                
                 disp('Number of child models with the number of times being reused:');
                 disp(obj.childModelMap.data);
                 
@@ -106,6 +111,8 @@ classdef analyze_complexity < handle
                 obj.calculate_number_of_blocks_hierarchy(obj.map,i);
                 close_system(s);
             end
+            
+            obj.calculate_number_of_specific_blocks(obj.blockTypeMap);
             
             % rendering boxPlot for child model reuse %
             figure
@@ -121,6 +128,34 @@ classdef analyze_complexity < handle
             title('Block Count across Hierarchy');
         end
         
+        function calculate_number_of_specific_blocks(obj,m)
+            m.keys();
+            keys = m.data_keys();
+            disp('Number of specific blocks with their counts:');
+            %disp(m.data);
+            vectorTemp = strings(numel(keys),1);
+            vectorTemp(:,1)=keys;
+            
+            countTemp = zeros(numel(keys),2);
+            for k = 1:numel(keys)
+               countTemp(k,1)=k;
+               countTemp(k,2)=m.data.(keys{k});
+            end
+            
+            sortedVector = sortrows(countTemp,2);
+            fprintf('%25s | Count\n','Block Type');
+            for i=numel(keys)-10:numel(keys)
+                fprintf('%25s | %3d\n',vectorTemp(sortedVector(i,1)),sortedVector(i,2));
+            end
+            % rendering boxPlot for number of specific blocks used across
+            % all models in the list.
+            
+            figure
+            boxplot(sortedVector(end-10:end,2));
+            ylabel(obj.exptype);
+            title('Number of Specific blocks');
+        end
+        
         function calculate_number_of_blocks_hierarchy(obj,m,modelCount)
             m.keys();
             keys = m.data_keys();
@@ -132,21 +167,31 @@ classdef analyze_complexity < handle
             end
         end
         
-        function calculate_number_of_blocks_aggregated(obj)
+        function calculate_metrics_using_api_data(obj)
             [row,~]=size(obj.data);
-            boxPlotVector = zeros(row-1,1);
-            
+            aggregatedBlockCount = zeros(row-1,1);
+            cyclomaticComplexityCount = zeros(row-1,1);
             %skip the first row as it is the column name
             for i=2:row 
-                boxPlotVector(i,1)=obj.data{i,2};
+                aggregatedBlockCount(i,1)=obj.data{i,2};
+                if ~isnan(obj.data{i,4})
+                    cyclomaticComplexityCount(i,1)=obj.data{i,4};
+                end
             end
             
-            %rendering boxPlot for block counts hierarchy wise
+            %rendering boxPlot for block counts hierarchy aggregated
             figure
-            boxplot(boxPlotVector);
+            boxplot(aggregatedBlockCount);
             xlabel(obj.exptype);
             ylabel('Number Of Blocks');
             title('Block Count Aggregated');
+            
+            %rendering boxPlot for cyclomatic complexity
+            figure
+            boxplot(cyclomaticComplexityCount);
+            xlabel(obj.exptype);
+            ylabel('Count');
+            title('Cyclomatic Complexity Count');
         end
         
         function calculate_child_model_ratio(obj,m,modelCount)
