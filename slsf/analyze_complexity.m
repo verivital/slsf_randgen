@@ -18,9 +18,10 @@ classdef analyze_complexity < handle
         exptype = 'example';
         
         % lists containing models
-        examples = {'sldemo_fuelsys','sldemo_mdlref_variants_enum','sldemo_mdlref_basic','untitled2'};
+        % examples = {'sldemo_fuelsys','sldemo_mdlref_variants_enum','sldemo_mdlref_basic','untitled2'};
+        examples = {'sldemo_mdlref_basic','sldemo_mdlref_variants_enum','sldemo_mdlref_bus','sldemo_mdlref_conversion','sldemo_mdlref_counter_bus','sldemo_mdlref_counter_datamngt','sldemo_mdlref_dsm','sldemo_mdlref_dsm_bot','sldemo_mdlref_dsm_bot2','sldemo_mdlref_F2C'};
         openSource = {'hyperloop_arc','staticmodel'};
-        cyfuzz = {'sldemo_mdlref_basic'};
+        cyfuzz = {'sldemo_mdlref_basic','sldemo_mdlref_variants_enum'};
         
         data = cell(1, 7);
         di = 1;
@@ -31,10 +32,13 @@ classdef analyze_complexity < handle
         map;
         blockTypeMap;
         childModelMap;
+        childModelPerLevelMap;
         
-        % vectors storing data for box plot for displaying
+        % global vectors storing data for box plot for displaying some
+        % metrics that need to be calculated for all models in a list
         boxPlotChildModelReuse;
         boxPlotBlockCountHierarchyWise;
+        boxPlotChildRepresentingBlockCount;
         
     end
     
@@ -70,17 +74,19 @@ classdef analyze_complexity < handle
                     error('Invalid Argument');
             end
             %obj.write_excel();
-            disp('Metrics calculated by the API');
-            %obj.calculate_metrics_using_api_data();
+            obj.renderAllBoxPlots();
             disp(obj.data);
         end
            
         function analyze_examples(obj)
             disp('Analyzing examples');
-            % intializing vector for box plot
+            % intializing vectors for box plot
             obj.boxPlotChildModelReuse = zeros(numel(obj.examples),1);
-            obj.boxPlotBlockCountHierarchyWise = zeros(numel(obj.examples),5); % max hierarchy level we add to our box plot is 5.
-           
+            % max hierarchy level we add to our box plot is 5.
+            obj.boxPlotBlockCountHierarchyWise = zeros(numel(obj.examples),5);
+            % we will only count upto level 5 as this is our requirement.
+            % some models may have more than 5 hierarchy levels but they are rare.
+            obj.boxPlotChildRepresentingBlockCount = zeros(numel(obj.examples),5); 
             obj.blockTypeMap = mymap();
             
             % loop over all models in the list
@@ -90,7 +96,7 @@ classdef analyze_complexity < handle
              
                 % initializing maps for storing metrics
                 obj.map = mymap();
-                
+                obj.childModelPerLevelMap = mymap();
                 obj.childModelMap = mymap();
                 
                 % API function to obtain metrics
@@ -109,23 +115,46 @@ classdef analyze_complexity < handle
                 
                 obj.calculate_child_model_ratio(obj.childModelMap,i);
                 obj.calculate_number_of_blocks_hierarchy(obj.map,i);
+                obj.calculate_child_representing_block_count(obj.childModelPerLevelMap,i);
                 close_system(s);
             end
-            
+        end
+        
+        function renderAllBoxPlots(obj)
             obj.calculate_number_of_specific_blocks(obj.blockTypeMap);
+            obj.calculate_metrics_using_api_data();
             
             % rendering boxPlot for child model reuse %
             figure
             boxplot(obj.boxPlotChildModelReuse);
             xlabel(obj.exptype);
             ylabel('% Reuse');
-            title('Child Model Reuse(%)');
+            title('Metric 1: Child Model Reuse(%)');
             
             % rendering boxPlot for block counts hierarchy wise
             figure
             boxplot(obj.boxPlotBlockCountHierarchyWise);
             ylabel('Number Of Blocks');
-            title('Block Count across Hierarchy');
+            title('Metric 3: Block Count across Hierarchy');
+            
+            % rendering boxPlot for child representing blockcount
+            figure
+            boxplot(obj.boxPlotChildRepresentingBlockCount);
+            ylabel('Number Of Child Blocks');
+            title('Metric 5: Child-Representing blocks(Model Reference and Subsystems)');
+        end
+        
+        function calculate_child_representing_block_count(obj,m,modelCount)
+            m.keys();
+            keys = m.data_keys();
+            
+            for k = 1:numel(keys)
+                levelString = strsplit(keys{k},'x');
+                level = str2num(levelString{2});
+                if level<=5
+                    obj.boxPlotChildRepresentingBlockCount(modelCount,level) = obj.boxPlotChildRepresentingBlockCount(modelCount,level) + m.data.(keys{k});
+                end
+            end
         end
         
         function calculate_number_of_specific_blocks(obj,m)
@@ -147,23 +176,25 @@ classdef analyze_complexity < handle
             for i=numel(keys)-10:numel(keys)
                 fprintf('%25s | %3d\n',vectorTemp(sortedVector(i,1)),sortedVector(i,2));
             end
+            
             % rendering boxPlot for number of specific blocks used across
             % all models in the list.
-            
             figure
             boxplot(sortedVector(end-10:end,2));
             ylabel(obj.exptype);
-            title('Number of Specific blocks');
+            title('Metric 7: Number of Specific blocks');
         end
         
         function calculate_number_of_blocks_hierarchy(obj,m,modelCount)
             m.keys();
             keys = m.data_keys();
             
-            for k = 1:min(numel(keys),5)
+            for k = 1:numel(keys)
                 levelString = strsplit(keys{k},'x');
                 level = str2num(levelString{2});
-                obj.boxPlotBlockCountHierarchyWise(modelCount,level) = obj.boxPlotBlockCountHierarchyWise(modelCount,level) + m.data.(keys{k});
+                if level <=5
+                    obj.boxPlotBlockCountHierarchyWise(modelCount,level) = obj.boxPlotBlockCountHierarchyWise(modelCount,level) + m.data.(keys{k});
+                end
             end
         end
         
@@ -184,14 +215,14 @@ classdef analyze_complexity < handle
             boxplot(aggregatedBlockCount);
             xlabel(obj.exptype);
             ylabel('Number Of Blocks');
-            title('Block Count Aggregated');
+            title('Metric 2: Block Count Aggregated');
             
             %rendering boxPlot for cyclomatic complexity
             figure
             boxplot(cyclomaticComplexityCount);
             xlabel(obj.exptype);
             ylabel('Count');
-            title('Cyclomatic Complexity Count');
+            title('Metric 6: Cyclomatic Complexity Count');
         end
         
         function calculate_child_model_ratio(obj,m,modelCount)
@@ -212,7 +243,8 @@ classdef analyze_complexity < handle
                 obj.boxPlotChildModelReuse(modelCount) = reusedModels/(newModels+reusedModels);
             end
         end
-            
+        
+        %our recursive function to calculate metrics not supported by API
         function obtain_hierarchy_metrics(obj,sys,depth,isModelReference)
             all_blocks = find_system(sys,'SearchDepth',1);
             if isModelReference
@@ -222,6 +254,7 @@ classdef analyze_complexity < handle
                 all_blocks = all_blocks(2:end);
             end
             count=0;
+            childCountLevel=0;
             [blockCount,~] =size(all_blocks);
             
             %skip the root model which always comes as the first model
@@ -232,9 +265,11 @@ classdef analyze_complexity < handle
                     obj.addToBlockTypeMap(blockType{1,1});
                     if util.cell_str_in(obj.childModelList,blockType)
                         % child model found
+                        childCountLevel=childCountLevel+1;
                         if strcmp(blockType,'ModelReference') == 1
                             modelName = get_param(currentBlock,'ModelName');
                             obj.addToChildModelMap(modelName{1,1});
+                            
                             obj.obtain_hierarchy_metrics(currentBlock,depth+1,true);
                         else
                             obj.obtain_hierarchy_metrics(currentBlock,depth+1,false);
@@ -244,14 +279,20 @@ classdef analyze_complexity < handle
                     count=count+1;
                 end
             end
+            mapKey = num2str(depth);
             if count >0
-                mapKey = num2str(depth);
                 if obj.map.contains(mapKey)
                     existingCount = obj.map.get(mapKey);
                     obj.map.put(mapKey,existingCount + count);
                 else
                     obj.map.put(mapKey,count);
                 end
+            end
+            if obj.childModelPerLevelMap.contains(mapKey)
+                existingCount = obj.childModelPerLevelMap.get(mapKey);
+                obj.childModelPerLevelMap.put(mapKey,existingCount + childCountLevel);
+            else
+                obj.childModelPerLevelMap.put(mapKey,childCountLevel);
             end
         end
         
