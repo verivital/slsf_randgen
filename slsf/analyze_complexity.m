@@ -27,7 +27,7 @@ classdef analyze_complexity < handle
         examples = {'untitled'};
         
         openSource = {'hyperloop_arc','staticmodel'};
-        cyfuzz = {'sldemo_mdlref_basic','sldemo_mdlref_variants_enum'};
+        cyfuzz = {'sldemo_mdlref_variants_enum'};
         
         data = cell(1, 7);
         di = 1;
@@ -52,7 +52,7 @@ classdef analyze_complexity < handle
         model_classes;
         
         max_level = 5;  % Max hierarchy levels to follow
-        
+        max_unique_blocks = 10;
     end
     
     methods
@@ -83,6 +83,12 @@ classdef analyze_complexity < handle
                     obj.analyze_all_models_from_a_class();
                 case 'cyfuzz'
                     obj.examples = obj.cyfuzz;
+                    obj.analyze_all_models_from_a_class();
+                case 'github'
+                    allFiles = dir('github_slx_files/*.slx' );
+                    obj.examples = regexprep({allFiles.name},'.slx','');
+%                     disp("FUUUUUUUUU");
+%                     disp(obj.examples);
                     obj.analyze_all_models_from_a_class();
                 otherwise
                     error('Invalid Argument');
@@ -187,7 +193,7 @@ classdef analyze_complexity < handle
         function calculate_number_of_specific_blocks(obj,m)
             m.keys();
             keys = m.data_keys();
-            disp('Number of specific blocks with their counts:');
+            fprintf('Number of Top %d specific blocks with their counts:\n',obj.max_unique_blocks);
             %disp(m.data);
             vectorTemp = strings(numel(keys),1);
             vectorTemp(:,1)=keys;
@@ -200,20 +206,29 @@ classdef analyze_complexity < handle
             
             sortedVector = sortrows(countTemp,2);
             fprintf('%25s | Count\n','Block Type');
-            for i=numel(keys)-10:numel(keys)
+            startingPoint = 1;
+            % adding checks for if unique block types are less than 10 to
+            % avoid exception
+            if numel(keys) > obj.max_unique_blocks
+                startingPoint = numel(keys) - obj.max_unique_blocks;
+            end
+            for i=startingPoint:numel(keys)
                 fprintf('%25s | %3d\n',vectorTemp(sortedVector(i,1)),sortedVector(i,2));
             end
             
             % rendering boxPlot for number of specific blocks used across
             % all models in the list.
             figure
-            boxplot(sortedVector(end-10:end,2));
+            boxPlotVector = sortedVector(:,2);
+            if numel(keys) > obj.max_unique_blocks
+                boxPlotVector = sortedVector(end-obj.max_unique_blocks:end,2);
+            end
+            boxplot(boxPlotVector);
             ylabel(obj.exptype);
             title('Metric 7: Number of Specific blocks');
         end
         
-        function calculate_number_of_blocks_hierarchy(obj,m,modelCount)
-            
+        function calculate_number_of_blocks_hierarchy(obj,m,modelCount)            
             for k = 1:m.len_keys()
                 levelString = strsplit(m.key(k),'x');
                 level = str2double(levelString{2});
