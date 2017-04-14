@@ -82,6 +82,12 @@ classdef analyze_complexity < handle
                 case 'cyfuzz'
                     obj.examples = obj.cyfuzz;
                     obj.analyze_all_models_from_a_class();
+                case 'github'
+                    allFiles = dir('github_slx_files/*.slx' );
+                    obj.examples = regexprep({allFiles.name},'.slx','');
+%                     disp("FUUUUUUUUU");
+%                     disp(obj.examples);
+                    obj.analyze_all_models_from_a_class();
                 otherwise
                     error('Invalid Argument');
             end
