@@ -70,9 +70,29 @@ classdef mymap < handle
         end
         
         function ret  = key(obj, index)
-            %  WARNING only call this after calling `keys()` first
+            %  WARNING only call this after calling `keys()` or `len_keys()`
             %  otherwise you might not get updated values.
             ret = obj.data_keys{index};
+        end
+        
+        function ret = len_keys(obj)
+            ret = numel(obj.keys());
+        end
+        
+        function obj = inc(obj, k)
+            if obj.contains(k)
+                obj.put(k, obj.get(k) + 1);
+            else
+                obj.put(k, 1);
+            end
+        end
+        
+        function obj = insert_or_add(obj, k, v)
+            if obj.contains(k)
+                obj.put(k, obj.get(k) + v);
+            else
+                obj.put(k, v);
+            end
         end
     end
     
