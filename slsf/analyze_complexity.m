@@ -23,7 +23,8 @@ classdef analyze_complexity < handle
 %         examples = {'sldemo_mdlref_basic','sldemo_mdlref_variants_enum','sldemo_mdlref_bus','sldemo_mdlref_conversion','sldemo_mdlref_counter_bus','sldemo_mdlref_counter_datamngt','sldemo_mdlref_dsm','sldemo_mdlref_dsm_bot','sldemo_mdlref_dsm_bot2','sldemo_mdlref_F2C'};
 %         examples = {'sldemo_mdlref_basic'};
 %         examples = {'sldemo_mdlref_bus'};
-        examples = {'sldemo_mdlref_basic', 'sldemo_mdlref_bus'};
+%         examples = {'sldemo_mdlref_basic', 'sldemo_mdlref_bus'};
+        examples = {'untitled'};
         
         openSource = {'hyperloop_arc','staticmodel'};
         cyfuzz = {'sldemo_mdlref_basic','sldemo_mdlref_variants_enum'};
@@ -44,6 +45,8 @@ classdef analyze_complexity < handle
         boxPlotChildModelReuse;
         boxPlotBlockCountHierarchyWise;
         boxPlotChildRepresentingBlockCount;
+        
+        bp_SFunctions;
         
         % model classes
         model_classes;
@@ -103,6 +106,9 @@ classdef analyze_complexity < handle
             
             obj.blockTypeMap = mymap();
             
+            % S-Functions
+            obj.bp_SFunctions = boxplotmanager();
+            
             % loop over all models in the list
             for i = 1:numel(obj.examples)
                 s = obj.examples{i};
@@ -135,7 +141,7 @@ classdef analyze_complexity < handle
         end
         
         function renderAllBoxPlots(obj)
-            obj.calculate_number_of_specific_blocks(obj.blockTypeMap);
+%             obj.calculate_number_of_specific_blocks(obj.blockTypeMap);
             obj.calculate_metrics_using_api_data();
             
             % rendering Metric 1: boxPlot for child model reuse %
@@ -157,10 +163,14 @@ classdef analyze_complexity < handle
             % rendering boxPlot for child representing blockcount
             figure
             disp('[DEBUG] Box Plot: Child representing blocks...');
-            obj.boxPlotChildRepresentingBlockCount
+%             obj.boxPlotChildRepresentingBlockCount
             boxplot(obj.boxPlotChildRepresentingBlockCount);
             ylabel('Number Of Child-representing Blocks');
             title('Metric 5: Child-Representing blocks(across hierarchy levels)');
+            
+            % S-Functions count
+            obj.bp_SFunctions.draw('Metric 20 (Number of S-Functions)', 'Hierarchy Levels', 'Block Count');
+            
         end
         
         function calculate_child_representing_block_count(obj,m,modelCount)
@@ -243,8 +253,12 @@ classdef analyze_complexity < handle
             for i=2:row 
                 aggregatedBlockCount(i-1,1)=obj.data{i,2};
 %                 if ~isnan(obj.data{i,4})
-                cyclomaticComplexityCount(i-1,1)=obj.data{i,4};
-%                 end
+
+                if isempty(obj.data{i, 4})
+                    cyclomaticComplexityCount(i-1,1)= NaN;
+                else
+                    cyclomaticComplexityCount(i-1,1)=obj.data{i,4};
+                end
             end
             
             %rendering boxPlot for block counts hierarchy aggregated
@@ -295,8 +309,11 @@ classdef analyze_complexity < handle
                 all_blocks = find_system(sys,'SearchDepth',1);
 %                 fprintf('[V] SubSystem %s; depth %d\n', char(sys), depth);
             end
+            
             count=0;
             childCountLevel=0;
+            count_sfunctions = 0;
+            
             [blockCount,~] =size(all_blocks);
             
             %skip the root model which always comes as the first model
@@ -329,7 +346,9 @@ classdef analyze_complexity < handle
                                 childCountLevel=childCountLevel+1;
                             end
                         end
-                        
+                    elseif util.cell_str_in({'S-Function'}, blockType)
+                        % S-Function found
+                        count_sfunctions = count_sfunctions + 1;
                     end
                     count=count+1;
                 end
@@ -345,6 +364,8 @@ classdef analyze_complexity < handle
             end
             
             obj.childModelPerLevelMap.insert_or_add(mapKey, childCountLevel);
+            
+            obj.bp_SFunctions.add(count_sfunctions, int2str(depth));
             
         end
         
