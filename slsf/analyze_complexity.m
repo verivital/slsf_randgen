@@ -10,6 +10,8 @@ classdef analyze_complexity < handle
         SUBSYSTEM_COUNT_AGGR = 5;
         SUBSYSTEM_DEPTH_AGGR = 6;
         LIBRARY_LINK_COUNT = 7;
+        
+        BP_LIBCOUNT_GROUPLEN = 20;  % length of group for Metric 9
     end
     
     properties
@@ -18,13 +20,13 @@ classdef analyze_complexity < handle
         exptype = 'example';
         
         % lists containing models
-        % examples = {'sldemo_fuelsys','sldemo_mdlref_variants_enum','sldemo_mdlref_basic','untitled2'};
+%         examples = {'sldemo_fuelsys','sldemo_mdlref_variants_enum','sldemo_mdlref_basic','untitled2'};
 
 %         examples = {'sldemo_mdlref_basic','sldemo_mdlref_variants_enum','sldemo_mdlref_bus','sldemo_mdlref_conversion','sldemo_mdlref_counter_bus','sldemo_mdlref_counter_datamngt','sldemo_mdlref_dsm','sldemo_mdlref_dsm_bot','sldemo_mdlref_dsm_bot2','sldemo_mdlref_F2C'};
-%         examples = {'sldemo_mdlref_basic'};
+        examples = {'sldemo_mdlref_basic'};
 %         examples = {'sldemo_mdlref_bus'};
 %         examples = {'sldemo_mdlref_basic', 'sldemo_mdlref_bus'};
-        examples = {'untitled'};
+%         examples = {'untitled'};
         
         openSource = {'hyperloop_arc','staticmodel'};
         cyfuzz = {'sldemo_mdlref_variants_enum'};
@@ -47,15 +49,23 @@ classdef analyze_complexity < handle
         boxPlotChildRepresentingBlockCount;
         
         bp_SFunctions;
+        bp_lib_count;
+        
         
         % model classes
         model_classes;
         
         max_level = 5;  % Max hierarchy levels to follow
+        
+        blocktype_library_map; % Map, key is blocktype, value is the library
+        libcount_single_model;  % Map, keys are block-library; values are count (how many time a block from that library occurred in a single model)
+        blk_count;
+        
         max_unique_blocks = 10;
     end
     
     methods
+        
         
         function obj = init_excel_headers(obj)
             obj.data{1, obj.MODEL_NAME} = 'Model name';
@@ -68,12 +78,14 @@ classdef analyze_complexity < handle
             obj.data{1, obj.LIBRARY_LINK_COUNT} = 'LibLink cnt';
         end
         
-        function  obj = analyze_complexity(exptype)
-            obj.exptype = exptype;
+        function  obj = analyze_complexity()
+            obj.blocktype_library_map = util.getLibOfAllBlocks();
             obj.model_classes = mymap('example', 'Simulink Examples', 'opensource', 'Open Source', 'cyfuzz', 'CyFuzz');
         end
         
-        function start(obj)
+        function start(obj, exptype)
+            % Start a single experiment
+            obj.exptype = exptype;
             obj.init_excel_headers();
             switch obj.exptype
                 case 'example'
@@ -115,6 +127,9 @@ classdef analyze_complexity < handle
             % S-Functions
             obj.bp_SFunctions = boxplotmanager();
             
+            % Lib count: metric 9
+            obj.bp_lib_count = boxplotmanager(obj.BP_LIBCOUNT_GROUPLEN);  % Max 10 character is allowed as group name
+            
             % loop over all models in the list
             for i = 1:numel(obj.examples)
                 s = obj.examples{i};
@@ -124,6 +139,8 @@ classdef analyze_complexity < handle
                 obj.map = mymap();
                 obj.childModelPerLevelMap = mymap();
                 obj.childModelMap = mymap();
+                obj.libcount_single_model = mymap();
+                obj.blk_count = 0;
                 
                 % API function to obtain metrics
                 obj.do_single_model(s);
@@ -142,6 +159,8 @@ classdef analyze_complexity < handle
                 obj.calculate_child_model_ratio(obj.childModelMap,i);
                 obj.calculate_number_of_blocks_hierarchy(obj.map,i);
                 obj.calculate_child_representing_block_count(obj.childModelPerLevelMap,i);
+                obj.calculate_lib_count(obj.libcount_single_model);
+                
                 close_system(s);
             end
         end
@@ -176,6 +195,9 @@ classdef analyze_complexity < handle
             
             % S-Functions count
             obj.bp_SFunctions.draw('Metric 20 (Number of S-Functions)', 'Hierarchy Levels', 'Block Count');
+            
+            % Lib Count (Metric 9)
+            obj.bp_lib_count.draw(['Metric 9 (Library Participation) in ' obj.model_classes.get(obj.exptype)], 'Simulink library', 'Blocks from this library (%)');
             
         end
         
@@ -293,6 +315,21 @@ classdef analyze_complexity < handle
             title('Metric 6: Cyclomatic Complexity Count');
         end
         
+        function calculate_lib_count(obj, m)
+%             fprintf('[D] Calculate Lib Count Metric\n');
+%             num_blocks = obj.data{model_index + 1, obj.BLOCK_COUNT_AGGR};
+            count_blocks = 0;
+            for i = 1:m.len_keys()
+                k = m.key(i);
+                ratio = m.get(k)/obj.blk_count * 100;
+                obj.bp_lib_count.add(round(ratio), k);
+                fprintf('\t[D] calculate lib count: library: %s, ratio: %.2f\n', k, ratio);
+                count_blocks = count_blocks + m.get(k);
+            end
+            assert(count_blocks == obj.blk_count);
+%             fprintf('[D] Final Count: %d; actual: %d; Manual: %d\n', count_blocks, num_blocks, obj.blk_count);
+        end
+        
         function calculate_child_model_ratio(obj,m,modelCount)
             reusedModels = 0;
             newModels = m.len_keys();
@@ -337,6 +374,7 @@ classdef analyze_complexity < handle
                 if ~ strcmp(currentBlock, sys) 
                     blockType = get_param(currentBlock, 'blocktype');
                     obj.blockTypeMap.inc(blockType{1,1});
+                    obj.libcount_single_model.inc(obj.get_lib(blockType{1, 1}));
                     if util.cell_str_in(obj.childModelList,blockType)
                         % child model found
                         
@@ -357,7 +395,8 @@ classdef analyze_complexity < handle
                             if inner_count > 0
                                 % There are some subsystems which are not
                                 % actually subsystems, they have zero
-                                % blocks.
+                                % blocks. Also, masked ones won't show any
+                                % underlying implementation
                                 childCountLevel=childCountLevel+1;
                             end
                         end
@@ -366,6 +405,7 @@ classdef analyze_complexity < handle
                         count_sfunctions = count_sfunctions + 1;
                     end
                     count=count+1;
+                    obj.blk_count = obj.blk_count + 1;
                 end
             end
             
@@ -382,6 +422,14 @@ classdef analyze_complexity < handle
             
             obj.bp_SFunctions.add(count_sfunctions, int2str(depth));
             
+        end
+        
+        function ret = get_lib(obj, block_type)
+            if obj.blocktype_library_map.contains(block_type)
+                ret = obj.blocktype_library_map.get(block_type);
+            else
+                ret = 'Others';
+            end
         end
         
         
@@ -449,7 +497,7 @@ classdef analyze_complexity < handle
     methods(Static)
         function go(exptype)
             disp('--- Complexity Analysis --');
-            analyze_complexity(exptype).start();
+            analyze_complexity().start(exptype);
         end
     end
 end
