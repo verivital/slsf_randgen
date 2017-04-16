@@ -95,7 +95,8 @@ classdef analyze_complexity < handle
         % Multi experiment environment
         exp_pointer = 0; % Will be incremented each time a new experiment is started
         
-        
+        models_having_hierarchy_count = 0;
+        models_no_hierarchy_count = 0;
     end
     
     methods
@@ -266,6 +267,12 @@ classdef analyze_complexity < handle
             % Hierarchy depth count (Metric 4)
             obj.bp_hier_depth_count.draw(['Metric 4 (Maximum Hierarchy Depth) in ' obj.model_classes.get(obj.exptype)], obj.model_classes.get(obj.exptype), 'Hierarchy depth');
             
+            % Table showing Models having hierarchy (Metric 8)
+            disp(['Metric 8 (Models having Hierarchy Count) in ' obj.model_classes.get(obj.exptype)]);
+            disp('');
+            fprintf('|With Hierarchy    |%3d |\n',obj.models_having_hierarchy_count);
+            fprintf('|Without Hierarchy |%3d |\n ',obj.models_no_hierarchy_count);
+            disp('');
         end
         
         function obj = calculate_compile_time_metrics(obj, s)
@@ -326,7 +333,10 @@ classdef analyze_complexity < handle
         
         function calculate_number_of_blocks_hierarchy(obj,m,modelCount)
             if m.len_keys() > 1
+                obj.models_having_hierarchy_count = obj.models_having_hierarchy_count + 1;
                 obj.bp_hier_depth_count.add(m.len_keys(),1);
+            else
+                obj.models_no_hierarchy_count = obj.models_no_hierarchy_count + 1;
             end
             for k = 1:m.len_keys()
                 levelString = strsplit(m.key(k),'x');
