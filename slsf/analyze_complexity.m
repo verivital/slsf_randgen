@@ -67,9 +67,9 @@ classdef analyze_complexity < handle
         openSource = {'hyperloop_arc','staticmodel'};
         cyfuzz = {'sldemo_mdlref_variants_enum'};
         
-        data = cell(1, 7);  % For single exp
+        data;  % For single exp
         all_data;   % Collection of all obj.data. After running an experiment copy obj.data to obj.all_data
-        di = 1;
+        di;
         
         % array containing blockTypes to check for child models in a model
         childModelList = {'SubSystem','ModelReference'};
@@ -157,7 +157,11 @@ classdef analyze_complexity < handle
         end
            
         function analyze_all_models_from_a_class(obj)
-            fprintf('Analyzing %s\n', obj.exptype);
+            fprintf('=================== Analyzing %s =====================\n', obj.exptype);
+            
+            obj.data = cell(1, 7);
+            obj.di = 1;
+            
             % intializing vectors for box plot
             obj.boxPlotChildModelReuse = zeros(numel(obj.examples),1);
             % max hierarchy level we add to our box plot is 5.
