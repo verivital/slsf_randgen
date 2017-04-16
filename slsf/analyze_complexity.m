@@ -3,6 +3,7 @@ classdef analyze_complexity < handle
     %   Detailed explanation goes here
     
     properties(Constant = true)
+        % Excel File Columns
         MODEL_NAME = 1;
         BLOCK_COUNT_AGGR = 2;
         BLOCK_COUNT_ROOT = 3;
@@ -12,26 +13,62 @@ classdef analyze_complexity < handle
         LIBRARY_LINK_COUNT = 7;
         
         BP_LIBCOUNT_GROUPLEN = 20;  % length of group for Metric 9
+        BP_COMPILE_TIME_GROUPLEN = 20;  % length of group for compile time metric
+        
+        % Different classes of simulink models (i.e. different experiment types)
+        EXP_EXAMPLES = 'example';   % Examples and demos that come with Simulink 
+        EXP_GITHUB = 'github';
+        EXP_MATLAB_CENTRAL = 'matlabcentral';
+        EXP_RESEARCH = 'research';  % Academic and industrial research
+        
+        % Metric IDS
+        
+        METRIC_CHILD_REUSE = 1;
+        METRIC_2 = 2;
+        METRIC_3 = 3;
+        METRIC_4 = 4;
+        METRIC_5 = 5;
+        METRIC_6 = 6;
+        METRIC_7 = 7;
+        METRIC_8 = 8;
+        METRIC_9 = 9;
+        METRIC_11 = 11;
+        METRIC_COMPILE_TIME = 12;
+        METRIC_13 = 13;
+        METRIC_14 = 14;
+        METRIC_15 = 15;
+        METRIC_16 = 16;
+        METRIC_18 = 18;
+        METRIC_19= 19;
+        METRIC_20 = 20;
+        METRIC_21 = 21;
+        METRIC_22 = 22;
+        
+        NUM_METRICS = 22;
+        
+        
+        
     end
     
     properties
         base_dir = '';
         % types of lists supported: example,cyfuzz,openSource
-        exptype = 'example';
+        exptype;        % Current Experiment type
         
         % lists containing models
 %         examples = {'sldemo_fuelsys','sldemo_mdlref_variants_enum','sldemo_mdlref_basic','untitled2'};
 
 %         examples = {'sldemo_mdlref_basic','sldemo_mdlref_variants_enum','sldemo_mdlref_bus','sldemo_mdlref_conversion','sldemo_mdlref_counter_bus','sldemo_mdlref_counter_datamngt','sldemo_mdlref_dsm','sldemo_mdlref_dsm_bot','sldemo_mdlref_dsm_bot2','sldemo_mdlref_F2C'};
-        examples = {'sldemo_mdlref_basic'};
-%         examples = {'sldemo_mdlref_bus'};
+%         examples = {'aeroblk_HL20'};
+        examples = {'sldemo_mdlref_bus'};
 %         examples = {'sldemo_mdlref_basic', 'sldemo_mdlref_bus'};
 %         examples = {'untitled'};
         
         openSource = {'hyperloop_arc','staticmodel'};
         cyfuzz = {'sldemo_mdlref_variants_enum'};
         
-        data = cell(1, 7);
+        data = cell(1, 7);  % For single exp
+        all_data;   % Collection of all obj.data. After running an experiment copy obj.data to obj.all_data
         di = 1;
         
         % array containing blockTypes to check for child models in a model
@@ -50,6 +87,7 @@ classdef analyze_complexity < handle
         
         bp_SFunctions;
         bp_lib_count;
+        bp_compiletime;
         
         
         % model classes
@@ -63,6 +101,11 @@ classdef analyze_complexity < handle
         
 
         max_unique_blocks = 10;
+        
+        % Multi experiment environment
+        exp_pointer = 0; % Will be incremented each time a new experiment is started
+        
+        
     end
     
     methods
@@ -86,7 +129,9 @@ classdef analyze_complexity < handle
         
         function start(obj, exptype)
             % Start a single experiment
+            obj.exp_pointer = obj.exp_pointer + 1;
             obj.exptype = exptype;
+            
             obj.init_excel_headers();
             switch obj.exptype
                 case 'example'
@@ -131,6 +176,9 @@ classdef analyze_complexity < handle
             % Lib count: metric 9
             obj.bp_lib_count = boxplotmanager(obj.BP_LIBCOUNT_GROUPLEN);  % Max 10 character is allowed as group name
             
+            % Compile time
+            obj.bp_compiletime = boxplotmanager(obj.BP_COMPILE_TIME_GROUPLEN);
+            
             % loop over all models in the list
             for i = 1:numel(obj.examples)
                 s = obj.examples{i};
@@ -161,6 +209,8 @@ classdef analyze_complexity < handle
                 obj.calculate_number_of_blocks_hierarchy(obj.map,i);
                 obj.calculate_child_representing_block_count(obj.childModelPerLevelMap,i);
                 obj.calculate_lib_count(obj.libcount_single_model);
+                
+                obj.calculate_compile_time_metrics(s);
                 
                 close_system(s);
             end
@@ -200,6 +250,16 @@ classdef analyze_complexity < handle
             % Lib Count (Metric 9)
             obj.bp_lib_count.draw(['Metric 9 (Library Participation) in ' obj.model_classes.get(obj.exptype)], 'Simulink library', 'Blocks from this library (%)');
             
+            % Compile Time
+            obj.bp_compiletime.draw('Metric 12 (Compile Time)', 'Model Classes', 'Compilation time (seconds)');
+            
+        end
+        
+        function obj = calculate_compile_time_metrics(obj, s)
+            [~, sRpt] = sldiagnostics(s, 'CompileStats');
+            elapsed_time = sum([sRpt.Statistics(:).WallClockTime]);
+            fprintf('[DEBUG] Compile time: %d \n', elapsed_time);
+            obj.bp_compiletime.add(elapsed_time, obj.exptype);
         end
         
         function calculate_child_representing_block_count(obj,m,modelCount)
@@ -317,7 +377,7 @@ classdef analyze_complexity < handle
         end
         
         function calculate_lib_count(obj, m)
-%             fprintf('[D] Calculate Lib Count Metric\n');
+            fprintf('[D] Calculate Lib Count Metric\n');
 %             num_blocks = obj.data{model_index + 1, obj.BLOCK_COUNT_AGGR};
             count_blocks = 0;
             for i = 1:m.len_keys()
@@ -328,7 +388,7 @@ classdef analyze_complexity < handle
                 count_blocks = count_blocks + m.get(k);
             end
             assert(count_blocks == obj.blk_count);
-%             fprintf('[D] Final Count: %d; actual: %d; Manual: %d\n', count_blocks, num_blocks, obj.blk_count);
+            fprintf('[D] Final Count: %d; Manual: %d\n', count_blocks, obj.blk_count);
         end
         
         function calculate_child_model_ratio(obj,m,modelCount)
@@ -496,9 +556,11 @@ classdef analyze_complexity < handle
     end
     
     methods(Static)
-        function go(exptype)
+        function go()
+            % Entry point to run ALL analysis
             disp('--- Complexity Analysis --');
-            analyze_complexity().start(exptype);
+            ac = analyze_complexity();
+            ac.start(analyze_complexity.EXP_EXAMPLES);
         end
     end
 end
