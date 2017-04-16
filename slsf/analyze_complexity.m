@@ -263,6 +263,9 @@ classdef analyze_complexity < handle
             % Lib Count (Metric 9)
             obj.bp_lib_count.draw(['Metric 9 (Library Participation) in ' obj.model_classes.get(obj.exptype)], 'Simulink library', 'Blocks from this library (%)');
             
+            % Hierarchy depth count (Metric 4)
+            obj.bp_hier_depth_count.draw(['Metric 4 (Maximum Hierarchy Depth) in ' obj.model_classes.get(obj.exptype)], obj.model_classes.get(obj.exptype), 'Hierarchy depth');
+            
         end
         
         function obj = calculate_compile_time_metrics(obj, s)
@@ -323,7 +326,7 @@ classdef analyze_complexity < handle
         
         function calculate_number_of_blocks_hierarchy(obj,m,modelCount)
             if m.len_keys() > 1
-                obj.bp_hier_depth_count.add(1,m.len_keys());
+                obj.bp_hier_depth_count.add(m.len_keys(),1);
             end
             for k = 1:m.len_keys()
                 levelString = strsplit(m.key(k),'x');
@@ -572,7 +575,7 @@ classdef analyze_complexity < handle
             
             % Call as many experiments you want to run
             ac.start(analyze_complexity.EXP_EXAMPLES);
-            ac.start(analyze_complexity.EXP_GITHUB);
+            %ac.start(analyze_complexity.EXP_GITHUB);
             
             % Get results for all experiments
             ac.get_metric_for_all_experiments();
