@@ -20,6 +20,7 @@ classdef analyze_complexity < handle
         EXP_GITHUB = 'github';
         EXP_MATLAB_CENTRAL = 'matlabcentral';
         EXP_RESEARCH = 'research';  % Academic and industrial research
+        EXP_CYFUZZ = 'cyfuzz';
         
         % Metric IDS
         
@@ -55,21 +56,11 @@ classdef analyze_complexity < handle
         % types of lists supported: example,cyfuzz,openSource
         exptype;        % Current Experiment type
         
-        % lists containing models
-%         examples = {'sldemo_fuelsys','sldemo_mdlref_variants_enum','sldemo_mdlref_basic','untitled2'};
-
-%         examples = {'sldemo_mdlref_basic','sldemo_mdlref_variants_enum','sldemo_mdlref_bus','sldemo_mdlref_conversion','sldemo_mdlref_counter_bus','sldemo_mdlref_counter_datamngt','sldemo_mdlref_dsm','sldemo_mdlref_dsm_bot','sldemo_mdlref_dsm_bot2','sldemo_mdlref_F2C'};
-%         examples = {'aeroblk_HL20'};
-        examples = {'sldemo_mdlref_bus'};
-%         examples = {'sldemo_mdlref_basic', 'sldemo_mdlref_bus'};
-%         examples = {'untitled'};
-        
-        openSource = {'hyperloop_arc','staticmodel'};
-        cyfuzz = {'sldemo_mdlref_variants_enum'};
-        
         data;  % For single exp
         all_data;   % Collection of all obj.data. After running an experiment copy obj.data to obj.all_data
         di;
+        
+        examples;   % This array will be populated by all models of the model class
         
         % array containing blockTypes to check for child models in a model
         childModelList = {'SubSystem','ModelReference'};
@@ -125,6 +116,12 @@ classdef analyze_complexity < handle
         function  obj = analyze_complexity()
             obj.blocktype_library_map = util.getLibOfAllBlocks();
             obj.model_classes = mymap('example', 'Simulink Examples', 'opensource', 'Open Source', 'cyfuzz', 'CyFuzz');
+            
+            % Init those data structures which carries data for all
+            % experiments
+            
+            % Compile time
+            obj.bp_compiletime = boxplotmanager(obj.BP_COMPILE_TIME_GROUPLEN);
         end
         
         function start(obj, exptype)
@@ -134,26 +131,39 @@ classdef analyze_complexity < handle
             
             obj.init_excel_headers();
             switch obj.exptype
-                case 'example'
+                case analyze_complexity.EXP_EXAMPLES
+                    obj.examples = analyze_complexity_cfg.examples;
                     obj.analyze_all_models_from_a_class();
-                case 'opensource'
-                    obj.examples = obj.openSource;
+                case analyze_complexity.EXP_GITHUB
+                    obj.examples = analyze_complexity_cfg.github;
                     obj.analyze_all_models_from_a_class();
-                case 'cyfuzz'
-                    obj.examples = obj.cyfuzz;
+                case analyze_complexity.EXP_MATLAB_CENTRAL
+                    obj.examples = analyze_complexity_cfg.matlab_central;
                     obj.analyze_all_models_from_a_class();
-                case 'github'
-                    allFiles = dir('github_slx_files/*.slx' );
-                    obj.examples = regexprep({allFiles.name},'.slx','');
-%                     disp("FUUUUUUUUU");
-%                     disp(obj.examples);
+                case analyze_complexity.EXP_RESEARCH
+                    obj.examples = analyze_complexity_cfg.research;
+                    obj.analyze_all_models_from_a_class();
+                case analyze_complexity.EXP_CYFUZZ
+                    obj.examples = analyze_complexity_cfg.cyfuzz;
                     obj.analyze_all_models_from_a_class();
                 otherwise
                     error('Invalid Argument');
             end
+            
             %obj.write_excel();
+            
             obj.renderAllBoxPlots();
             disp(obj.data);
+            obj.all_data{obj.exp_pointer} = obj.data;
+        end
+        
+        function obj = get_metric_for_all_experiments(obj)
+            % Call this method to after running experiments for all classes
+            % of models
+            % Compile Time
+            
+            obj.bp_compiletime.draw('Metric 12 (Compile Time)', 'Model Classes', 'Compilation time (seconds)');
+            
         end
            
         function analyze_all_models_from_a_class(obj)
@@ -180,8 +190,6 @@ classdef analyze_complexity < handle
             % Lib count: metric 9
             obj.bp_lib_count = boxplotmanager(obj.BP_LIBCOUNT_GROUPLEN);  % Max 10 character is allowed as group name
             
-            % Compile time
-            obj.bp_compiletime = boxplotmanager(obj.BP_COMPILE_TIME_GROUPLEN);
             
             % loop over all models in the list
             for i = 1:numel(obj.examples)
@@ -253,9 +261,6 @@ classdef analyze_complexity < handle
             
             % Lib Count (Metric 9)
             obj.bp_lib_count.draw(['Metric 9 (Library Participation) in ' obj.model_classes.get(obj.exptype)], 'Simulink library', 'Blocks from this library (%)');
-            
-            % Compile Time
-            obj.bp_compiletime.draw('Metric 12 (Compile Time)', 'Model Classes', 'Compilation time (seconds)');
             
         end
         
@@ -560,11 +565,17 @@ classdef analyze_complexity < handle
     end
     
     methods(Static)
-        function go()
+        function ac = go()
             % Entry point to run ALL analysis
             disp('--- Complexity Analysis --');
             ac = analyze_complexity();
+            
+            % Call as many experiments you want to run
             ac.start(analyze_complexity.EXP_EXAMPLES);
+            ac.start(analyze_complexity.EXP_GITHUB);
+            
+            % Get results for all experiments
+            ac.get_metric_for_all_experiments();
         end
     end
 end
