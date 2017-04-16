@@ -5,14 +5,14 @@ classdef analyze_complexity_cfg < handle
     properties(Constant = true)
         % Models
         
-        examples = {'sldemo_mdlref_basic','sldemo_mdlref_variants_enum','sldemo_mdlref_bus','sldemo_mdlref_conversion','sldemo_mdlref_counter_bus','sldemo_mdlref_counter_datamngt','sldemo_mdlref_dsm','sldemo_mdlref_dsm_bot','sldemo_mdlref_dsm_bot2','sldemo_mdlref_F2C'};
+        examples = {'sldemo_mdlref_variants_enum','sldemo_mdlref_bus','sldemo_mdlref_conversion','sldemo_mdlref_counter_bus','sldemo_mdlref_counter_datamngt','sldemo_mdlref_dsm','sldemo_mdlref_dsm_bot','sldemo_mdlref_dsm_bot2','sldemo_mdlref_F2C'};
 %         examples = {'aeroblk_HL20'};
 %         examples = {'sldemo_mdlref_bus'};
 %         examples = {'sldemo_mdlref_basic', 'sldemo_mdlref_bus'};
 %         examples = {'untitled'};
 
 
-        github = {'aeroblk_HL20'};
+        github = {};
         
         matlab_central = {};
         

@@ -79,7 +79,7 @@ classdef analyze_complexity < handle
         bp_SFunctions;
         bp_lib_count;
         bp_compiletime;
-        
+        bp_hier_depth_count; % Metric 4
         
         % model classes
         model_classes;
@@ -90,13 +90,13 @@ classdef analyze_complexity < handle
         libcount_single_model;  % Map, keys are block-library; values are count (how many time a block from that library occurred in a single model)
         blk_count;
         
-
         max_unique_blocks = 10;
         
         % Multi experiment environment
         exp_pointer = 0; % Will be incremented each time a new experiment is started
         
-        
+        models_having_hierarchy_count = 0;
+        models_no_hierarchy_count = 0;
     end
     
     methods
@@ -187,6 +187,8 @@ classdef analyze_complexity < handle
             % S-Functions
             obj.bp_SFunctions = boxplotmanager();
             
+            obj.bp_hier_depth_count = boxplotmanager();
+            
             % Lib count: metric 9
             obj.bp_lib_count = boxplotmanager(obj.BP_LIBCOUNT_GROUPLEN);  % Max 10 character is allowed as group name
             
@@ -262,6 +264,15 @@ classdef analyze_complexity < handle
             % Lib Count (Metric 9)
             obj.bp_lib_count.draw(['Metric 9 (Library Participation) in ' obj.model_classes.get(obj.exptype)], 'Simulink library', 'Blocks from this library (%)');
             
+            % Hierarchy depth count (Metric 4)
+            obj.bp_hier_depth_count.draw(['Metric 4 (Maximum Hierarchy Depth) in ' obj.model_classes.get(obj.exptype)], obj.model_classes.get(obj.exptype), 'Hierarchy depth');
+            
+            % Table showing Models having hierarchy (Metric 8)
+            disp(['Metric 8 (Models having Hierarchy Count) in ' obj.model_classes.get(obj.exptype)]);
+            disp('');
+            fprintf('|With Hierarchy    |%3d |\n',obj.models_having_hierarchy_count);
+            fprintf('|Without Hierarchy |%3d |\n ',obj.models_no_hierarchy_count);
+            disp('');
         end
         
         function obj = calculate_compile_time_metrics(obj, s)
@@ -320,7 +331,13 @@ classdef analyze_complexity < handle
             title('Metric 7: Number of Specific blocks');
         end
         
-        function calculate_number_of_blocks_hierarchy(obj,m,modelCount)            
+        function calculate_number_of_blocks_hierarchy(obj,m,modelCount)
+            if m.len_keys() > 1
+                obj.models_having_hierarchy_count = obj.models_having_hierarchy_count + 1;
+                obj.bp_hier_depth_count.add(m.len_keys(),1);
+            else
+                obj.models_no_hierarchy_count = obj.models_no_hierarchy_count + 1;
+            end
             for k = 1:m.len_keys()
                 levelString = strsplit(m.key(k),'x');
                 level = str2double(levelString{2});
@@ -340,15 +357,11 @@ classdef analyze_complexity < handle
 %                         fprintf('V is not zero:%d\n', v);
 %                     end
                     obj.boxPlotBlockCountHierarchyWise(modelCount,level) =  v;
-                    
                     % Cross-validation
                     if level == 1
                         assert(v == obj.data{modelCount + 1, obj.BLOCK_COUNT_ROOT});
-                    end
-                    
+                    end 
                 end
-                
-                
             end
         end
         
@@ -572,7 +585,7 @@ classdef analyze_complexity < handle
             
             % Call as many experiments you want to run
             ac.start(analyze_complexity.EXP_EXAMPLES);
-            ac.start(analyze_complexity.EXP_GITHUB);
+            %ac.start(analyze_complexity.EXP_GITHUB);
             
             % Get results for all experiments
             ac.get_metric_for_all_experiments();
