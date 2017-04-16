@@ -88,7 +88,7 @@ classdef analyze_complexity < handle
         bp_SFunctions;
         bp_lib_count;
         bp_compiletime;
-        
+        bp_hier_depth_count; % Metric 4
         
         % model classes
         model_classes;
@@ -175,6 +175,8 @@ classdef analyze_complexity < handle
             
             % S-Functions
             obj.bp_SFunctions = boxplotmanager();
+            
+            obj.bp_hier_depth_count = boxplotmanager();
             
             % Lib count: metric 9
             obj.bp_lib_count = boxplotmanager(obj.BP_LIBCOUNT_GROUPLEN);  % Max 10 character is allowed as group name
@@ -314,7 +316,10 @@ classdef analyze_complexity < handle
             title('Metric 7: Number of Specific blocks');
         end
         
-        function calculate_number_of_blocks_hierarchy(obj,m,modelCount)            
+        function calculate_number_of_blocks_hierarchy(obj,m,modelCount)
+            if m.len_keys() > 1
+                obj.bp_hier_depth_count.add(1,m.len_keys());
+            end
             for k = 1:m.len_keys()
                 levelString = strsplit(m.key(k),'x');
                 level = str2double(levelString{2});
@@ -334,15 +339,11 @@ classdef analyze_complexity < handle
 %                         fprintf('V is not zero:%d\n', v);
 %                     end
                     obj.boxPlotBlockCountHierarchyWise(modelCount,level) =  v;
-                    
                     % Cross-validation
                     if level == 1
                         assert(v == obj.data{modelCount + 1, obj.BLOCK_COUNT_ROOT});
-                    end
-                    
+                    end 
                 end
-                
-                
             end
         end
         
