@@ -97,6 +97,10 @@ classdef analyze_complexity < handle
         
         models_having_hierarchy_count = 0;
         models_no_hierarchy_count = 0;
+        
+        % For storing Metric 15 (Target model uses embedded real time count)
+        model_uses_ert_count=0;
+        model_uses_grt_count=0;
     end
     
     methods
@@ -197,7 +201,11 @@ classdef analyze_complexity < handle
             for i = 1:numel(obj.examples)
                 s = obj.examples{i};
                 open_system(s);
-             
+                
+                cs = getActiveConfigSet(s);
+                % Metric 15
+                obj.obtain_hardware_type_metric(cs);
+                
                 % initializing maps for storing metrics
                 obj.map = mymap();
                 obj.childModelPerLevelMap = mymap();
@@ -269,10 +277,13 @@ classdef analyze_complexity < handle
             
             % Table showing Models having hierarchy (Metric 8)
             disp(['Metric 8 (Models having Hierarchy Count) in ' obj.model_classes.get(obj.exptype)]);
-            disp('');
-            fprintf('|With Hierarchy    |%3d |\n',obj.models_having_hierarchy_count);
-            fprintf('|Without Hierarchy |%3d |\n ',obj.models_no_hierarchy_count);
-            disp('');
+            fprintf('With Hierarchy:    %3d \n',obj.models_having_hierarchy_count);
+            fprintf('Without Hierarchy: %3d \n ',obj.models_no_hierarchy_count);
+            
+            disp('Metric 15 Target (EmbeddedRealTime/GenericRealTime) count');
+            fprintf('Generic Real Time: %3d\n',obj.model_uses_grt_count);
+            fprintf('Other: %3d\n ',obj.model_uses_ert_count);
+            
         end
         
         function obj = calculate_compile_time_metrics(obj, s)
@@ -429,6 +440,14 @@ classdef analyze_complexity < handle
                 obj.boxPlotChildModelReuse(modelCount) = reusedModels/(newModels+reusedModels);
             else
                 obj.boxPlotChildModelReuse(modelCount) = NaN;
+            end
+        end
+        
+        function obtain_hardware_type_metric(obj, cs) % cs = configuarationSettings of a model
+            if contains(cs.get_param('TargetHWDeviceType'),'Generic')
+                obj.model_uses_grt_count = obj.model_uses_grt_count + 1;
+            else
+                obj.model_uses_ert_count = obj.model_uses_ert_count + 1;
             end
         end
         
