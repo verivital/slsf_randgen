@@ -36,9 +36,15 @@ classdef boxplotmanager < handle
         end
         
         function draw(obj, my_title, x_label, y_label)
-%             disp(['[DEBUG] Box Plot: ' my_title]);
+            disp(['[DEBUG] Box Plot: ' my_title]);
 %             obj.data
 %             obj.group
+            
+            if isempty(obj.data)
+                warning('No Data for BoxPlot! Not Drawing.');
+                return;
+            end
+            
             figure;
             boxplot(obj.data, obj.group); % 'GroupOrder', {'1', '2', '3'}
             title(my_title);
