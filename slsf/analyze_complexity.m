@@ -90,6 +90,7 @@ classdef analyze_complexity < handle
         bp_block_count_level_wise;  % Metric 3
         bp_matlab_cyclomatic;
         bp_connections_depth_count; % Metric 21
+        bp_connections_aggregated_count; % Metric 22
         
         % model classes
         model_classes;
@@ -257,6 +258,9 @@ classdef analyze_complexity < handle
             
             % Metric 21
             obj.bp_connections_depth_count = boxplotmanager();
+            
+            %Metric 22
+            obj.bp_connections_aggregated_count = boxplotmanager();
            
             % Metric 8
             obj.models_having_hierarchy_count = 0;
@@ -350,7 +354,10 @@ classdef analyze_complexity < handle
             obj.bp_hier_depth_count.draw(['Metric 4 (Maximum Hierarchy Depth) in ' obj.model_classes.get(obj.exptype)], obj.model_classes.get(obj.exptype), 'Hierarchy depth');
             
             % Connections Level wise( Metric 21)
-            obj.bp_connections_depth_count.draw(['Metric 21 (Level-wise Connections) in ' obj.model_classes.get(obj.exptype)], obj.model_classes.get(obj.exptype), 'Connections Count');
+            obj.bp_connections_depth_count.draw(['Metric 21 (Level-wise Connections Count) in ' obj.model_classes.get(obj.exptype)], obj.model_classes.get(obj.exptype), 'Connections Count');
+            
+            % Connections Aggregated ( Metric 22)
+            obj.bp_connections_aggregated_count.draw(['Metric 22 (Aggregated Connections Count) in ' obj.model_classes.get(obj.exptype)], obj.model_classes.get(obj.exptype), 'Connections Count');
             
             % Table showing Models having hierarchy (Metric 8)
             disp(['Metric 8 (Models having Hierarchy Count) in ' obj.model_classes.get(obj.exptype)]);
@@ -363,13 +370,18 @@ classdef analyze_complexity < handle
         end
         
         function calculate_connections_level_wise(obj,m)
+            count = 0;
             for k = 1:m.len_keys()
                 levelString = strsplit(m.key(k),'x');
                 level = str2double(levelString{2});
+                
                 if level<=obj.max_level
-                    obj.bp_connections_depth_count.add(m.get(m.key(k)),level);
+                    countLevel = m.get(m.key(k)); 
+                    count = count + countLevel;
+                    obj.bp_connections_depth_count.add(countLevel,level);
                 end
             end
+            obj.bp_connections_aggregated_count.add(count,1);
         end
         
         function obj = calculate_compile_time_metrics(obj, s)
