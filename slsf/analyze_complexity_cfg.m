@@ -12,7 +12,7 @@ classdef analyze_complexity_cfg < handle
 %         examples = {'aeroblk_HL20'};
 %         examples = {'sldemo_mdlref_variants_enum'};
 %         examples = {'sldemo_mdlref_basic', 'sldemo_mdlref_bus'};
-%         examples = {'untitled'};
+%         examples = {'sldemo_mdlref_basic'};
 %         examples = {'sldemo_auto_carelec'};
         github = {'aeroblk_self_cond_cntr'};
         
