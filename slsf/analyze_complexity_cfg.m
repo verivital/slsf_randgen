@@ -4,20 +4,16 @@ classdef analyze_complexity_cfg < handle
     
     properties(Constant = true)
         % Models
-        
-
-             
     end
     
     properties
         bp_render;  % Which box plots to render
-        %         examples = {'sldemo_mdlref_variants_enum','sldemo_mdlref_bus','sldemo_mdlref_conversion','sldemo_mdlref_counter_bus','sldemo_mdlref_counter_datamngt','sldemo_mdlref_dsm','sldemo_mdlref_dsm_bot','sldemo_mdlref_dsm_bot2','sldemo_mdlref_F2C'};
+        examples = {'sldemo_mdlref_variants_enum','sldemo_mdlref_bus','sldemo_mdlref_conversion','sldemo_mdlref_counter_bus','sldemo_mdlref_counter_datamngt','sldemo_mdlref_dsm','sldemo_mdlref_dsm_bot','sldemo_mdlref_dsm_bot2','sldemo_mdlref_F2C'};
 %         examples = {'aeroblk_HL20'};
 %         examples = {'sldemo_mdlref_variants_enum'};
 %         examples = {'sldemo_mdlref_basic', 'sldemo_mdlref_bus'};
-%         examples = {'untitled'};
-
-        examples = {'sldemo_auto_carelec'};
+%         examples = {'sldemo_mdlref_basic'};
+%         examples = {'sldemo_auto_carelec'};
         github = {'aeroblk_self_cond_cntr'};
         
         matlab_central = {};
@@ -26,7 +22,8 @@ classdef analyze_complexity_cfg < handle
         
         cyfuzz = {};
         
-        scripts_to_run = {'InitializeCSTHDisturbedStdOp1', 'InitializeCSTHDisturbedStdOp2'};
+        scripts_to_run = {};
+%         scripts_to_run = {'InitializeCSTHDisturbedStdOp1', 'InitializeCSTHDisturbedStdOp2'};
     end
     
     methods
