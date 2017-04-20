@@ -73,6 +73,7 @@ classdef analyze_complexity < handle
         blockTypeMap;
         childModelMap;
         childModelPerLevelMap;
+        connectionsLevelMap;
         
         % global vectors storing data for box plot for displaying some
         % metrics that need to be calculated for all models in a list
@@ -87,7 +88,9 @@ classdef analyze_complexity < handle
         bp_block_count; % Metric 2
         bp_child_model_reuse;   % Metric 1
         bp_block_count_level_wise;  % Metric 3
-        bp_matlab_cyclomatic;   
+        bp_matlab_cyclomatic;
+        bp_connections_depth_count; % Metric 21
+        bp_connections_aggregated_count; % Metric 22
         
         % model classes
         model_classes;
@@ -103,6 +106,11 @@ classdef analyze_complexity < handle
         
         % Multi experiment environment
         exp_pointer = 0; % Will be incremented each time a new experiment is started
+        
+        
+        % For storing Metric 15 (Target model uses embedded real time count)
+        model_uses_ert_count=0;
+        model_uses_grt_count=0;
         
         models_having_hierarchy_count; % metric 8
         models_no_hierarchy_count; % metric 8
@@ -186,7 +194,7 @@ classdef analyze_complexity < handle
             
             %obj.write_excel();
             
-            obj.renderAllBoxPlots();
+            obj.render_all_box_plots();
             disp(obj.data);
             
             obj.all_data{obj.exp_pointer} = obj.data;
@@ -243,9 +251,17 @@ classdef analyze_complexity < handle
             % S-Functions
             obj.bp_SFunctions = boxplotmanager();
             
+            obj.bp_hier_depth_count = boxplotmanager();
+            
             % Lib count: metric 9
             obj.bp_lib_count = boxplotmanager(obj.BP_LIBCOUNT_GROUPLEN);  % Max 10 character is allowed as group name
             
+            % Metric 21
+            obj.bp_connections_depth_count = boxplotmanager();
+            
+            %Metric 22
+            obj.bp_connections_aggregated_count = boxplotmanager();
+           
             % Metric 8
             obj.models_having_hierarchy_count = 0;
             obj.models_no_hierarchy_count = 0;
@@ -256,11 +272,16 @@ classdef analyze_complexity < handle
                 obj.cur_exp_meta.inc(analyze_complexity.META_NUM_MODELS);
                 s = obj.examples{i};
                 open_system(s);
-             
+                
+                cs = getActiveConfigSet(s);
+                % Metric 15
+                obj.obtain_hardware_type_metric(cs);
+                
                 % initializing maps for storing metrics
                 obj.map = mymap();
                 obj.childModelPerLevelMap = mymap();
                 obj.childModelMap = mymap();
+                obj.connectionsLevelMap = mymap();
                 obj.libcount_single_model = mymap();
                 obj.blk_count = 0;
 %                 obj.blk_count_masked = 0; % Metric 2
@@ -283,17 +304,17 @@ classdef analyze_complexity < handle
                 obj.calculate_number_of_blocks_hierarchy(obj.map,i);
                 obj.calculate_child_representing_block_count(obj.childModelPerLevelMap,i);
                 obj.calculate_lib_count(obj.libcount_single_model);
-                
+                obj.calculate_connections_level_wise(obj.connectionsLevelMap);
                 obj.calculate_compile_time_metrics(s);
                 
                 % All blocks (including masked, hidden) in the model
-                obj.bp_block_count.add(mdlrefCountBlocks(s), obj.exptype);
+                %obj.bp_block_count.add(mdlrefCountBlocks(s), obj.exptype);
                 
                 close_system(s);
             end
         end
         
-        function renderAllBoxPlots(obj)
+        function render_all_box_plots(obj)
 %             obj.calculate_number_of_specific_blocks(obj.blockTypeMap);
             obj.calculate_metrics_using_api_data();
             
@@ -328,14 +349,39 @@ classdef analyze_complexity < handle
             
             % Lib Count (Metric 9)
             obj.bp_lib_count.draw(['Metric 9 (Library Participation) in ' obj.model_classes.get(obj.exptype)], 'Simulink library', 'Blocks from this library (%)');
+
+            % Hierarchy depth count (Metric 4)
+            obj.bp_hier_depth_count.draw(['Metric 4 (Maximum Hierarchy Depth) in ' obj.model_classes.get(obj.exptype)], obj.model_classes.get(obj.exptype), 'Hierarchy depth');
             
+            % Connections Level wise( Metric 21)
+            obj.bp_connections_depth_count.draw(['Metric 21 (Level-wise Connections Count) in ' obj.model_classes.get(obj.exptype)], obj.model_classes.get(obj.exptype), 'Connections Count');
+            
+            % Connections Aggregated ( Metric 22)
+            obj.bp_connections_aggregated_count.draw(['Metric 22 (Aggregated Connections Count) in ' obj.model_classes.get(obj.exptype)], obj.model_classes.get(obj.exptype), 'Connections Count');
             
             % Table showing Models having hierarchy (Metric 8)
             disp(['Metric 8 (Models having Hierarchy Count) in ' obj.model_classes.get(obj.exptype)]);
-            disp('');
-            fprintf('|With Hierarchy    |%3d |\n',obj.models_having_hierarchy_count);
-            fprintf('|Without Hierarchy |%3d |\n ',obj.models_no_hierarchy_count);
-            disp('');
+            fprintf('With Hierarchy:    %3d \n',obj.models_having_hierarchy_count);
+            fprintf('Without Hierarchy: %3d \n ',obj.models_no_hierarchy_count);
+            
+            disp('Metric 15 Target (EmbeddedRealTime/GenericRealTime) count');
+            fprintf('Generic Real Time: %3d\n',obj.model_uses_grt_count);
+            fprintf('Other: %3d\n ',obj.model_uses_ert_count);
+        end
+        
+        function calculate_connections_level_wise(obj,m)
+            count = 0;
+            for k = 1:m.len_keys()
+                levelString = strsplit(m.key(k),'x');
+                level = str2double(levelString{2});
+                
+                if level<=obj.max_level
+                    countLevel = m.get(m.key(k)); 
+                    count = count + countLevel;
+                    obj.bp_connections_depth_count.add(countLevel,level);
+                end
+            end
+            obj.bp_connections_aggregated_count.add(count,1);
         end
         
         function obj = calculate_compile_time_metrics(obj, s)
@@ -524,6 +570,16 @@ classdef analyze_complexity < handle
             end
         end
         
+        function obtain_hardware_type_metric(obj, cs) % cs = configuarationSettings of a model
+            if contains(cs.get_param('TargetHWDeviceType'),'Generic')
+                obj.model_uses_grt_count = obj.model_uses_grt_count + 1;
+            else
+                obj.model_uses_ert_count = obj.model_uses_ert_count + 1;
+                disp('[DEBUG] Metric 15 Model uses some other TargetHWDeviceType besides generic real time');
+                disp(cs.get_param('TargetHWDeviceType'));
+            end
+        end
+        
         %our recursive function to calculate metrics not supported by API
         function count = obtain_hierarchy_metrics(obj,sys,depth,isModelReference)  
             if isModelReference
@@ -531,9 +587,11 @@ classdef analyze_complexity < handle
                 load_system(mdlRefName);
                 all_blocks = find_system(mdlRefName,'SearchDepth',1);
                 all_blocks = all_blocks(2:end);
+                lines = find_system(mdlRefName,'SearchDepth','1','FindAll','on','type','line');
 %                 fprintf('[V] ReferencedModel %s; depth %d\n', char(mdlRefName), depth);
             else
                 all_blocks = find_system(sys,'SearchDepth',1);
+                lines = find_system(sys,'SearchDepth','1','FindAll','on','type','line');
 %                 fprintf('[V] SubSystem %s; depth %d\n', char(sys), depth);
             end
             
@@ -560,11 +618,11 @@ classdef analyze_complexity < handle
                             is_model_reused = obj.childModelMap.contains(modelName);
                             obj.childModelMap.inc(modelName{1,1});
                             
-                            if ~ is_model_reused
+                            %if ~ is_model_reused
                                 % Will not count the same referenced model
                                 % twice.
                                 obj.obtain_hierarchy_metrics(currentBlock,depth+1,true);
-                            end
+                            %end
                         else
                             inner_count  = obj.obtain_hierarchy_metrics(currentBlock,depth+1,false);
                             if inner_count > 0
@@ -588,6 +646,9 @@ classdef analyze_complexity < handle
             
 %             fprintf('\tBlock Count: %d\n', count);
             
+            if numel(lines) > 0
+                obj.connectionsLevelMap.insert_or_add(mapKey,numel(lines));
+            end
             
             if count >0
                 obj.bp_block_count_level_wise.add(count, mapKey)
@@ -677,7 +738,6 @@ classdef analyze_complexity < handle
             ac = analyze_complexity();
             
             % Call as many experiments you want to run
-            
             ac.start(analyze_complexity.EXP_EXAMPLES);
 %             ac.start(analyze_complexity.EXP_GITHUB);
 %             ac.start(analyze_complexity.EXP_RESEARCH);
