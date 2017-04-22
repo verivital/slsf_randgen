@@ -90,6 +90,7 @@ classdef analyze_complexity < handle
         bp_child_model_reuse;   % Metric 1
         bp_block_count_level_wise;  % Metric 3
         bp_matlab_cyclomatic;
+        bp_algebraic_loop_count;
         bp_connections_depth_count; % Metric 21
         bp_connections_aggregated_count; % Metric 22
         bp_unique_block_aggregated_count; % Metric 23
@@ -258,6 +259,9 @@ classdef analyze_complexity < handle
             
             % Lib count: metric 9
             obj.bp_lib_count = boxplotmanager(obj.BP_LIBCOUNT_GROUPLEN);  % Max 10 character is allowed as group name
+           
+            % Metric 11
+            obj.bp_algebraic_loop_count = boxplotmanager();
             
             % Metric 21
             obj.bp_connections_depth_count = boxplotmanager();
@@ -307,7 +311,7 @@ classdef analyze_complexity < handle
                 disp('[DEBUG] Number of child models with the number of times being reused:');
                 disp(obj.childModelMap.data);
                 
-                obj.bp_unique_block_aggregated_count.add(obj.uniqueBlockMap.len_keys(),1);
+                obj.bp_unique_block_aggregated_count.add(obj.uniqueBlockMap.len_keys(),obj.exptype);
                 obj.calculate_child_model_ratio(obj.childModelMap,i);
                 obj.calculate_number_of_blocks_hierarchy(obj.map,i);
                 obj.calculate_child_representing_block_count(obj.childModelPerLevelMap,i);
@@ -358,6 +362,10 @@ classdef analyze_complexity < handle
             % Lib Count (Metric 9)
             obj.bp_lib_count.draw(['Metric 9 (Library Participation) in ' obj.model_classes.get(obj.exptype)], 'Simulink library', 'Blocks from this library (%)');
 
+            % Algebraic Loops Count( Metric 11)
+            obj.bp_algebraic_loop_count.draw(['Metric 11 (Algebraic Loops Count) in ' obj.model_classes.get(obj.exptype)], obj.model_classes.get(obj.exptype), 'Loop Count')
+            
+            
             % Hierarchy depth count (Metric 4)
             obj.bp_hier_depth_count.draw(['Metric 4 (Maximum Hierarchy Depth) in ' obj.model_classes.get(obj.exptype)], obj.model_classes.get(obj.exptype), 'Hierarchy depth');
             
@@ -423,6 +431,12 @@ classdef analyze_complexity < handle
                 elapsed_time = sum([sRpt.Statistics(:).WallClockTime]);
                 fprintf('[DEBUG] Compile time: %d \n', elapsed_time);
                 obj.bp_compiletime.add(elapsed_time, obj.exptype);
+                
+                % finding algebraic loops if the model compiles
+                aloops = Simulink.BlockDiagram.getAlgebraicLoops(s);
+                if numel(aloops) > 0
+                    obj.bp_algebraic_loop_count.add(numel(aloops),obj.exptype);
+                end
             end
         end
         
