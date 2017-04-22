@@ -71,6 +71,7 @@ classdef analyze_complexity < handle
         % maps for storing metrics per model
         map;
         blockTypeMap;
+        uniqueBlockMap;
         childModelMap;
         childModelPerLevelMap;
         connectionsLevelMap;
@@ -91,6 +92,7 @@ classdef analyze_complexity < handle
         bp_matlab_cyclomatic;
         bp_connections_depth_count; % Metric 21
         bp_connections_aggregated_count; % Metric 22
+        bp_unique_block_aggregated_count; % Metric 23
         
         % model classes
         model_classes;
@@ -243,6 +245,7 @@ classdef analyze_complexity < handle
             obj.boxPlotChildRepresentingBlockCount = zeros(numel(obj.examples),obj.max_level); 
             obj.boxPlotChildRepresentingBlockCount(:) = NaN;
             
+            % Metric 7
             obj.blockTypeMap = mymap();
             
             % Metric 3
@@ -261,6 +264,9 @@ classdef analyze_complexity < handle
             
             %Metric 22
             obj.bp_connections_aggregated_count = boxplotmanager();
+            
+            %Metric 23
+            obj.bp_unique_block_aggregated_count = boxplotmanager();
            
             % Metric 8
             obj.models_having_hierarchy_count = 0;
@@ -279,6 +285,7 @@ classdef analyze_complexity < handle
                 
                 % initializing maps for storing metrics
                 obj.map = mymap();
+                obj.uniqueBlockMap = mymap();
                 obj.childModelPerLevelMap = mymap();
                 obj.childModelMap = mymap();
                 obj.connectionsLevelMap = mymap();
@@ -300,6 +307,7 @@ classdef analyze_complexity < handle
                 disp('[DEBUG] Number of child models with the number of times being reused:');
                 disp(obj.childModelMap.data);
                 
+                obj.bp_unique_block_aggregated_count.add(obj.uniqueBlockMap.len_keys(),1);
                 obj.calculate_child_model_ratio(obj.childModelMap,i);
                 obj.calculate_number_of_blocks_hierarchy(obj.map,i);
                 obj.calculate_child_representing_block_count(obj.childModelPerLevelMap,i);
@@ -315,7 +323,7 @@ classdef analyze_complexity < handle
         end
         
         function render_all_box_plots(obj)
-%             obj.calculate_number_of_specific_blocks(obj.blockTypeMap);
+            obj.calculate_number_of_specific_blocks(obj.blockTypeMap);
             obj.calculate_metrics_using_api_data();
             
             % rendering Metric 1: boxPlot for child model reuse %
@@ -358,6 +366,9 @@ classdef analyze_complexity < handle
             
             % Connections Aggregated ( Metric 22)
             obj.bp_connections_aggregated_count.draw(['Metric 22 (Aggregated Connections Count) in ' obj.model_classes.get(obj.exptype)], obj.model_classes.get(obj.exptype), 'Connections Count');
+            
+            % Unique Blocks Aggregated ( Metric 23)
+            obj.bp_unique_block_aggregated_count.draw(['Metric 23 (Aggregated Unique Block Count) in ' obj.model_classes.get(obj.exptype)], obj.model_classes.get(obj.exptype), 'Block Count')
             
             % Table showing Models having hierarchy (Metric 8)
             disp(['Metric 8 (Models having Hierarchy Count) in ' obj.model_classes.get(obj.exptype)]);
@@ -448,20 +459,21 @@ classdef analyze_complexity < handle
             if numel(keys) > obj.max_unique_blocks
                 startingPoint = numel(keys) - obj.max_unique_blocks;
             end
+            disp('Metric 7: Number of Specific blocks');
             for i=startingPoint:numel(keys)
                 fprintf('%25s | %3d\n',vectorTemp(sortedVector(i,1)),sortedVector(i,2));
             end
             
             % rendering boxPlot for number of specific blocks used across
             % all models in the list.
-            figure
-            boxPlotVector = sortedVector(:,2);
-            if numel(keys) > obj.max_unique_blocks
-                boxPlotVector = sortedVector(end-obj.max_unique_blocks:end,2);
-            end
-            boxplot(boxPlotVector);
-            ylabel(obj.exptype);
-            title('Metric 7: Number of Specific blocks');
+%             figure
+%             boxPlotVector = sortedVector(:,2);
+%             if numel(keys) > obj.max_unique_blocks
+%                 boxPlotVector = sortedVector(end-obj.max_unique_blocks:end,2);
+%             end
+%             boxplot(boxPlotVector);
+%             ylabel(obj.exptype);
+%             title('Metric 7: Number of Specific blocks');
         end
         
         function calculate_number_of_blocks_hierarchy(obj,m,modelCount)
@@ -607,6 +619,7 @@ classdef analyze_complexity < handle
                 if ~ strcmp(currentBlock, sys) 
                     blockType = get_param(currentBlock, 'blocktype');
                     obj.blockTypeMap.inc(blockType{1,1});
+                    obj.uniqueBlockMap.inc(blockType{1,1});
                     obj.libcount_single_model.inc(obj.get_lib(blockType{1, 1}));
                     if util.cell_str_in(obj.childModelList,blockType)
                         % child model found
