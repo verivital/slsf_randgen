@@ -75,6 +75,7 @@ classdef analyze_complexity < handle
         childModelMap;
         childModelPerLevelMap;
         connectionsLevelMap;
+        targetModelMap; % Metric 15
         
         % global vectors storing data for box plot for displaying some
         % metrics that need to be calculated for all models in a list
@@ -106,6 +107,7 @@ classdef analyze_complexity < handle
 %         blk_count_masked;   % Aggregated block count including masked and hidden .. using sldiagnostic API
         
         max_unique_blocks = 10;
+        max_hardware_types = 5;
         
         % Multi experiment environment
         exp_pointer = 0; % Will be incremented each time a new experiment is started
@@ -249,6 +251,9 @@ classdef analyze_complexity < handle
             % Metric 7
             obj.blockTypeMap = mymap();
             
+            % Metric 15
+            obj.targetModelMap = mymap();
+            
             % Metric 3
             obj.bp_block_count_level_wise = boxplotmanager();
             
@@ -283,9 +288,6 @@ classdef analyze_complexity < handle
                 s = obj.examples{i};
                 open_system(s);
                 
-                cs = getActiveConfigSet(s);
-                % Metric 15
-                obj.obtain_hardware_type_metric(cs);
                 
                 % initializing maps for storing metrics
                 obj.map = mymap();
@@ -297,6 +299,10 @@ classdef analyze_complexity < handle
                 obj.blk_count = 0;
 %                 obj.blk_count_masked = 0; % Metric 2
                 
+                % Metric 15
+                cs = getActiveConfigSet(s);
+                obj.obtain_hardware_type_metric(cs);
+
                 % API function to obtain metrics
                 obj.do_single_model(s);
                 
@@ -383,9 +389,22 @@ classdef analyze_complexity < handle
             fprintf('With Hierarchy:    %3d \n',obj.models_having_hierarchy_count);
             fprintf('Without Hierarchy: %3d \n ',obj.models_no_hierarchy_count);
             
-            disp('Metric 15 Target (EmbeddedRealTime/GenericRealTime) count');
-            fprintf('Generic Real Time: %3d\n',obj.model_uses_grt_count);
-            fprintf('Other: %3d\n ',obj.model_uses_ert_count);
+            % Metric 15
+            obj.display_metric15();
+        end
+        
+        
+        function display_metric15(obj)
+            fprintf('\nMetric 15 Target Hardware Count\n');
+            [keyVector,sortedVector] = obj.targetModelMap.sort_by_value();
+            startingPoint = 1;
+            len = obj.targetModelMap.len_keys();
+            if len > obj.max_hardware_types
+                startingPoint = len - obj.max_hardware_types;
+            end
+            for i=len:-1:startingPoint
+                fprintf('%25s | %3d\n',keyVector(sortedVector(i,1)),sortedVector(i,2));
+            end
         end
         
         function calculate_connections_level_wise(obj,m)
@@ -452,42 +471,18 @@ classdef analyze_complexity < handle
         end
         
         function calculate_number_of_specific_blocks(obj,m)
-            m.keys();
-            keys = m.data_keys();
-            fprintf('Number of Top %d specific blocks with their counts:\n',obj.max_unique_blocks);
-            %disp(m.data);
-            vectorTemp = strings(numel(keys),1);
-            vectorTemp(:,1)=keys;
-            
-            countTemp = zeros(numel(keys),2);
-            for k = 1:numel(keys)
-               countTemp(k,1)=k;
-               countTemp(k,2)=m.data.(keys{k});
-            end
-            
-            sortedVector = sortrows(countTemp,2);
-            fprintf('%25s | Count\n','Block Type');
             startingPoint = 1;
             % adding checks for if unique block types are less than 10 to
             % avoid exception
-            if numel(keys) > obj.max_unique_blocks
-                startingPoint = numel(keys) - obj.max_unique_blocks;
-            end
-            disp('Metric 7: Number of Specific blocks');
-            for i=startingPoint:numel(keys)
-                fprintf('%25s | %3d\n',vectorTemp(sortedVector(i,1)),sortedVector(i,2));
+            if m.len_keys() > obj.max_unique_blocks
+                startingPoint = m.len_keys() - obj.max_unique_blocks;
             end
             
-            % rendering boxPlot for number of specific blocks used across
-            % all models in the list.
-%             figure
-%             boxPlotVector = sortedVector(:,2);
-%             if numel(keys) > obj.max_unique_blocks
-%                 boxPlotVector = sortedVector(end-obj.max_unique_blocks:end,2);
-%             end
-%             boxplot(boxPlotVector);
-%             ylabel(obj.exptype);
-%             title('Metric 7: Number of Specific blocks');
+            [keyVector, sortedVector] = m.sort_by_value();
+            fprintf('Metric 7: Number of Top %d blocks with their counts:\n',obj.max_unique_blocks);
+            for i=m.len_keys():-1:startingPoint
+                fprintf('%25s | %3d\n',keyVector(sortedVector(i,1)),sortedVector(i,2));
+            end
         end
         
         function calculate_number_of_blocks_hierarchy(obj,m,modelCount)
@@ -597,13 +592,15 @@ classdef analyze_complexity < handle
         end
         
         function obtain_hardware_type_metric(obj, cs) % cs = configuarationSettings of a model
-            if contains(cs.get_param('TargetHWDeviceType'),'Generic')
-                obj.model_uses_grt_count = obj.model_uses_grt_count + 1;
-            else
-                obj.model_uses_ert_count = obj.model_uses_ert_count + 1;
-                disp('[DEBUG] Metric 15 Model uses some other TargetHWDeviceType besides generic real time');
-                disp(cs.get_param('TargetHWDeviceType'));
-            end
+            obj.targetModelMap.inc(cs.get_param('TargetHWDeviceType'));
+            
+%             if contains(cs.get_param('TargetHWDeviceType'),'Generic')
+%                 obj.model_uses_grt_count = obj.model_uses_grt_count + 1;
+%             else
+%                 obj.model_uses_ert_count = obj.model_uses_ert_count + 1;
+%                 disp('[DEBUG] Metric 15 Model uses some other TargetHWDeviceType besides generic real time');
+%                 disp(cs.get_param('TargetHWDeviceType'));
+%             end
         end
         
         %our recursive function to calculate metrics not supported by API
