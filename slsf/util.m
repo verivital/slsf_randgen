@@ -390,6 +390,13 @@ classdef util < handle
             
         end
         
+        function find_system(sys)
+            x = find_system(sys, 'SearchDepth','1','FindAll','on', 'LookUnderMasks', 'all', 'FollowLinks','on', 'type','line');
+            for i=1:numel(x)
+                get_param(x(i), 'type')
+            end
+        end
+        
     end
     
 end

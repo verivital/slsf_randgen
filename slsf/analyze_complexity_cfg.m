@@ -8,12 +8,12 @@ classdef analyze_complexity_cfg < handle
     
     properties
         bp_render;  % Which box plots to render
-        examples = {'sldemo_mdlref_variants_enum','sldemo_mdlref_bus','sldemo_mdlref_conversion','sldemo_mdlref_counter_bus','sldemo_mdlref_counter_datamngt','sldemo_mdlref_dsm','sldemo_mdlref_dsm_bot','sldemo_mdlref_dsm_bot2','sldemo_mdlref_F2C'};
+%         examples = {'sldemo_mdlref_variants_enum','sldemo_mdlref_bus','sldemo_mdlref_conversion','sldemo_mdlref_counter_bus','sldemo_mdlref_counter_datamngt','sldemo_mdlref_dsm','sldemo_mdlref_dsm_bot','sldemo_mdlref_dsm_bot2','sldemo_mdlref_F2C'};
 %         examples = {'aeroblk_HL20'};
 %         examples = {'sldemo_mdlref_variants_enum'};
 %         examples = {'sldemo_mdlref_basic', 'sldemo_mdlref_bus'};
 %         examples = {'sldemo_mdlref_basic'};
-%         examples = {'sldemo_auto_carelec'};
+        examples = {'untitled1'};
         github = {'aeroblk_self_cond_cntr'};
         
         matlab_central = { 'ACTimeOvercurrentRelayBlock',  'Engine_Testrig',  'Fuel_Eco_TEST',  'HPW',  'HVDC_system',  'LF_AC29bus_HVDCdemo_V2_1',  'Link_A',  'Link_B',  'MAXPID_modelisation_multi_physique_MATLAB_2015a_Ivan_Liebgott',  'UPFC_1',  'Vehicle_Dynamics_Testrig',  'complex_multiply_example',  'downsample_upsample_example',  'enabled_subsystem_example',  'fir_filter_example',  'pvwindupfc11',  'realtime_pacer_lib',  'stateflow_example',  'sync_subsystem_example',  'view_wave_example',  'BB2',  'DMM',  'HVDC',  'MA_Model',  'MinorStepLib',  'OCR',  'PDQuadrotor',  'SimpleBounce',  'VFT',  'VU_NXTWay',  'VU_NXTWay_Simple',  'VU_lineFollow',  'VU_lineFollow1',  'VU_lineFollow1b',  'VU_lineFollow2',  'VU_motorSpdCtrl',  'VU_testBtTxRx',  'VU_testSoundTone1',  'VU_testSoundTone2',  'VU_testSoundTone3',  'VU_testUsbTxRx',  'Vehicle_Dynamics_Testrig',  'Wind_PMSG',  'lego_nxt_lib',  'lorenz3d',  'm3dscope_new',  'm3dscope_old',  'matrixFtse',  'microturbine_rectifierconverter',  'my_model',  'realtime_pacer_example',  'rev_pow_ckt_new4'  };
@@ -53,8 +53,8 @@ classdef analyze_complexity_cfg < handle
                 'Boiler_MIMOControl_PID12', 'Boiler_SISOControl_PID12', };
             research_c = {'benchmark_no_taylor', 'benchmark'};
             research_d = {'slsf_buck', 'flyback_openloop', 'forward_conv', 'forward_conv_hyst', 'fwr', 'buck_hvoltage2', 'pll'};
-%             obj.research = [research_a, research_b, research_c];
-            obj.research = research_d;
+            obj.research = [research_a, research_b, research_c, research_d];
+%             obj.research = research_d;
             
             % GitHub
             
