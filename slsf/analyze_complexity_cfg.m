@@ -8,10 +8,11 @@ classdef analyze_complexity_cfg < handle
     
     properties
         bp_render;  % Which box plots to render
-        examples = {'sldemo_mdlref_variants_enum','sldemo_mdlref_bus','sldemo_mdlref_conversion','sldemo_mdlref_counter_bus','sldemo_mdlref_counter_datamngt','sldemo_mdlref_dsm','sldemo_mdlref_dsm_bot','sldemo_mdlref_dsm_bot2','sldemo_mdlref_F2C'};
+        % sldemo_mdlref_counter_bus causing issues in getAlgebraicLoops
+        examples = {'sldemo_mdlref_variants_enum','sldemo_mdlref_bus','sldemo_mdlref_conversion','sldemo_mdlref_counter_datamngt','sldemo_mdlref_dsm','sldemo_mdlref_dsm_bot','sldemo_mdlref_dsm_bot2','sldemo_mdlref_F2C','ex_algebraic_loop'};
+%         examples = {'sldemo_mdlref_variants_enum','sldemo_mdlref_bus','sldemo_mdlref_conversion','sldemo_mdlref_counter_bus','sldemo_mdlref_counter_datamngt','sldemo_mdlref_dsm','sldemo_mdlref_dsm_bot','sldemo_mdlref_dsm_bot2','sldemo_mdlref_F2C'};
 %         examples = {'aeroblk_HL20'};
 %         examples = {'sldemo_mdlref_variants_enum'};
-%         examples = {'sldemo_mdlref_basic', 'sldemo_mdlref_bus'};
 %         examples = {'sldemo_mdlref_basic'};
 %         examples = {'sldemo_auto_carelec'};
         github = {'aeroblk_self_cond_cntr'};
