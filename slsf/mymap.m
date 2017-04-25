@@ -79,6 +79,20 @@ classdef mymap < handle
             ret = numel(obj.keys());
         end
         
+        function [vectorTemp, sortedVector] = sort_by_value(obj)
+            len = numel(obj.keys());
+            keys = obj.data_keys;
+            vectorTemp = strings(len,1);
+            vectorTemp(:,1)=keys;
+            
+            countTemp = zeros(len,2);
+            for k = 1:len
+               countTemp(k,1)=k;
+               countTemp(k,2)=obj.data.(keys{k});
+            end
+            sortedVector = sortrows(countTemp,2);
+        end
+        
         function obj = inc(obj, k)
             if obj.contains(k)
                 obj.put(k, obj.get(k) + 1);
