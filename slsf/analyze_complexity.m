@@ -50,7 +50,7 @@ classdef analyze_complexity < handle
         META_NUM_MODELS = 'total';
         META_NUM_COMPILE = 'compile';   % Those who compiles
         META_NUM_HIER = 'hier';
-        
+        META_BLOCK_TYPE_MAP = 'btm';
         
         
     end
@@ -256,6 +256,7 @@ classdef analyze_complexity < handle
                 mt = obj.all_exp_meta.get(i);
                 fprintf('\t\tTotal: %d; \t\t Compiled: %d; \t\tHier: %d;\n',...
                     mt.get(obj.META_NUM_MODELS), mt.get(obj.META_NUM_COMPILE), mt.get(obj.META_NUM_HIER));
+                obj.calculate_number_of_specific_blocks(mt.get(obj.META_BLOCK_TYPE_MAP));
             end
             
         end
@@ -358,7 +359,8 @@ classdef analyze_complexity < handle
         end
         
         function render_all_box_plots(obj)
-            obj.calculate_number_of_specific_blocks(obj.blockTypeMap);
+            obj.cur_exp_meta.put(obj.META_BLOCK_TYPE_MAP, obj.blockTypeMap);
+%             obj.calculate_number_of_specific_blocks(obj.blockTypeMap);
             obj.calculate_metrics_using_api_data();
             
             % rendering Metric 1: boxPlot for child model reuse %
