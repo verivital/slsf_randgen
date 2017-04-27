@@ -96,6 +96,7 @@ classdef analyze_complexity < handle
         bp_connections_depth_count; % Metric 21
         bp_connections_aggregated_count; % Metric 22
         bp_unique_block_aggregated_count; % Metric 23
+        bp_descendants_count;
         
         % model classes
         model_classes;
@@ -106,6 +107,7 @@ classdef analyze_complexity < handle
         libcount_single_model;  % Map, keys are block-library; values are count (how many time a block from that library occurred in a single model)
         blk_count;  % Aggregated block count excluding hidden and masked blocks
         blk_count_masked;   % Aggregated block count including masked and hidden .. using sldiagnostic API
+        descendants_count;  % Count all children and grandchildren for the top model - aggregated result.
         
         max_unique_blocks = 10;
         max_hardware_types = 5;
@@ -171,6 +173,16 @@ classdef analyze_complexity < handle
             obj.bp_unique_block_aggregated_count.calc_stats = true;
             
             obj.bp_algebraic_loop_count = boxplotmanager(obj.BP_ALL_EXPERIMENTS_GROUPLEN);
+            obj.bp_descendants_count = boxplotmanager(obj.BP_ALL_EXPERIMENTS_GROUPLEN);
+            
+            % Init group boxplots
+            
+            obj.bp_block_count_level_wise = boxplotmanager_grouped();
+            obj.bp_lib_count = boxplotmanager_grouped(obj.BP_LIBCOUNT_GROUPLEN);
+%             obj.bp_lib_count.label_orientation = 'inline';
+            
+            obj.bp_connections_depth_count = boxplotmanager_grouped();
+%             obj.bp_block_count_level_wise.plotstyle = 'compact';
             
             % meta
             obj.all_exp_meta = mycell();
@@ -235,6 +247,13 @@ classdef analyze_complexity < handle
             obj.bp_connections_aggregated_count.draw('Aggregated Connections Count #22', 'Model classes', 'Connections Count');
             obj.bp_unique_block_aggregated_count.draw('Aggregated Unique Block Count #23', 'Model classes', 'Blocks count');
             obj.bp_algebraic_loop_count.draw('Algebraic Loops Count', 'Model classes', 'Loop Count');
+            obj.bp_descendants_count.draw('Child-representing blocks count (Aggregated)', 'Model classes', 'Blocks count');
+            
+            % Group draw
+            obj.bp_block_count_level_wise.group_draw('Block Count (level wise)', 'Hierarchy levels', 'Blocks count', true);
+            obj.bp_lib_count.group_draw('Library participation', 'Simulink library', 'Blocks (%)'); 
+            obj.bp_connections_depth_count.group_draw('Connections Count (level wise)', 'Hierarchy Levels', 'Connections Count', true);
+      
             
             obj.bp_compiletime.get_stat();
             obj.bp_block_count.get_stat();
@@ -242,6 +261,7 @@ classdef analyze_complexity < handle
             obj.bp_matlab_cyclomatic.get_stat();
             obj.bp_connections_aggregated_count.get_stat();
             obj.bp_unique_block_aggregated_count.get_stat();
+            obj.bp_descendants_count.get_stat();
            
             
             
@@ -284,7 +304,7 @@ classdef analyze_complexity < handle
             obj.targetModelMap = mymap();
             
             % Metric 3
-            obj.bp_block_count_level_wise = boxplotmanager();
+            obj.bp_block_count_level_wise.init_sg(obj.exptype);
             
             % S-Functions
             obj.bp_SFunctions = boxplotmanager();
@@ -292,11 +312,11 @@ classdef analyze_complexity < handle
 %             obj.bp_hier_depth_count = boxplotmanager();
             
             % Lib count: metric 9
-            obj.bp_lib_count = boxplotmanager(obj.BP_LIBCOUNT_GROUPLEN);  % Max 10 character is allowed as group name
-            obj.bp_lib_count.plotstyle = 'compact';
+            obj.bp_lib_count.init_sg(obj.exptype);  % Max 10 character is allowed as group name
+%             obj.bp_lib_count.plotstyle = 'compact';
             
             % Metric 21
-            obj.bp_connections_depth_count = boxplotmanager();
+            obj.bp_connections_depth_count.init_sg(obj.exptype);
 
            
             % Metric 8
@@ -320,6 +340,7 @@ classdef analyze_complexity < handle
                 obj.connectionsLevelMap = mymap();
                 obj.libcount_single_model = mymap();
                 obj.blk_count = 0;
+                obj.descendants_count = 0;
                  obj.blk_count_masked = 0; % Metric 2
                 
                 % Metric 15
@@ -351,8 +372,12 @@ classdef analyze_complexity < handle
                 % All blocks (including masked, hidden) in the model
                 blk_count_sldiag = mdlrefCountBlocks(s);
                 obj.bp_block_count.add(blk_count_sldiag, obj.exptype);
+                
 %                 fprintf('My block count: %d; SLDIAG block count: %d\n', obj.blk_count, blk_count_sldiag);
                 assert(abs(obj.blk_count - blk_count_sldiag) < 30);
+                assert(obj.blk_count >= blk_count_sldiag);
+                
+                obj.bp_descendants_count.add(obj.descendants_count, obj.exptype);
                 
                 close_system(s);
             end
@@ -379,7 +404,6 @@ classdef analyze_complexity < handle
 %             ylabel('Number Of Blocks');
 %             title(['Metric 3: Block Count across Hierarchy in ' obj.model_classes.get(obj.exptype)]);
 
-            obj.bp_block_count_level_wise.draw(['Block Count (level wise) in ' obj.model_classes.get(obj.exptype)], 'Hierarchy levels', 'Blocks count', true);
             
             % rendering boxPlot for child representing blockcount NOT
             % DOOING IT... SEEMS REDUNDANT
@@ -393,16 +417,14 @@ classdef analyze_complexity < handle
 %             % S-Functions count SEEMS REDUNDANT
 %             obj.bp_SFunctions.draw('Metric 20 (Number of S-Functions)', 'Hierarchy Levels', 'Block Count');
             
-            % Lib Count (Metric 9)
-            obj.bp_lib_count.draw(['Libraries used in ' obj.model_classes.get(obj.exptype)], 'Simulink library', 'Blocks (%)'); 
+
             
             % Hierarchy depth count (Metric 4)
 %             obj.bp_hier_depth_count.draw(['Metric 4 (Maximum Hierarchy Depth) in ' obj.model_classes.get(obj.exptype)], obj.model_classes.get(obj.exptype), 'Hierarchy depth');
             
-            % Connections Level wise( Metric 21)
-            obj.bp_connections_depth_count.draw(['Connections Count (level wise) in ' obj.model_classes.get(obj.exptype)], 'Hierarchy Levels', 'Connections Count', true);
-      
-            pause();
+            
+             
+%              pause;
             
             % Table showing Models having hierarchy (Metric 8)
 %             disp(['Metric 8 (Models having Hierarchy Count) in ' obj.model_classes.get(obj.exptype)]);
@@ -481,6 +503,7 @@ classdef analyze_complexity < handle
         end
         
         function calculate_child_representing_block_count(obj,m,modelCount)
+            cnt = 0;
             for k = 1:m.len_keys()
                 levelString = strsplit(m.key(k),'x');
                 level = str2double(levelString{2});
@@ -488,7 +511,11 @@ classdef analyze_complexity < handle
                     assert(isnan(obj.boxPlotChildRepresentingBlockCount(modelCount,level)));
                     obj.boxPlotChildRepresentingBlockCount(modelCount,level) = m.get(m.key(k));
                 end
+                cnt = cnt + m.get(m.key(k));
             end
+%             cnt
+%             obj.descendants_count
+            assert(cnt == obj.descendants_count);
         end
         
         function calculate_number_of_specific_blocks(obj,m)
@@ -628,16 +655,20 @@ classdef analyze_complexity < handle
         end
         
         %our recursive function to calculate metrics not supported by API
-        function count = obtain_hierarchy_metrics(obj,sys,depth,isModelReference)  
+        function count = obtain_hierarchy_metrics(obj,sys,depth,isModelReference)
+%             sys
+%             fprintf('[DEBUG] OHM - %s\n', char(sys));
             if isModelReference
                 mdlRefName = get_param(sys,'ModelName');
                 load_system(mdlRefName);
                 all_blocks = find_system(mdlRefName,'SearchDepth',1, 'LookUnderMasks', 'all', 'FollowLinks','on');
+                assert(strcmp(all_blocks(1), mdlRefName));
                 all_blocks = all_blocks(2:end);
                 lines = find_system(mdlRefName,'SearchDepth','1','FindAll','on', 'LookUnderMasks', 'all', 'FollowLinks','on', 'type','line');
 %                 fprintf('[V] ReferencedModel %s; depth %d\n', char(mdlRefName), depth);
             else
                 all_blocks = find_system(sys,'SearchDepth',1, 'LookUnderMasks', 'all', 'FollowLinks','on');
+                assert(strcmp(all_blocks(1), sys));
                 lines = find_system(sys,'SearchDepth','1','FindAll','on', 'LookUnderMasks', 'all', 'FollowLinks','on', 'type','line');
 %                 fprintf('[V] SubSystem %s; depth %d\n', char(sys), depth);
             end
@@ -732,9 +763,13 @@ classdef analyze_complexity < handle
                 % If there are blocks, only then it makes sense to count
                 % connections
                 obj.connectionsLevelMap.insert_or_add(mapKey,unique_lines);
+                obj.descendants_count = obj.descendants_count + childCountLevel;
+%             else
+%                 error('0 block count!!');
             end
             
-            obj.childModelPerLevelMap.insert_or_add(mapKey, childCountLevel);
+            obj.childModelPerLevelMap.insert_or_add(mapKey, childCountLevel); %WARNING shouldn't we do this only when
+%             count>0?
             
             obj.bp_SFunctions.add(count_sfunctions, int2str(depth));
             
@@ -813,15 +848,22 @@ classdef analyze_complexity < handle
     methods(Static)
         function ac = go()
             % Entry point to run ALL analysis
+            base_dir = 'publicmodels';
+            addpath(genpath([base_dir filesep 'academic_models']));
+            addpath(genpath([base_dir filesep 'gh']));
+            addpath([base_dir filesep 'github_slx_files']);
+            addpath([base_dir filesep 'matalb_central_models']);
+            
+            addpath('')
             disp('--- Complexity Analysis --');
             ac = analyze_complexity();
             
             % Call as many experiments you want to run
-%             ac.start(analyze_complexity.EXP_EXAMPLES);
-%             ac.start(analyze_complexity.EXP_GITHUB);
+            ac.start(analyze_complexity.EXP_EXAMPLES);
+            ac.start(analyze_complexity.EXP_GITHUB);
+            ac.start(analyze_complexity.EXP_MATLAB_CENTRAL);
             ac.start(analyze_complexity.EXP_RESEARCH);
-%             ac.start(analyze_complexity.EXP_MATLAB_CENTRAL);
-            
+                        
             % Get results for all experiments
             ac.get_metric_for_all_experiments();
         end
