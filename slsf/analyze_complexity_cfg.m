@@ -60,9 +60,9 @@ classdef analyze_complexity_cfg < handle
             research_d = {'slsf_buck', 'flyback_openloop', 'forward_conv', 'forward_conv_hyst', 'fwr', 'buck_hvoltage2', 'pll'};
             research_e = {'AbstractFuelControl_M1', 'AbstractFuelControl_M2', 'AbstractFuelControl_M3'};
             
-%             obj.research = [research_a, research_b, research_c, research_d];
+            obj.research = [research_a, research_b, research_c, research_d research_e];
             
-            obj.research = research_e;
+%             obj.research = research_e;
             
             % GitHub
             
