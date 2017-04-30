@@ -46,10 +46,10 @@ classdef analyze_complexity_cfg < handle
             examples_c = {'sldemo_antiwindup', 'sldemo_pid2dof', 'sldemo_bumpless'};
             examples_d = {'aeroblk_wf_3dof', 'asbdhc2', 'asbswarm', 'aeroblk_HL20', 'asbQuatEML', 'aeroblk_indicated', 'aeroblk_six_dof',...
                 'asbGravWPrec', 'aeroblk_calibrated', 'aeroblk_self_cond_cntr',};
-            examples_e = {'sldemo_mdlref_variants_enum', 'sldemo_mdlref_bus','sldemo_mdlref_conversion','sldemo_mdlref_counter_datamngt','sldemo_mdlref_dsm','sldemo_mdlref_dsm_bot','sldemo_mdlref_dsm_bot2','sldemo_mdlref_F2C','ex_algebraic_loop'};
+            examples_e = {'sldemo_mdlref_variants_enum', 'sldemo_mdlref_bus','sldemo_mdlref_conversion','sldemo_mdlref_counter_datamngt','sldemo_mdlref_dsm','sldemo_mdlref_dsm_bot','sldemo_mdlref_dsm_bot2','sldemo_mdlref_F2C'};
 
             obj.examples = [examples_a, examples_b, examples_c, examples_d, examples_e];
-%             obj.examples = examples_d;
+%             obj.examples = examples_e;
             
             % Research
             

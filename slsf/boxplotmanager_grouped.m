@@ -95,6 +95,7 @@ classdef boxplotmanager_grouped < handle
             inc = 2;
 
             f = figure;
+            set(f,'name',my_title);
             
             box_colors = {'k', 'm', 'r', 'b', 'c', 'g', 'y'};
             
@@ -133,7 +134,7 @@ classdef boxplotmanager_grouped < handle
             xlim('auto');
             ylim('auto');
             
-            title(my_title);
+%             title(my_title);
             xlabel(x_label);
             ylabel(y_label);
         end

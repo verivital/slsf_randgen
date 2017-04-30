@@ -13,7 +13,7 @@ classdef analyze_complexity < handle
         LIBRARY_LINK_COUNT = 7;
         
         BP_LIBCOUNT_GROUPLEN = 10;  % length of group for Metric 9
-        BP_ALL_EXPERIMENTS_GROUPLEN = 14;  % length of group for those boxplots which have all experiments inside them
+        BP_ALL_EXPERIMENTS_GROUPLEN = 1;  % length of group for those boxplots which have all experiments inside them
         % Different classes of simulink models (i.e. different experiment types)
         EXP_EXAMPLES = 'example';   % Examples and demos that come with Simulink 
         EXP_GITHUB = 'github';
@@ -51,6 +51,16 @@ classdef analyze_complexity < handle
         META_NUM_COMPILE = 'compile';   % Those who compiles
         META_NUM_HIER = 'hier';
         META_BLOCK_TYPE_MAP = 'btm';
+        
+        % Correlation 
+        COR_CYCLOMATIC = 1;
+        COR_COMPILE_TIME = 2;
+        COR_BLOCKS = 3;
+        COR_CONNS = 4;
+        COR_HIER = 5;
+        COR_CRB = 6;
+        
+        NUM_CORR = 6;
         
         
     end
@@ -96,7 +106,7 @@ classdef analyze_complexity < handle
         bp_connections_depth_count; % Metric 21
         bp_connections_aggregated_count; % Metric 22
         bp_unique_block_aggregated_count; % Metric 23
-        bp_descendants_count;
+        bp_descendants_count; % Number of child-representing blocks
         
         % model classes
         model_classes;
@@ -127,6 +137,11 @@ classdef analyze_complexity < handle
         cur_exp_meta;   % Map, key is an exp_meta for the current experiment set.
         
         cfg; %  Instance of analyze_complexity_cfg class
+        
+        % Correlation
+        corr_all = [];
+        corr_curr = []; % Current
+        corr_index = 0;
     end
     
     methods
@@ -174,6 +189,7 @@ classdef analyze_complexity < handle
             
             obj.bp_algebraic_loop_count = boxplotmanager(obj.BP_ALL_EXPERIMENTS_GROUPLEN);
             obj.bp_descendants_count = boxplotmanager(obj.BP_ALL_EXPERIMENTS_GROUPLEN);
+            obj.bp_descendants_count.calc_stats = true;
             
             % Init group boxplots
             
@@ -192,6 +208,41 @@ classdef analyze_complexity < handle
             for i=1:numel(obj.cfg.scripts_to_run)
                 eval(obj.cfg.scripts_to_run{i});
             end
+        end
+        
+        function copy_data_for_corr(obj)
+%             fprintf('-=- Corr Analysis Data Collection -=-\n');
+            for i=1:obj.NUM_CORR
+%                 disp(obj.corr_curr(i))
+                if isempty(obj.corr_curr(i)) || isnan(obj.corr_curr(i))
+%                     fprintf('\t\t Data empty at index %d\n', i);
+                    return;
+                end
+            end
+            
+            obj.corr_index = obj.corr_index + 1;
+            
+            for i=1:obj.NUM_CORR
+                obj.corr_all(obj.corr_index, i) = obj.corr_curr(i);
+            end
+           
+        end
+        
+        function do_corr_analysis(obj)
+            fprintf('Total data: %d\n', obj.corr_index);
+            fprintf('-=- Checking for normality -=- \n');
+            
+            for i=1:obj.NUM_CORR
+                disp(kstest(obj.corr_all(:,i)))
+            end
+            
+            R = corrcoef(obj.corr_all)
+            
+            f = figure();
+            set(f, 'name', 'Correleation analysis');
+            plotmatrix(obj.corr_all);
+            
+            
         end
         
         function start(obj, exptype)
@@ -228,7 +279,7 @@ classdef analyze_complexity < handle
             %obj.write_excel();
             
             obj.render_all_box_plots();
-%             disp(obj.data);
+            disp(obj.data);
             
             obj.all_data{obj.exp_pointer} = obj.data;
             obj.all_exp_meta.add(obj.cur_exp_meta);
@@ -342,6 +393,10 @@ classdef analyze_complexity < handle
                 obj.blk_count = 0;
                 obj.descendants_count = 0;
                  obj.blk_count_masked = 0; % Metric 2
+                 
+                % Corr coeff
+                obj.corr_curr = zeros(1, obj.NUM_CORR);
+                obj.corr_curr(:) = NaN;
                 
                 % Metric 15
                 cs = getActiveConfigSet(s);
@@ -371,13 +426,23 @@ classdef analyze_complexity < handle
                 
                 % All blocks (including masked, hidden) in the model
                 blk_count_sldiag = mdlrefCountBlocks(s);
-                obj.bp_block_count.add(blk_count_sldiag, obj.exptype);
+                obj.bp_block_count.add(obj.blk_count, obj.exptype);
+                obj.corr_curr(obj.COR_BLOCKS) = obj.blk_count;
+                
                 
 %                 fprintf('My block count: %d; SLDIAG block count: %d\n', obj.blk_count, blk_count_sldiag);
                 assert(abs(obj.blk_count - blk_count_sldiag) < 30);
                 assert(obj.blk_count >= blk_count_sldiag);
                 
                 obj.bp_descendants_count.add(obj.descendants_count, obj.exptype);
+                obj.corr_curr(obj.COR_CRB) = obj.descendants_count;
+                
+%                 fprintf('CC: %d\n', obj.data{obj.di, obj.CYCLOMATIC});
+                if ~isempty(obj.data{obj.di, obj.CYCLOMATIC})
+                    obj.corr_curr(obj.COR_CYCLOMATIC) = obj.data{obj.di, obj.CYCLOMATIC};
+                end
+                
+                obj.copy_data_for_corr();
                 
                 close_system(s);
             end
@@ -447,7 +512,9 @@ classdef analyze_complexity < handle
             end
             for i=len:-1:startingPoint
                 fprintf('%25s | %3d\n',keyVector(sortedVector(i,1)),sortedVector(i,2));
+%                 fprintf('%s, ',keyVector(sortedVector(i,1))); 
             end
+            fprintf('\n');
         end
         
         function calculate_connections_level_wise(obj,m)
@@ -459,10 +526,11 @@ classdef analyze_complexity < handle
                 if level<=obj.max_level
                     countLevel = m.get(m.key(k)); 
                     count = count + countLevel;
-                    obj.bp_connections_depth_count.add(countLevel,num2str(level));
+%                     obj.bp_connections_depth_count.add(countLevel,num2str(level));
                 end
             end
             obj.bp_connections_aggregated_count.add(count,obj.exptype);
+            obj.corr_curr(obj.COR_CONNS) = count;
         end
         
         function obj = calculate_compile_time_metrics(obj, s)
@@ -493,6 +561,7 @@ classdef analyze_complexity < handle
                 elapsed_time = sum([sRpt.Statistics(:).WallClockTime]);
 %                 fprintf('[DEBUG] Compile time: %d \n', elapsed_time);
                 obj.bp_compiletime.add(elapsed_time, obj.exptype);
+                obj.corr_curr(obj.COR_COMPILE_TIME) = elapsed_time;
                 
                 % finding algebraic loops if the model compiles
                 aloops = Simulink.BlockDiagram.getAlgebraicLoops(s);
@@ -529,17 +598,25 @@ classdef analyze_complexity < handle
             [keyVector, sortedVector] = m.sort_by_value();
             fprintf('Metric 7: Number of Top %d blocks with their counts:\n',obj.max_unique_blocks);
             for i=m.len_keys():-1:startingPoint
-                fprintf('%25s | %3d\n',keyVector(sortedVector(i,1)),sortedVector(i,2));
+%                 fprintf('%25s | %3d\n',keyVector(sortedVector(i,1)),sortedVector(i,2));
+                fprintf('%s, ',keyVector(sortedVector(i,1)));
+                
             end
+            fprintf('\n');
         end
         
         function calculate_number_of_blocks_hierarchy(obj,m,modelCount)
             if m.len_keys() > 1
                 obj.models_having_hierarchy_count = obj.models_having_hierarchy_count + 1;
-                obj.bp_hier_depth_count.add(m.len_keys(), obj.exptype);
             else
                 obj.models_no_hierarchy_count = obj.models_no_hierarchy_count + 1;
             end
+            
+            assert(m.len_keys() >= 1);
+            
+            obj.bp_hier_depth_count.add(m.len_keys(), obj.exptype);
+            obj.corr_curr(obj.COR_HIER) = m.len_keys();
+            
             for k = 1:m.len_keys()
                 levelString = strsplit(m.key(k),'x');
                 level = str2double(levelString{2});
@@ -581,6 +658,7 @@ classdef analyze_complexity < handle
                 else
 %                     cyclomaticComplexityCount(i-1,1)=obj.data{i,4};
                     obj.bp_matlab_cyclomatic.add(obj.data{i,4}, obj.exptype);
+                    
                 end
             end
             
@@ -757,6 +835,7 @@ classdef analyze_complexity < handle
             if count >0
                 if depth <= obj.max_level
                     obj.bp_block_count_level_wise.add(count, mapKey)
+                    obj.bp_connections_depth_count.add(unique_lines,mapKey);
                 end
                 
                 obj.map.insert_or_add(mapKey, count);
@@ -866,6 +945,8 @@ classdef analyze_complexity < handle
                         
             % Get results for all experiments
             ac.get_metric_for_all_experiments();
+            
+            ac.do_corr_analysis();
         end
     end
 end

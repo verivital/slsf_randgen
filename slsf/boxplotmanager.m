@@ -8,6 +8,7 @@ classdef boxplotmanager < handle
         index = 1;
         group_len;
         plotstyle = 'traditional';
+%         plotstyle = 'compact';
         calc_stats = false;
         all_data;   % For collecting status explicitly
         my_title; % Will be populated when calling draw();
@@ -69,16 +70,19 @@ classdef boxplotmanager < handle
                 return;
             end
 
-            figure;
+            f = figure;
+            set(f,'name',my_title);
             
             if sort_groups
                 group_order =   sort(categories(categorical(cellstr(obj.group))));
-                boxplot(obj.data, obj.group, 'Colors', 'k', 'PlotStyle', obj.plotstyle, 'GroupOrder', group_order, 'Widths', 0.25); 
+                boxplot(obj.data, obj.group, 'Colors', 'k', 'PlotStyle', obj.plotstyle, 'GroupOrder', group_order, 'Widths', 0.2,...
+                    'MedianStyle', 'target'); 
             else
-                boxplot(obj.data, obj.group, 'Colors', 'k', 'PlotStyle', obj.plotstyle, 'Widths', 0.25); 
+                boxplot(obj.data, obj.group, 'Colors', 'k', 'PlotStyle', obj.plotstyle, 'Widths', 0.2,...
+                    'MedianStyle', 'target'); 
             end
             
-            title(my_title);
+%             title(my_title);
             xlabel(x_label);
             ylabel(y_label);
         end
@@ -89,7 +93,9 @@ classdef boxplotmanager < handle
                 k = obj.all_data.key(i);
                 d = obj.all_data.get(k);
                 d = cell2mat(d.data);
-                fprintf('\t\t %s | \t\t Min: %.2f | \t\t Max: %.2f | \t\t Med: %.2f \n',k, min(d), max(d), median(d));
+%                 fprintf('\t\t %s | \t\t Min: %.2f | \t\t Max: %.2f | \t\t Med: %.2f \n',k, min(d), max(d), median(d));
+                fprintf('\t\t %s | \t\t \\idt{%d}{%d}{%d}{%d}{%d} \n',k, min(d), max(d), round(median(d)), round(mean(d)), round(std(d)));
+                
             end
         end
         
