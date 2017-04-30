@@ -318,8 +318,6 @@ classdef analyze_complexity < handle
             obj.bp_lib_count.init_sg(obj.exptype);  % Max 10 character is allowed as group name
 %             obj.bp_lib_count.plotstyle = 'compact';
             
-            obj.bp_lib_count.plotstyle = 'compact';
-            
             % Metric 21
             obj.bp_connections_depth_count.init_sg(obj.exptype);
             
