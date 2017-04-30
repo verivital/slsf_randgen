@@ -97,6 +97,7 @@ classdef analyze_complexity < handle
         bp_connections_aggregated_count; % Metric 22
         bp_unique_block_aggregated_count; % Metric 23
         bp_descendants_count;
+        bp_simulation_time; % Metric 17
         
         % model classes
         model_classes;
@@ -174,6 +175,7 @@ classdef analyze_complexity < handle
             
             obj.bp_algebraic_loop_count = boxplotmanager(obj.BP_ALL_EXPERIMENTS_GROUPLEN);
             obj.bp_descendants_count = boxplotmanager(obj.BP_ALL_EXPERIMENTS_GROUPLEN);
+            obj.bp_simulation_time = boxplotmanager(obj.BP_ALL_EXPERIMENTS_GROUPLEN);
             
             % Init group boxplots
             
@@ -248,6 +250,7 @@ classdef analyze_complexity < handle
             obj.bp_unique_block_aggregated_count.draw('Aggregated Unique Block Count #23', 'Model classes', 'Blocks count');
             obj.bp_algebraic_loop_count.draw('Algebraic Loops Count', 'Model classes', 'Loop Count');
             obj.bp_descendants_count.draw('Child-representing blocks count (Aggregated)', 'Model classes', 'Blocks count');
+            obj.bp_simulation_time.draw('Model Simulation Time(Aggregated) #17', 'Model classes', 'Simulation Time');
             
             % Group draw
             obj.bp_block_count_level_wise.group_draw('Block Count (level wise)', 'Hierarchy levels', 'Blocks count', true);
@@ -659,7 +662,21 @@ classdef analyze_complexity < handle
         
         function obtain_hardware_type_metric(obj, cs) % cs = configuarationSettings of a model
             obj.targetModelMap.inc(cs.get_param('TargetHWDeviceType'));
-            
+            startTime = cs.get_param('StartTime');
+            stopTime = cs.get_param('StopTime');
+            try
+                startTime = str2double(startTime);
+                stopTime = str2double(stopTime);
+                if startTime > 0
+                    disp('DEBUG START TIME FOUND GREATER THAN 0.0');
+                    disp(startTime);
+                end
+                obj.bp_simulation_time.add(stopTime, obj.exptype);
+            catch ME
+                disp('DEBUG Exception occured while getting Simulation Time Metric 17');
+                disp(ME);
+                rethrow(ME);
+            end
 %             if contains(cs.get_param('TargetHWDeviceType'),'Generic')
 %                 obj.model_uses_grt_count = obj.model_uses_grt_count + 1;
 %             else
