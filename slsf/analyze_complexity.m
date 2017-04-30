@@ -318,20 +318,11 @@ classdef analyze_complexity < handle
             obj.bp_lib_count.init_sg(obj.exptype);  % Max 10 character is allowed as group name
 %             obj.bp_lib_count.plotstyle = 'compact';
             
-            % Metric 11
-            obj.bp_algebraic_loop_count = boxplotmanager();
-            
             obj.bp_lib_count.plotstyle = 'compact';
             
             % Metric 21
             obj.bp_connections_depth_count.init_sg(obj.exptype);
             
-            %Metric 22
-            obj.bp_connections_aggregated_count = boxplotmanager();
-            
-            %Metric 23
-            obj.bp_unique_block_aggregated_count = boxplotmanager();
-           
             % Metric 8
             obj.models_having_hierarchy_count = 0;
             obj.models_no_hierarchy_count = 0;
@@ -894,7 +885,7 @@ classdef analyze_complexity < handle
             ac.start(analyze_complexity.EXP_EXAMPLES);
             %ac.start(analyze_complexity.EXP_GITHUB);
             %ac.start(analyze_complexity.EXP_MATLAB_CENTRAL);
-            %ac.start(analyze_complexity.EXP_RESEARCH);
+            ac.start(analyze_complexity.EXP_RESEARCH);
                         
             % Get results for all experiments
             ac.get_metric_for_all_experiments();
