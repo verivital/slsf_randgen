@@ -431,7 +431,7 @@ classdef analyze_complexity < handle
 %             obj.bp_SFunctions.draw('Metric 20 (Number of S-Functions)', 'Hierarchy Levels', 'Block Count');
             
             % Algebraic Loops Count( Metric 11)
-            obj.bp_algebraic_loop_count.draw(['Metric 11 (Algebraic Loops Count) in ' obj.model_classes.get(obj.exptype)], obj.model_classes.get(obj.exptype), 'Loop Count')
+%             obj.bp_algebraic_loop_count.draw(['Metric 11 (Algebraic Loops Count) in ' obj.model_classes.get(obj.exptype)], obj.model_classes.get(obj.exptype), 'Loop Count')
 
             
             % Hierarchy depth count (Metric 4)
@@ -442,7 +442,7 @@ classdef analyze_complexity < handle
 %              pause;
             
             % Unique Blocks Aggregated ( Metric 23)
-            obj.bp_unique_block_aggregated_count.draw(['Metric 23 (Aggregated Unique Block Count) in ' obj.model_classes.get(obj.exptype)], obj.model_classes.get(obj.exptype), 'Block Count')
+%             obj.bp_unique_block_aggregated_count.draw(['Metric 23 (Aggregated Unique Block Count) in ' obj.model_classes.get(obj.exptype)], obj.model_classes.get(obj.exptype), 'Block Count')
             
             % Table showing Models having hierarchy (Metric 8)
 %             disp(['Metric 8 (Models having Hierarchy Count) in ' obj.model_classes.get(obj.exptype)]);
