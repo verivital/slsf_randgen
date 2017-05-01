@@ -12,13 +12,14 @@ classdef analyze_complexity < handle
         SUBSYSTEM_DEPTH_AGGR = 6;
         LIBRARY_LINK_COUNT = 7;
         
-        BP_LIBCOUNT_GROUPLEN = 10;  % length of group for Metric 9
-        BP_ALL_EXPERIMENTS_GROUPLEN = 1;  % length of group for those boxplots which have all experiments inside them
+        BP_LIBCOUNT_GROUPLEN = 7;  % length of group for Metric 9
+        BP_ALL_EXPERIMENTS_GROUPLEN = 2;  % length of group for those boxplots which have all experiments inside them
         % Different classes of simulink models (i.e. different experiment types)
-        EXP_EXAMPLES = 'example';   % Examples and demos that come with Simulink 
-        EXP_GITHUB = 'github';
-        EXP_MATLAB_CENTRAL = 'matlabcentral';
-        EXP_RESEARCH = 'others';  % Academic and industrial research
+        EXP_EXAMPLES = 'ex';   % Examples and demos that come with Simulink 
+        EXP_GITHUB = 'g1';
+        EXP_GITHUB_COMPLEX = 'g2'
+        EXP_MATLAB_CENTRAL = 'mc';
+        EXP_RESEARCH = 'ot';  % Academic and industrial research
         EXP_CYFUZZ = 'cyfuzz';
         
         % Metric IDS
@@ -61,6 +62,8 @@ classdef analyze_complexity < handle
         COR_CRB = 6;
         
         NUM_CORR = 6;
+        
+        
         
         
     end
@@ -142,6 +145,9 @@ classdef analyze_complexity < handle
         corr_all = [];
         corr_curr = []; % Current
         corr_index = 0;
+        
+        github_special;
+        current_sys;    % Name of the current model being analyzed
     end
     
     methods
@@ -159,10 +165,11 @@ classdef analyze_complexity < handle
         end
         
         function  obj = analyze_complexity()
+            obj.github_special = mycell();
             obj.cfg = analyze_complexity_cfg();
             obj.blocktype_library_map = util.getLibOfAllBlocks();
             obj.model_classes = mymap(obj.EXP_EXAMPLES, 'Examples', obj.EXP_GITHUB, 'GitHub', obj.EXP_RESEARCH, 'Others',...
-                obj.EXP_CYFUZZ, 'CyFuzz', obj.EXP_MATLAB_CENTRAL, 'MatlabCentral' );
+                obj.EXP_CYFUZZ, 'CyFuzz', obj.EXP_MATLAB_CENTRAL, 'MatlabCentral', obj.EXP_GITHUB_COMPLEX, 'HitHub' );
             obj.exp_names = mycell();
             
             % Init those data structures which carries data for all
@@ -216,7 +223,8 @@ classdef analyze_complexity < handle
 %                 disp(obj.corr_curr(i))
                 if isempty(obj.corr_curr(i)) || isnan(obj.corr_curr(i))
 %                     fprintf('\t\t Data empty at index %d\n', i);
-                    return;
+%                     return;
+                    obj.corr_curr(i) = NaN;
                 end
             end
             
@@ -233,10 +241,13 @@ classdef analyze_complexity < handle
             fprintf('-=- Checking for normality -=- \n');
             
             for i=1:obj.NUM_CORR
-                disp(kstest(obj.corr_all(:,i)))
+                single_metric = obj.corr_all(:,i);
+                disp(kstest((single_metric - nanmean(single_metric))/nanstd(single_metric)))
             end
             
-            R = corrcoef(obj.corr_all)
+            [Pm, Pp] = corrcoef(obj.corr_all, 'rows', 'pairwise')
+            [Sm, Sp] = corr(obj.corr_all, 'type', 'Spearman', 'rows', 'pairwise')
+            
             
             f = figure();
             set(f, 'name', 'Correleation analysis');
@@ -268,6 +279,9 @@ classdef analyze_complexity < handle
                     obj.analyze_all_models_from_a_class();
                 case analyze_complexity.EXP_RESEARCH
                     obj.examples = obj.cfg.research;
+                    obj.analyze_all_models_from_a_class();
+                case analyze_complexity.EXP_GITHUB_COMPLEX
+                    obj.examples = obj.cfg.github_complex;
                     obj.analyze_all_models_from_a_class();
                 case analyze_complexity.EXP_CYFUZZ
                     obj.examples = obj.cfg.cyfuzz;
@@ -380,6 +394,7 @@ classdef analyze_complexity < handle
                 obj.cur_exp_meta.inc(analyze_complexity.META_NUM_MODELS);
                 s = obj.examples{i};
                 fprintf('~~~~~~~~~~~~~~ %s ~~~~~~~~~~~~~~ \n', s);
+                obj.current_sys = s;
                 open_system(s);
                 
                 
@@ -616,6 +631,10 @@ classdef analyze_complexity < handle
             
             obj.bp_hier_depth_count.add(m.len_keys(), obj.exptype);
             obj.corr_curr(obj.COR_HIER) = m.len_keys();
+            
+            if strcmp(obj.exptype, obj.EXP_GITHUB) && m.len_keys() > 2
+                obj.github_special.add(obj.current_sys);
+            end
             
             for k = 1:m.len_keys()
                 levelString = strsplit(m.key(k),'x');
@@ -940,6 +959,7 @@ classdef analyze_complexity < handle
             % Call as many experiments you want to run
             ac.start(analyze_complexity.EXP_EXAMPLES);
             ac.start(analyze_complexity.EXP_GITHUB);
+            ac.start(analyze_complexity.EXP_GITHUB_COMPLEX);
             ac.start(analyze_complexity.EXP_MATLAB_CENTRAL);
             ac.start(analyze_complexity.EXP_RESEARCH);
                         
@@ -947,6 +967,9 @@ classdef analyze_complexity < handle
             ac.get_metric_for_all_experiments();
             
             ac.do_corr_analysis();
+            
+            fprintf('Special Github models');
+            ac.github_special.print_all([]);
         end
     end
 end

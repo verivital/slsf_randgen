@@ -92,12 +92,12 @@ classdef boxplotmanager_grouped < handle
             
             width = 0.20;
             x_diff = 0.4;
-            inc = 2;
+            inc = 2.5;
 
             f = figure;
             set(f,'name',my_title);
             
-            box_colors = {'k', 'm', 'r', 'b', 'c', 'g', 'y'};
+            box_colors = {'k', 'm', 'r', 'b', [0 .5 0], 'c', 'y'};
             
             for i=1:obj.subgroup_data.len
                 sg_name = obj.subgroup_names.get(i);

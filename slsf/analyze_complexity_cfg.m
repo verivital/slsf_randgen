@@ -18,6 +18,8 @@ classdef analyze_complexity_cfg < handle
 %         examples = {'untitled1'};
         github = {'aeroblk_self_cond_cntr'};
         
+        github_complex = {};
+        
         matlab_central = { 'ACTimeOvercurrentRelayBlock',  'Engine_Testrig',  'Fuel_Eco_TEST',  'HPW',  'HVDC_system',  'LF_AC29bus_HVDCdemo_V2_1',  'Link_A',  'Link_B',  'MAXPID_modelisation_multi_physique_MATLAB_2015a_Ivan_Liebgott',  'UPFC_1',  'Vehicle_Dynamics_Testrig',  'complex_multiply_example',  'downsample_upsample_example',  'enabled_subsystem_example',  'fir_filter_example',  'pvwindupfc11',  'realtime_pacer_lib',  'stateflow_example',  'sync_subsystem_example',  'view_wave_example',  'BB2',  'DMM',  'HVDC',  'MA_Model',  'MinorStepLib',  'OCR',  'PDQuadrotor',  'SimpleBounce',  'VFT',  'VU_NXTWay',  'VU_NXTWay_Simple',  'VU_lineFollow',  'VU_lineFollow1',  'VU_lineFollow1b',  'VU_lineFollow2',  'VU_motorSpdCtrl',  'VU_testBtTxRx',  'VU_testSoundTone1',  'VU_testSoundTone2',  'VU_testSoundTone3',  'VU_testUsbTxRx',  'Vehicle_Dynamics_Testrig',  'Wind_PMSG',  'lego_nxt_lib',  'lorenz3d',  'm3dscope_new',  'm3dscope_old',  'matrixFtse',  'microturbine_rectifierconverter',  'my_model',  'realtime_pacer_example',  'rev_pow_ckt_new4'  };
         
         research = {};
@@ -73,14 +75,20 @@ classdef analyze_complexity_cfg < handle
             gh_d = { 'ATWS',  'ControlAllocator',  'DCMotor',  'DEVICE1',  'HEV',  'LQR',  'OCA_2_Prop',  'OCA_SUB',  'OCA_SUB_modified',  'Orientation',  'PID',  'PR9',  'QTM2SI',  'Transmitter',  'XC',  'aa',  'analogicalgates',  'bianpinx1',  'danxiangjiangya',  'danxiangtiaoya',  'demostration09',  'demostration1',  'enginecontroller',  'feedforward1',  'feedforward2',  'jieyue',  'measurement',  'modello',  'motorcontroller',  'nibian',  'pdcontrol',  'picpicpic',  'pidmodel',  'powercontroller',  'prog2',  'proj',  'quadtestmodel',  'rasberry',  'rester',  'roblocks',  'robotjointmodel',  'shengyazhanbo',  'simone',  'simulation',  'test',  'testmodel',  'transmissioncontroller',  'u2pwm',  'untitled1_slx',  'vehiclecontroller',  'zh2fsk',  'zhengliu',  'Ackermann',  'Arrays1',  'Arrays2',  'Arrays3_0',  'Arrays3_1',  'Counter_with_prop',  'CruiseControl3',  'Early1',  'Events1',  'Events2',  'Events3',  'Events3Out',  'Events4',  'Events5',  'Events6',  'Events7',  'Flowchart1',  'Flowchart10',  'Flowchart2',  'Flowchart3',  'Flowchart4',  'Flowchart5',  'Flowchart6',  'Flowchart7',  'Flowchart8',  'Flowchart9',  'GraphFun1',  'Hierarchy1',  'Hierarchy2',  'Hierarchy3',  'Hierarchy4',  'History1',  'Iek1',  'Iek2',  'Inner1',  'Inner2',  'Inner3',  'Inner4',  'Junctions1',  'Junctions2',  'Junctions3',  'Junctions4',  'Junctions5',  'Junctions6',  'Junctions7',  'Junctions8',  'Junctions9',  'Loops1',  'Loops10',  'Loops2',  'Loops3',  'Loops4',  'Loops5',  'Loops6',  'Loops7',  'Loops8',  'Loops9',  'Nonterm1',  'On1',  'Outer1',  'Parallel1',  'Parallel2',  'Parallel3',  'Parallel4',  'Parallel5',  'ROSACE_VA_control',  'ROSACE_VA_control_simu',  'SetReset',  'SetResetOut',  'SetResetWait',  'SetResetWaitOut',  'SfSecurity',  'Single1',  'Stopwatch1',  'Stopwatch2',  'Subsys1',  'Super1',  'Super10',  'Super11',  'Super12',  'Super13',  'Super2',  'Super2Out',  'Super3',  'Super4',  'Super5',  'Super6',  'Super7',  'Super8',  'Super9',  'Temporal1',  'Twochart1'  };
 
 %             obj.github = gh_d;
-            obj.github = [gh_a, gh_b, gh_c, gh_d];
+%             obj.github = [gh_a, gh_b, gh_c, gh_d];
+
+            obj.github = gh_d;
+            obj.github_complex = [gh_a, gh_b, gh_c];
+
+%            obj.github = gh_a;
+%            obj.github_complex = gh_b;
         end
     end
     
     methods(Static)
         
         function ret = get_models(loc)
-            base_dir = 'stories';
+            base_dir = 'publicmodels';
             full_loc = [base_dir filesep loc];
             
             all_files = mycell();
@@ -127,6 +135,34 @@ classdef analyze_complexity_cfg < handle
             strbuf = [strbuf ' };']
             
             fprintf('Found %d children \n', children.len_keys());
+        end
+        
+        
+        function parse_github_repos()
+            gh_data_file = 'github_data';
+            load(gh_data_file);
+            global github_repos;
+            
+            target_dir = ['publicmodels' filesep 'gms' filesep];
+            
+            num_reps = 0;
+            
+            for i=1:numel(github_repos)
+                
+                c = github_repos{i};
+                
+                if isempty(c)
+                    continue;
+                end
+                
+                c = strip(c);
+                
+                num_reps = num_reps + 1;
+                
+                repo_parts = strsplit(c, '/');
+                
+                system(['git clone ' c ' ' target_dir repo_parts{end}])
+            end
         end
         
     end
