@@ -660,11 +660,13 @@ classdef analyze_complexity < handle
         end
         
         function obtain_simulation_time_metric(obj, cs) % cs = configuarationSettings of a model
+            startTime = cs.get_param('StartTime');
             stopTime = cs.get_param('StopTime');
             try
+                startTime = eval(startTime);
                 stopTime = eval(stopTime);
-                if stopTime ~= Inf || stopTime ~= -Inf
-                    obj.bp_simulation_time.add(stopTime, obj.exptype);
+                if stopTime ~= Inf && stopTime ~= -Inf && startTime ~= Inf && startTime ~= -Inf
+                    obj.bp_simulation_time.add((stopTime-startTime), obj.exptype);
                 else
                     obj.simulation_time_nonNumericMap.inc('1');
                 end
