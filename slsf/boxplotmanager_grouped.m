@@ -99,6 +99,8 @@ classdef boxplotmanager_grouped < handle
             
             box_colors = {'k', 'm', 'r', 'b', [0 .5 0], 'c', 'y'};
             
+            whisker = 70;
+            
             for i=1:obj.subgroup_data.len
                 sg_name = obj.subgroup_names.get(i);
                 fprintf('\t -=-=-=-=-=-= Subgroup: %s -=-=-=-=-\n', sg_name);
@@ -122,7 +124,7 @@ classdef boxplotmanager_grouped < handle
                 
                 boxplot(sg_data, sg_group, 'Colors', box_colors{i}, 'PlotStyle', obj.plotstyle, 'Positions', position,...
                     'GroupOrder', group_order, 'Widths', width, 'Symbol', [box_colors{i} '+'], 'LabelOrientation', obj.label_orientation,...
-                    'MedianStyle', 'target');
+                    'MedianStyle', 'target', 'whisker', whisker);
                 hold on;
 %                 set(gca,'XTickLabel',{' '})  % Erase xlabels   
                 
@@ -137,6 +139,7 @@ classdef boxplotmanager_grouped < handle
 %             title(my_title);
             xlabel(x_label);
             ylabel(y_label);
+            set(gca, 'YScale', 'log')
         end
         
 %         function draw(obj, my_title, x_label, y_label, sort_groups)

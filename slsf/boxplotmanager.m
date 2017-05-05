@@ -73,18 +73,21 @@ classdef boxplotmanager < handle
             f = figure;
             set(f,'name',my_title);
             
+            whisker = 70;
+            
             if sort_groups
                 group_order =   sort(categories(categorical(cellstr(obj.group))));
                 boxplot(obj.data, obj.group, 'Colors', 'k', 'PlotStyle', obj.plotstyle, 'GroupOrder', group_order, 'Widths', 0.2,...
-                    'MedianStyle', 'target'); 
+                    'MedianStyle', 'target', 'whisker', whisker); 
             else
                 boxplot(obj.data, obj.group, 'Colors', 'k', 'PlotStyle', obj.plotstyle, 'Widths', 0.2,...
-                    'MedianStyle', 'target'); 
+                    'MedianStyle', 'target', 'whisker', whisker); 
             end
             
 %             title(my_title);
             xlabel(x_label);
             ylabel(y_label);
+            set(gca, 'YScale', 'log');
         end
         
         function get_stat(obj)

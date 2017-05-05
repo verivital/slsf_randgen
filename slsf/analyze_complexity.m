@@ -15,12 +15,14 @@ classdef analyze_complexity < handle
         BP_LIBCOUNT_GROUPLEN = 7;  % length of group for Metric 9
         BP_ALL_EXPERIMENTS_GROUPLEN = 2;  % length of group for those boxplots which have all experiments inside them
         % Different classes of simulink models (i.e. different experiment types)
-        EXP_EXAMPLES = 'ex';   % Examples and demos that come with Simulink 
+        EXP_EXAMPLES = 'e';   % Examples and demos that come with Simulink 
         EXP_GITHUB = 'g1';
         EXP_GITHUB_COMPLEX = 'g2'
-        EXP_MATLAB_CENTRAL = 'mc';
-        EXP_RESEARCH = 'ot';  % Academic and industrial research
+        EXP_MATLAB_CENTRAL = 'm';
+        EXP_RESEARCH = 'o';  % Academic and industrial research
         EXP_CYFUZZ = 'cyfuzz';
+        EXP_SIMPLE = 's';
+        EXP_COMPLEX = 'c';
         
         % Metric IDS
         
@@ -64,8 +66,6 @@ classdef analyze_complexity < handle
         NUM_CORR = 6;
         
         
-        
-        
     end
     
     properties
@@ -97,6 +97,7 @@ classdef analyze_complexity < handle
         boxPlotBlockCountHierarchyWise;
         boxPlotChildRepresentingBlockCount;
         
+%         bp_scc; % Strongly connected components
         bp_SFunctions;
         bp_lib_count;
         bp_compiletime;
@@ -121,6 +122,7 @@ classdef analyze_complexity < handle
         blk_count;  % Aggregated block count excluding hidden and masked blocks
         blk_count_masked;   % Aggregated block count including masked and hidden .. using sldiagnostic API
         descendants_count;  % Count all children and grandchildren for the top model - aggregated result.
+%         scc_count;
         
         max_unique_blocks = 10;
         max_hardware_types = 5;
@@ -143,11 +145,16 @@ classdef analyze_complexity < handle
         
         % Correlation
         corr_all = [];
+        corr_all_meta; % MyCell: Name and model class 
         corr_curr = []; % Current
         corr_index = 0;
         
         github_special;
         current_sys;    % Name of the current model being analyzed
+        
+        % Other Misc.
+        num_1000_blocks = 0;
+        explored_models;    % To prevent accidental calculation of same model twice.
     end
     
     methods
@@ -169,7 +176,8 @@ classdef analyze_complexity < handle
             obj.cfg = analyze_complexity_cfg();
             obj.blocktype_library_map = util.getLibOfAllBlocks();
             obj.model_classes = mymap(obj.EXP_EXAMPLES, 'Examples', obj.EXP_GITHUB, 'GitHub', obj.EXP_RESEARCH, 'Others',...
-                obj.EXP_CYFUZZ, 'CyFuzz', obj.EXP_MATLAB_CENTRAL, 'MatlabCentral', obj.EXP_GITHUB_COMPLEX, 'HitHub' );
+                obj.EXP_CYFUZZ, 'CyFuzz', obj.EXP_MATLAB_CENTRAL, 'MatlabCentral', obj.EXP_GITHUB_COMPLEX, 'HitHub',...
+                obj.EXP_SIMPLE, 'Simple', obj.EXP_COMPLEX, 'Complex');
             obj.exp_names = mycell();
             
             % Init those data structures which carries data for all
@@ -187,6 +195,9 @@ classdef analyze_complexity < handle
             
             obj.bp_matlab_cyclomatic = boxplotmanager(obj.BP_ALL_EXPERIMENTS_GROUPLEN);
             obj.bp_matlab_cyclomatic.calc_stats = true;
+            
+%             obj.bp_scc = boxplotmanager(obj.BP_ALL_EXPERIMENTS_GROUPLEN);
+%             obj.bp_scc.calc_stats = true;
             
             obj.bp_connections_aggregated_count = boxplotmanager(obj.BP_ALL_EXPERIMENTS_GROUPLEN); %Metric 22
             obj.bp_connections_aggregated_count.calc_stats = true;
@@ -210,6 +221,12 @@ classdef analyze_complexity < handle
             % meta
             obj.all_exp_meta = mycell();
             
+            % Corr
+            obj.corr_all_meta = mycell();
+            
+            % Misc.
+            obj.explored_models = mymap();
+            
             % Run those scripts which are required by the models in order
             % to compile them
             for i=1:numel(obj.cfg.scripts_to_run)
@@ -219,11 +236,15 @@ classdef analyze_complexity < handle
         
         function copy_data_for_corr(obj)
 %             fprintf('-=- Corr Analysis Data Collection -=-\n');
+            if strcmp(obj.exptype, obj.EXP_SIMPLE)
+                return;
+            end
+            
             for i=1:obj.NUM_CORR
 %                 disp(obj.corr_curr(i))
                 if isempty(obj.corr_curr(i)) || isnan(obj.corr_curr(i))
 %                     fprintf('\t\t Data empty at index %d\n', i);
-%                     return;
+                    return;
                     obj.corr_curr(i) = NaN;
                 end
             end
@@ -233,6 +254,8 @@ classdef analyze_complexity < handle
             for i=1:obj.NUM_CORR
                 obj.corr_all(obj.corr_index, i) = obj.corr_curr(i);
             end
+            
+            obj.corr_all_meta.add([obj.exptype '; ' obj.current_sys]);
            
         end
         
@@ -242,7 +265,8 @@ classdef analyze_complexity < handle
             
             for i=1:obj.NUM_CORR
                 single_metric = obj.corr_all(:,i);
-                disp(kstest((single_metric - nanmean(single_metric))/nanstd(single_metric)))
+                normalized_metric = (single_metric - nanmean(single_metric))/nanstd(single_metric) ;
+                disp(kstest( normalized_metric ));
             end
             
             [Pm, Pp] = corrcoef(obj.corr_all, 'rows', 'pairwise')
@@ -286,6 +310,12 @@ classdef analyze_complexity < handle
                 case analyze_complexity.EXP_CYFUZZ
                     obj.examples = obj.cfg.cyfuzz;
                     obj.analyze_all_models_from_a_class();
+                case analyze_complexity.EXP_SIMPLE
+                    obj.examples = obj.cfg.simple;
+                    obj.analyze_all_models_from_a_class();
+                case analyze_complexity.EXP_COMPLEX
+                    obj.examples = obj.cfg.complex;
+                    obj.analyze_all_models_from_a_class();
                 otherwise
                     error('Invalid Argument');
             end
@@ -307,6 +337,7 @@ classdef analyze_complexity < handle
             obj.bp_child_model_reuse.draw('Child Model Reuse #1', 'Model Classes', 'Reuse rate (%)');
             obj.bp_compiletime.draw('Compile Time #12', 'Model Classes', 'Compilation time (sec)');
             obj.bp_block_count.draw('Block Count Aggregated #2', 'Model Classes', 'Blocks count');
+%             obj.bp_scc.draw('SCC', 'Model Classes', 'SCC count');
             obj.bp_hier_depth_count.draw('Maximum Hierarchy Depth #4', 'Model Classes', 'Hierarchy depth');
             obj.bp_matlab_cyclomatic.draw('MathWorks Cyclomatic Complexity', 'Model classes', 'Complexity');
             obj.bp_connections_aggregated_count.draw('Aggregated Connections Count #22', 'Model classes', 'Connections Count');
@@ -322,6 +353,7 @@ classdef analyze_complexity < handle
             
             obj.bp_compiletime.get_stat();
             obj.bp_block_count.get_stat();
+%             obj.bp_scc.get_stat();
             obj.bp_hier_depth_count.get_stat();
             obj.bp_matlab_cyclomatic.get_stat();
             obj.bp_connections_aggregated_count.get_stat();
@@ -394,6 +426,13 @@ classdef analyze_complexity < handle
                 obj.cur_exp_meta.inc(analyze_complexity.META_NUM_MODELS);
                 s = obj.examples{i};
                 fprintf('~~~~~~~~~~~~~~ %s ~~~~~~~~~~~~~~ \n', s);
+                
+                if obj.explored_models.contains(s)
+                    error('Duplicate model');
+                end
+                
+                obj.explored_models.put(s, 1);
+                
                 obj.current_sys = s;
                 open_system(s);
                 
@@ -406,6 +445,7 @@ classdef analyze_complexity < handle
                 obj.connectionsLevelMap = mymap();
                 obj.libcount_single_model = mymap();
                 obj.blk_count = 0;
+%                 obj.scc_count = 0;
                 obj.descendants_count = 0;
                  obj.blk_count_masked = 0; % Metric 2
                  
@@ -444,6 +484,13 @@ classdef analyze_complexity < handle
                 obj.bp_block_count.add(obj.blk_count, obj.exptype);
                 obj.corr_curr(obj.COR_BLOCKS) = obj.blk_count;
                 
+                if obj.blk_count > 1000
+                    obj.num_1000_blocks = obj.num_1000_blocks + 1;
+                end
+                
+                % SCC
+%                 obj.bp_scc.add(obj.scc_count, obj.exptype);
+                
                 
 %                 fprintf('My block count: %d; SLDIAG block count: %d\n', obj.blk_count, blk_count_sldiag);
                 assert(abs(obj.blk_count - blk_count_sldiag) < 30);
@@ -459,7 +506,7 @@ classdef analyze_complexity < handle
                 
                 obj.copy_data_for_corr();
                 
-                close_system(s);
+                close_system(s, 0);
             end
         end
         
@@ -776,9 +823,13 @@ classdef analyze_complexity < handle
             
             [blockCount,~] =size(all_blocks);
             
+            slb = slblocks_light(0);
+            
             %skip the root model which always comes as the first model
             for i=1:blockCount
                 currentBlock = all_blocks(i);
+%                 get_param(currentBlock, 'handle')
+                
                 if ~ strcmp(currentBlock, sys) 
                     blockType = get_param(currentBlock, 'blocktype');
                     obj.blockTypeMap.inc(blockType{1,1});
@@ -819,10 +870,19 @@ classdef analyze_complexity < handle
                         % S-Function found
                         count_sfunctions = count_sfunctions + 1;
                     end
+                    
                     count=count+1;
                     obj.blk_count = obj.blk_count + 1;
+                    
+                    slb.process_new_block(currentBlock);
+                    
                 end
             end
+            
+%             fprintf('Get SCC for %s\n', char(sys));
+%             con_com = simulator.get_connected_components(slb);
+%             fprintf('[ConComp] Got %d connected comps\n', con_com.len);
+%             obj.scc_count = obj.scc_count + con_com.len;
             
             mapKey = int2str(depth);
             
@@ -950,7 +1010,8 @@ classdef analyze_complexity < handle
             addpath(genpath([base_dir filesep 'academic_models']));
             addpath(genpath([base_dir filesep 'gh']));
             addpath([base_dir filesep 'github_slx_files']);
-            addpath([base_dir filesep 'matalb_central_models']);
+%             addpath([base_dir filesep 'matalb_central_models']);
+            addpath(genpath([base_dir filesep 'shafiulmc']));
             
             addpath('')
             disp('--- Complexity Analysis --');
@@ -958,18 +1019,25 @@ classdef analyze_complexity < handle
             
             % Call as many experiments you want to run
             ac.start(analyze_complexity.EXP_EXAMPLES);
-            ac.start(analyze_complexity.EXP_GITHUB);
-            ac.start(analyze_complexity.EXP_GITHUB_COMPLEX);
-            ac.start(analyze_complexity.EXP_MATLAB_CENTRAL);
+            ac.start(analyze_complexity.EXP_SIMPLE);
+            ac.start(analyze_complexity.EXP_COMPLEX);
             ac.start(analyze_complexity.EXP_RESEARCH);
+            
+            %%%% OLD EXPERIMENTS %%%
+            
+%             ac.start(analyze_complexity.EXP_GITHUB);
+%             ac.start(analyze_complexity.EXP_GITHUB_COMPLEX);
+%             ac.start(analyze_complexity.EXP_MATLAB_CENTRAL);
+
                         
             % Get results for all experiments
+            
             ac.get_metric_for_all_experiments();
             
             ac.do_corr_analysis();
             
-            fprintf('Special Github models');
-            ac.github_special.print_all([]);
+%             fprintf('Special Github models');
+%             ac.github_special.print_all([]);
         end
     end
 end
