@@ -77,6 +77,7 @@ classdef analyze_complexity < handle
         childModelPerLevelMap;
         connectionsLevelMap;
         targetModelMap; % Metric 15
+        simulation_time_nonNumericMap; % Metric 17
         
         % global vectors storing data for box plot for displaying some
         % metrics that need to be calculated for all models in a list
@@ -97,6 +98,7 @@ classdef analyze_complexity < handle
         bp_connections_aggregated_count; % Metric 22
         bp_unique_block_aggregated_count; % Metric 23
         bp_descendants_count;
+        bp_simulation_time; % Metric 17
         
         % model classes
         model_classes;
@@ -146,6 +148,7 @@ classdef analyze_complexity < handle
         function  obj = analyze_complexity()
             obj.cfg = analyze_complexity_cfg();
             obj.blocktype_library_map = util.getLibOfAllBlocks();
+            obj.simulation_time_nonNumericMap = mymap();
             obj.model_classes = mymap(obj.EXP_EXAMPLES, 'Examples', obj.EXP_GITHUB, 'GitHub', obj.EXP_RESEARCH, 'Others',...
                 obj.EXP_CYFUZZ, 'CyFuzz', obj.EXP_MATLAB_CENTRAL, 'MatlabCentral' );
             obj.exp_names = mycell();
@@ -174,6 +177,7 @@ classdef analyze_complexity < handle
             
             obj.bp_algebraic_loop_count = boxplotmanager(obj.BP_ALL_EXPERIMENTS_GROUPLEN);
             obj.bp_descendants_count = boxplotmanager(obj.BP_ALL_EXPERIMENTS_GROUPLEN);
+            obj.bp_simulation_time = boxplotmanager(obj.BP_ALL_EXPERIMENTS_GROUPLEN);
             
             % Init group boxplots
             
@@ -248,6 +252,7 @@ classdef analyze_complexity < handle
             obj.bp_unique_block_aggregated_count.draw('Aggregated Unique Block Count #23', 'Model classes', 'Blocks count');
             obj.bp_algebraic_loop_count.draw('Algebraic Loops Count', 'Model classes', 'Loop Count');
             obj.bp_descendants_count.draw('Child-representing blocks count (Aggregated)', 'Model classes', 'Blocks count');
+            obj.bp_simulation_time.draw('Model Simulation Time(Aggregated) #17', 'Model classes', 'Simulation Time');
             
             % Group draw
             obj.bp_block_count_level_wise.group_draw('Block Count (level wise)', 'Hierarchy levels', 'Blocks count', true);
@@ -263,7 +268,7 @@ classdef analyze_complexity < handle
             obj.bp_unique_block_aggregated_count.get_stat();
             obj.bp_descendants_count.get_stat();
            
-            
+            totalModelsCount = 0.0;
             
             % All other
             
@@ -271,14 +276,21 @@ classdef analyze_complexity < handle
             
             for i = 1:obj.exp_names.len
                 c = obj.exp_names.get(i);
+                
                 fprintf('\t*** %s ***\n', c);
                 
                 mt = obj.all_exp_meta.get(i);
+                totalModelsCount = totalModelsCount + mt.data.total;
                 fprintf('\t\tTotal: %d; \t\t Compiled: %d; \t\tHier: %d;\n',...
                     mt.get(obj.META_NUM_MODELS), mt.get(obj.META_NUM_COMPILE), mt.get(obj.META_NUM_HIER));
                 obj.calculate_number_of_specific_blocks(mt.get(obj.META_BLOCK_TYPE_MAP));
             end
             
+            fprintf('=================== Metric 17 =====================\n');
+            disp('Simulation Time of Models(% of non numeric time models vs total models) : ');
+            obj.simulation_time_nonNumericMap.keys();
+            keys = obj.simulation_time_nonNumericMap.data_keys;
+            fprintf('Percentage of non numeric simulation time models: %.2f \n',obj.simulation_time_nonNumericMap.data.(keys{1})*100/totalModelsCount);
         end
            
         function analyze_all_models_from_a_class(obj)
@@ -317,8 +329,7 @@ classdef analyze_complexity < handle
             
             % Metric 21
             obj.bp_connections_depth_count.init_sg(obj.exptype);
-
-           
+            
             % Metric 8
             obj.models_having_hierarchy_count = 0;
             obj.models_no_hierarchy_count = 0;
@@ -341,11 +352,12 @@ classdef analyze_complexity < handle
                 obj.libcount_single_model = mymap();
                 obj.blk_count = 0;
                 obj.descendants_count = 0;
-                 obj.blk_count_masked = 0; % Metric 2
+                obj.blk_count_masked = 0; % Metric 2
                 
                 % Metric 15
                 cs = getActiveConfigSet(s);
-                obj.obtain_hardware_type_metric(cs);
+                obj.targetModelMap.inc(cs.get_param('TargetHWDeviceType'));
+                obj.obtain_simulation_time_metric(cs);
 
                 % API function to obtain metrics
                 obj.do_single_model(s);
@@ -417,6 +429,8 @@ classdef analyze_complexity < handle
 %             % S-Functions count SEEMS REDUNDANT
 %             obj.bp_SFunctions.draw('Metric 20 (Number of S-Functions)', 'Hierarchy Levels', 'Block Count');
             
+            % Algebraic Loops Count( Metric 11)
+%             obj.bp_algebraic_loop_count.draw(['Metric 11 (Algebraic Loops Count) in ' obj.model_classes.get(obj.exptype)], obj.model_classes.get(obj.exptype), 'Loop Count')
 
             
             % Hierarchy depth count (Metric 4)
@@ -425,6 +439,9 @@ classdef analyze_complexity < handle
             
              
 %              pause;
+            
+            % Unique Blocks Aggregated ( Metric 23)
+%             obj.bp_unique_block_aggregated_count.draw(['Metric 23 (Aggregated Unique Block Count) in ' obj.model_classes.get(obj.exptype)], obj.model_classes.get(obj.exptype), 'Block Count')
             
             % Table showing Models having hierarchy (Metric 8)
 %             disp(['Metric 8 (Models having Hierarchy Count) in ' obj.model_classes.get(obj.exptype)]);
@@ -642,16 +659,20 @@ classdef analyze_complexity < handle
             end
         end
         
-        function obtain_hardware_type_metric(obj, cs) % cs = configuarationSettings of a model
-            obj.targetModelMap.inc(cs.get_param('TargetHWDeviceType'));
-            
-%             if contains(cs.get_param('TargetHWDeviceType'),'Generic')
-%                 obj.model_uses_grt_count = obj.model_uses_grt_count + 1;
-%             else
-%                 obj.model_uses_ert_count = obj.model_uses_ert_count + 1;
-%                 disp('[DEBUG] Metric 15 Model uses some other TargetHWDeviceType besides generic real time');
-%                 disp(cs.get_param('TargetHWDeviceType'));
-%             end
+        function obtain_simulation_time_metric(obj, cs) % cs = configuarationSettings of a model
+            startTime = cs.get_param('StartTime');
+            stopTime = cs.get_param('StopTime');
+            try
+                startTime = eval(startTime);
+                stopTime = eval(stopTime);
+                if stopTime ~= Inf && stopTime ~= -Inf && startTime ~= Inf && startTime ~= -Inf
+                    obj.bp_simulation_time.add((stopTime-startTime), obj.exptype);
+                else
+                    obj.simulation_time_nonNumericMap.inc('1');
+                end
+            catch
+                obj.simulation_time_nonNumericMap.inc('1');
+            end
         end
         
         %our recursive function to calculate metrics not supported by API
@@ -860,8 +881,8 @@ classdef analyze_complexity < handle
             
             % Call as many experiments you want to run
             ac.start(analyze_complexity.EXP_EXAMPLES);
-            ac.start(analyze_complexity.EXP_GITHUB);
-            ac.start(analyze_complexity.EXP_MATLAB_CENTRAL);
+            %ac.start(analyze_complexity.EXP_GITHUB);
+            %ac.start(analyze_complexity.EXP_MATLAB_CENTRAL);
             ac.start(analyze_complexity.EXP_RESEARCH);
                         
             % Get results for all experiments
