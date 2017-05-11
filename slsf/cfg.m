@@ -3,7 +3,7 @@ classdef cfg
     %   Detailed explanation goes here
     
     properties(Constant = true)
-        NUM_TESTS = 1;                          % Number of test models to generate
+        NUM_TESTS = 10;                          % Number of test models to generate
         CSMITH_CREATE_C = false;                % Will call Csmith to create C files. Set to False if reproducing.
         
         SIMULATE_MODELS = true;                 % Simulate generated model
@@ -28,17 +28,17 @@ classdef cfg
         STOP_IF_ERROR = false;                  % Stop the script when meet the first simulation error
         STOP_IF_OTHER_ERROR = true;             % Stop the script for errors not related to simulation e.g. unhandled exceptions or code bug. ALWAYS KEEP IT TRUE to detect my own bugs.
 
-        CLOSE_MODEL = false;                    % Close models after simulation
-        CLOSE_OK_MODELS = false;                % Close models for which simulation ran OK
+        CLOSE_MODEL = true;                    % Close models after simulation
+        CLOSE_OK_MODELS = true;                % Close models for which simulation ran OK
         
         FINAL_CLEAN_UP = true;                 % Will delete models and related artifacts (e.g. binaries) for the model
 
         GENERATE_TYPESMART_MODELS = false;      % Will create models that respects data-type compatibility
         
-        NUM_BLOCKS = 20;
-        CHILD_MODEL_NUM_BLOCKS = [10 20];
-        SUBSYSTEM_NUM_BLOCKS = [10 20];
-        IF_ACTION_SUBSYS_NUM_BLOCKS = [5 10];
+        NUM_BLOCKS = [30 50];
+        CHILD_MODEL_NUM_BLOCKS = [20 30];
+        SUBSYSTEM_NUM_BLOCKS = [20 30];
+        IF_ACTION_SUBSYS_NUM_BLOCKS = [5 15];
         
         MAX_HIERARCHY_LEVELS =3;               % Minimum value is 1 indicating a flat model with no hierarchy.
 
@@ -48,6 +48,8 @@ classdef cfg
         SAVE_SUCC_MODELS = true;                % Save successful simulation models in a folder
 
         PAUSE_BETWEEN_FIX_ERROR_STEPS = false;
+        PAUSE_BETWEEN_CYCLE_REMOVING = false;
+        PRESENTATION_MODE = false;   % Pause between various CyFuzz phases.
 
         USE_SIGNAL_LOGGING_API = true;          % If true, will use Simulink's Signal Logging API, otherwise adds Outport blocks to each block of the top level model
         SIMULATION_MODE = {'accelerator'};      % See 'SimulationMode' parameter in http://bit.ly/1WjA4uE
@@ -61,14 +63,14 @@ classdef cfg
         % library, set `is_blk` false. Set true for blocks.
         
         SL_BLOCKLIBS = {
-           struct('name', 'Discrete', 'is_blk', false, 'num', 0.58)
-%             struct('name', 'Continuous', 'is_blk', false,  'num', 0.1)
+           struct('name', 'Discrete', 'is_blk', false, 'num', 0.3)
+            struct('name', 'Continuous', 'is_blk', false,  'num', 0.3)
 %             struct('name', 'Math Operations', 'is_blk', false, 'num', 10)
 %             struct('name', 'Logic and Bit Operations', 'is_blk', false, 'num', 0.15)
-            struct('name', 'Sinks', 'is_blk', false, 'num', 0.2)
-            struct('name', 'Sources', 'is_blk', false, 'num', 0.2)
-%             struct('name', 'simulink/Ports & Subsystems/Subsystem', 'is_blk', true, 'num', 0.14)
-            struct('name', 'simulink/Ports & Subsystems/If', 'is_blk', true, 'num', .2)
+            struct('name', 'Sinks', 'is_blk', false, 'num', 0.15)
+            struct('name', 'Sources', 'is_blk', false, 'num', 0.15)
+            struct('name', 'simulink/Ports & Subsystems/Subsystem', 'is_blk', true, 'num', 0.05)
+            struct('name', 'simulink/Ports & Subsystems/If', 'is_blk', true, 'num', .05)
 %             struct('name', 'simulink/User-Defined Functions/S-Function', 'is_blk', true, 'num', 0.20)
 %             struct('name', 'simulink/Ports & Subsystems/Model', 'is_blk', true, 'num', 0.06)
         };

@@ -297,6 +297,10 @@ classdef simulator < handle
             end
            
             fprintf('--- End Cycle Remover -- \n');
+            
+            if cfg.PAUSE_BETWEEN_CYCLE_REMOVING
+                pause();
+            end
            
             function dfs_visit(v)
 %                 fprintf('\t[DFS-GRAY] %d\n', n.my_id)

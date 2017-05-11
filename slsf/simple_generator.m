@@ -72,7 +72,7 @@ classdef simple_generator < handle
         hz_space = 100;
         vt_space = 150;
 
-        blk_in_line = 5;
+        blk_in_line = 10;
         
         % hierarchy related
         hierarchy_new_old = []; % Ratio of new and old submodels
@@ -129,6 +129,11 @@ classdef simple_generator < handle
                     fprintf('Drawing blocks failed, returning\n');
                     return;
                 end
+                
+                if cfg.PRESENTATION_MODE
+                    fprintf('---- CyFuzz: Block Selection Phase Completed ---- \n');
+                    pause();
+                end
                
 
                 obj.chk_compatibility();
@@ -142,6 +147,11 @@ classdef simple_generator < handle
                 obj.my_result.store_runtime(singleresult.PORT_CONN);
                 
                 fprintf('--Done Connecting!--\n');
+                
+                if cfg.PRESENTATION_MODE
+                    fprintf('---- CyFuzz: Port Connection Phase Completed ---- \n');
+                    pause();
+                end
 
 %                 disp('Returning abruptly');
 %                 ret = true;
@@ -198,26 +208,6 @@ classdef simple_generator < handle
 %                 obj.my_result.set_ok_normal_mode();
                 obj.my_result.set_ok(singleresult.NORMAL)
                 
-%                 fprintf('[SIGNAL LOGGING] Now setting up...\n');
-%                 if obj.log_signals
-%                     if obj.use_signal_logging_api
-%                         obj.signal_logging_setup();
-%                     else
-%                         obj.logging_using_outport_setup();
-%                     end
-%                 else
-%                     fprintf('Skipping signal logging...\n');
-%                 end
-                
-                
-%                 save_system(obj.sys);
-%                 disp('Returning abruptly');
-%                 return;
-
-                % Eliminate new algebraic loops (e.g. due to signal logging)
-%                 simul = simulator(obj, obj.max_simul_attempt);
-%                 simul.alg_loop_eliminator();
-                
            
                 % Run simulation again for comparing results
                 
@@ -231,25 +221,8 @@ classdef simple_generator < handle
                 diff_tester.logging_method_siglog = obj.use_signal_logging_api;
                 
                 ret = diff_tester.go();
-%                 for i=1:max_try
-%                     
-%                     obj.simulate_for_data_logging();
-%                 
-%                     if ~ obj.my_result.is_acc_sim_ok
-%                         ret = false;
-%                         return;
-%                     end
-%                     
-%                     ret = obj.compare_sim_results(i);
-%                     
-%                     if ~ obj.my_result.is_log_len_mismatch
-%                         break; % No need to run all those simulations again
-%                     end
-%                     
-%                 end
                 
             else
-%                 obj.my_result.set_error_normal_mode(obj.last_exc);
                 obj.my_result.set_mode(singleresult.NORMAL, singleresult.ER);
                 % Don't need to record timed_out, it is already logged
                 % inside Simulator.m class
@@ -532,7 +505,7 @@ classdef simple_generator < handle
         end
         
         function obj = run_pre_block_connection_hooks(obj)
-            fprintf('-- Calling Pre-Block-Connection Hooks --');
+            fprintf('-- Calling Pre-Block-Connection Hooks --\n');
             for i=1:obj.pre_block_connection.len
                 data = obj.pre_block_connection.get(i);
                 obj.(data{1})(data{2});
@@ -540,7 +513,7 @@ classdef simple_generator < handle
         end
         
         function obj = run_post_block_connection_hooks(obj)
-            fprintf('-- Calling Post-Block-Connection Hooks --');
+            fprintf('-- Calling Post-Block-Connection Hooks --\n');
             for i=1:obj.post_block_connection.len
                 data = obj.post_block_connection.get(i);
                 obj.(data{1})(data{2});
@@ -792,8 +765,8 @@ classdef simple_generator < handle
                 return;
             end
             
-            fprintf('[!!] Sample time for %s ----- \n', getfullname(h));
-            disp(obj.assign_sampletime_for_discrete);
+%             fprintf('[!!] Sample time for %s ----- \n', getfullname(h));
+%             disp(obj.assign_sampletime_for_discrete);
             
             if ~ blk{2}
 %                 disp('NOT A DISCRETE BLOCK. RETURN');
