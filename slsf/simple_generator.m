@@ -72,7 +72,7 @@ classdef simple_generator < handle
         hz_space = 100;
         vt_space = 150;
 
-        blk_in_line = 10;
+        blk_in_line = 5;
         
         % hierarchy related
         hierarchy_new_old = []; % Ratio of new and old submodels
@@ -85,7 +85,7 @@ classdef simple_generator < handle
         pre_block_connection;    % Hooks to run for specific blocks, just before `connect_blocks` function.
         post_block_connection;  % Hooks to run for specific blocks, just after `connect_blocks` function.
         
-        assign_sampletime_for_discrete = true;  % Assign sample time for discrete blocks
+        assign_sampletime_for_discrete = true;  % Assign sample time for discrete blocks. In some subsystems (e.g. Action subsystem) we can't do this.
         
     end
     
@@ -932,8 +932,8 @@ classdef simple_generator < handle
             % Store drawing properties
             obj.d_x = x;
             obj.d_y = y;
-            obj.c_block = cur_blk;
-            
+            obj.c_block = cur_blk - 1;
+%             fprintf('c_block stored to %d\n', obj.c_block);
         end
         
         
@@ -941,12 +941,16 @@ classdef simple_generator < handle
         
         function [this_blk_name, h] = add_new_block(obj, block_type)
             
+%             fprintf('Inside add new block\n');
+            
             if obj.c_block == 0
                 fprintf('Resetting block count!\n');
                 obj.c_block =   numel(util.get_all_top_level_blocks(obj.sys));
             end
             
             obj.c_block = obj.c_block + 1;
+            
+%             fprintf('This is new block number: %d\n', obj.c_block);
             
             h_len = obj.d_x + obj.width;
 
@@ -1120,10 +1124,11 @@ classdef simple_generator < handle
                 error('FATAL: SUBSYSTEM creation error');
             end
             
-%             if strcmp(full_model_name, 'sampleModel4118/cfblk44')
-%                 fprintf('Pausing after model %s\n', full_model_name);
-%                 pause
-%             end
+            
+            if util.cell_str_in(cfg.PAUSE_AFTER_THIS_SUBSYSTEM , full_model_name)
+                fprintf('Pausing after model (subsystem) %s\n', full_model_name);
+                pause
+            end
         end
         
         function obj = random_config_block(obj, h, blk_type, blk_name)

@@ -39,6 +39,19 @@ classdef slbnode < handle
             obj.is_visited = false;
         end
         
+        function obj = replace_child(obj, chld_position, new_chld, child_p)
+            % chld_position is 2-element array. 1st element: at which port
+            % of obj this chld is connected. 2nd element is the serial
+            % number of the chld, as there are (possibly) other blocks
+            % connected at this output port of the obj.
+            obj.out_nodes{chld_position(1)}{chld_position(2)} = new_chld;
+            obj.out_nodes_otherport{chld_position(1)}{chld_position(2)} = child_p;
+            
+            if child_p == 1
+                new_chld.in_node_first = obj;
+            end
+        end
+        
         function obj = add_child(obj, child_node, my_p, child_p)
             if (numel(obj.out_nodes) < my_p) || isempty(obj.out_nodes{my_p})
                 obj.out_nodes{my_p} = {};
@@ -70,18 +83,24 @@ classdef slbnode < handle
                 
             end
             
-            ret = mycell({'double'});
+            ret = mycell({'double'}); % double is the default type
         end
         
-        function ret = is_out_in_types_compatible(obj, out)
+        function [ret, in] = is_out_in_types_compatible(obj, out)
             ret = false;
             
             in = obj.get_input_type();
             
-            disp('------ out-------')
+            fprintf('------ out-------\t');
             disp(out.data);
-            disp('------- in --------')
+            fprintf('------- in --------\t');
             disp(in.data);
+            
+            % Warning: Following logic is flawed if there are multiple out
+            % types. E.g. let out type = {int, double} and in_type =
+            % {double}. Following logic will consider the types
+            % "compatible" since we found one match. However, if the
+            % out_type is int in concrete run, then we will need extra converter.
             
             for i=1:out.len
                 for j = 1:in.len
@@ -216,14 +235,6 @@ classdef slbnode < handle
                 
             end
             
-        end
-        
-        function obj = replace_child(obj, chld_position, new_chld)
-            % chld_position is 2-element array. 1st element: at which port
-            % of obj this chld is connected. 2nd element is the serial
-            % number of the chld, as there are (possibly) other blocks
-            % connected at this output port of the obj.
-            obj.out_nodes{chld_position(1)}{chld_position(2)} = new_chld;
         end
         
         

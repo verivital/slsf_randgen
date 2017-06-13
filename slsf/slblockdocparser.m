@@ -1,10 +1,11 @@
 classdef (Sealed) slblockdocparser < handle
     %SLBLOCKDOCPARSER Parses Simulink documenation to collect info
     %   about Simulink blocks. Information are stored in `slblockdata`
-    %   instances.
+    %   instances. Support for input data-types were retrived from
+    %   `showblockdatatypetable ` command.
     
     properties (Constant = true)
-        DTYPES = {[], [], 'double', 'single', 'boolean', 'int'};
+        DTYPES = {[], [], 'double', 'single', 'boolean', 'int32'};
         INP_PARSE_START = 3;
         INP_PARSE_END = 6;
     end
@@ -284,13 +285,13 @@ classdef (Sealed) slblockdocparser < handle
 %                                     fprintf('Inherited\n');
                                 else
                                     if strcmp(cur_d_stripped, 'double')
-                                        blobj.out_dtypes.add('double');
+                                        blobj.out_dtypes.add(obj.DTYPES{3});
                                     elseif strcmp(cur_d_stripped, 'single')
-                                        blobj.out_dtypes.add('single');
+                                        blobj.out_dtypes.add(obj.DTYPES{4});
                                     elseif strcmp(cur_d_stripped, 'boolean')
-                                        blobj.out_dtypes.add('boolean');
+                                        blobj.out_dtypes.add(obj.DTYPES{5});
                                     elseif ~int_added && util.starts_with(cur_d_stripped, 'int')
-                                        blobj.out_dtypes.add('int');
+                                        blobj.out_dtypes.add(obj.DTYPES{6});
                                         int_added = true;
                                     elseif ~uint_added && util.starts_with(cur_d_stripped, 'uint')
                                         blobj.out_dtypes.add('uint');

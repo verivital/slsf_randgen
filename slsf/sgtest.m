@@ -196,6 +196,12 @@ function sgtest(skip_first)
 
             runtime.add(sg.my_result.runtime);
             
+            if cfg.STOP_IF_DTC_ERROR && ( 0< sg. my_result.dc_sim)
+                fprintf('Analysis used %d converters\n', sg. my_result.dc_analysis);
+                fprintf('Extra converter (%d) was necessary. Stopping for investigation \n', sg. my_result.dc_sim);
+                return;
+            end
+            
             dtc_stat.add({sg.my_result.dc_analysis, sg. my_result.dc_sim});
 
             if ~ sim_res

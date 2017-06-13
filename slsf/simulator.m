@@ -1,6 +1,6 @@
 classdef simulator < handle
-    %SIMULATOR Try to simulate a constructed model
-    %   Performs the "Fix Error" Phase of CyFuzz
+    %SIMULATOR Analyzes a random model and fixes errors from it
+    %   Performs the "Analyze" and "Fix Error" phases of CyFuzz
     
     properties
         generator;
@@ -21,7 +21,7 @@ classdef simulator < handle
         active_sys = [];    % Instead of using the top-most model, use this field to provide the child model's name 
         %when trying to fix child model from a parent model.
         
-        fxd = [];      
+        fxd = [];      % Instance of the Fixed Simulink Documentations
     end
     
     
@@ -96,7 +96,7 @@ classdef simulator < handle
 %             fprintf('END F Analysis for All Nodes\n');
 %         end
         
-        function obj = do_data_type_analysis(obj, dfs, fxd)
+        function obj = do_data_type_analysis(obj, dfs)
             while true
                 
                 if dfs.isempty()
@@ -113,8 +113,10 @@ classdef simulator < handle
 
                 c = dfs.pop();
                 fprintf('\t\t\t\t\t\t\t\t\t\t\t\tPopped %d\n', c.n.my_id);
-
+                
                 if c.n.is_visited
+                    % E.g. A source block which was added even before the
+                    % analysis began.
                     fprintf('%d is already visited\n', c.n.my_id);
                     continue;
                 end
@@ -126,7 +128,7 @@ classdef simulator < handle
                 obj.visited_nodes(c.n.my_id) = 1;
 
                 % Get my output type
-                my_out_type = c.n.get_output_type(fxd);
+                my_out_type = c.n.get_output_type(obj.fxd);
 
 
                 for i=1:numel(c.n.out_nodes)
@@ -134,25 +136,43 @@ classdef simulator < handle
                         chld = c.n.out_nodes{i}{j};
 
                         % Get In type
+                        
+                        fprintf('Parent visiting child %d -> %d\n', c.n.my_id, chld.my_id);
+%                         disp(my_out_type);
 
-                        is_compatible = chld.is_out_in_types_compatible(my_out_type);
+                        [is_compatible, chld_in_types] = chld.is_out_in_types_compatible(my_out_type);
 
                         if ~ is_compatible
                             fprintf('Input Output not compatible! Out: %s ||| In: %s\n', c.n.search_name, chld.search_name);
 %                             error('Input output types are not compatible');
 
-                            obj.add_data_type_converter(c.n.handle);
+                            chld_chosen_type = chld_in_types.get(1); % TODO randomly select one
+                            obj.add_data_type_converter(c.n.handle, chld_chosen_type);
+                            
                             obj.generator.my_result.dc_analysis = obj.generator.my_result.dc_analysis + 1;
                         end
 
 
-                        if c.n.out_nodes_otherport{i}{j} == 1
-                            chld_tagged = slbnodetags(chld);
-                            fprintf('pushing %d\n', chld.my_id);
-                            chld.in_type = my_out_type;
-                            dfs.push(chld_tagged);
+                        if c.n.out_nodes_otherport{i}{j} == 1 % For now, data arriving at first input port of a block denotes the output data type of the block
+                            
+                            if is_compatible
+                                chld.in_type = my_out_type;
+                            else
+                                chld.in_type = mycell({chld_chosen_type});
+                                fprintf('Chose type %s for the child\n', chld_chosen_type);
+                            end
+                            if ~ chld.is_visited
+                                chld_tagged = slbnodetags(chld);
+                                fprintf('pushing %d\n', chld.my_id);
+                                dfs.push(chld_tagged);
+                            else
+                                fprintf('Child was already visited, did not push.\n');
+                            end
                         else
-                            fprintf('Not Pushing %d; not pushed %d\n', chld.my_id, chld.in_node_first.my_id);
+%                             disp(chld);
+%                             disp(chld.my_id);
+%                             disp(chld.in_node_first);
+                            fprintf('Not Pushing %d as parent is not first. First parent: %d\n', chld.my_id, chld.in_node_first.my_id);
 %                             second_stack.push(slbnodetags(chld.in_node_first));
                         end
 
@@ -191,27 +211,27 @@ classdef simulator < handle
             obj.num_visited = 0;
             obj.visited_nodes = zeros(1, numel(slb.all));
             
-            obj.do_data_type_analysis(dfs, fxd);
+            obj.do_data_type_analysis(dfs);
             
             % secondary analysis
             
-            obj.secondary_analysis(slb, fxd);
+            obj.secondary_analysis(slb);
             
             fprintf('@@@@@@@@@@@@@@@ END PRE SIMULATION ANALYSIS @@@@@@@@@@@@@@@\n');
         end
         
-        function obj = secondary_analysis(obj, slb, fxd)
+        function obj = secondary_analysis(obj, slb)
             fprintf('~~ Secondary Analysis ~~\n');
             if obj.num_visited ~= slb.num_reachable_nodes
               
                 slb.num_reachable_nodes
-                fprintf('Unvisited Nodes:\n');
+                fprintf('[U] Unvisited Nodes:\n');
                 
                 unvisited = mycell(numel(slb.all) - obj.num_visited);
                 
                 for vi = 1:numel(obj.visited_nodes)
                     if obj.visited_nodes(vi) == 0
-                        fprintf('\t%d', vi);
+                        fprintf('\t Visiting: %d', vi);
                         unvisited.add(vi);
                     end
                 end
@@ -229,7 +249,7 @@ classdef simulator < handle
                         
                         dfs = CStack();
                         dfs.push(slbnodetags(new_node));
-                        obj.do_data_type_analysis(dfs, fxd);
+                        obj.do_data_type_analysis(dfs);
                         
                         break;
                     else
@@ -267,7 +287,7 @@ classdef simulator < handle
             new_block_node = slb.register_new_block(h, new_block_type, get_param(h, 'name'));
           
             old_parent = tn.which_parent_block;
-            old_parent.replace_child(tn.which_parent_port, new_block_node);
+            old_parent.replace_child(tn.which_parent_port, new_block_node, 1);
             new_block_node.add_child(tn.n, 1, tn.which_input_port);
         end
         
@@ -275,9 +295,9 @@ classdef simulator < handle
             fprintf('-- Starting cycle remover--\n');
             nodes_to_fix = mycell();
            
-            WHITE = 0;
-            GRAY = 1;
-            BLACK = 2;
+            WHITE = 0; % Unvisited
+            GRAY = 1;   % Visited, in current DFS path
+            BLACK = 2; % Visited, but not in current DFS path
            
             assert(numel(slb.nodes) == slb.NUM_BLOCKS);
             colors = zeros(1, slb.NUM_BLOCKS);
@@ -324,7 +344,7 @@ classdef simulator < handle
                             if v.n.is_outports_actionports
                                 assert(~ isempty(v.which_parent_block));
                                 nodes_to_fix.add(v);
-                                fprintf('\t(!) Will Fix this parent block instead of child block.\n');
+                                fprintf('\t(!) Action Ports: Will Fix this parent block instead of child block.\n');
                             else
                                 nodes_to_fix.add(tn);
                             end
@@ -400,9 +420,10 @@ classdef simulator < handle
             end
             
             
-            
-%             warning('Returning abruptly before simulating \n');
-%             return;
+            if cfg.STOP_BEFORE_SIMULATION
+                warning('Returning abruptly before simulating \n');
+                return;
+            end
             
             for i=1:obj.max_try
                 disp(['(s) Simulation attempt ' int2str(i)]);
@@ -660,10 +681,21 @@ classdef simulator < handle
         end
         
         
-        function new_blocks = add_data_type_converter(obj, h)
+        function new_blocks = add_data_type_converter(obj, h, chosen_type)
+            
+            if nargin == 2
+                chosen_type = [];
+            end
            
             disp('Adding DATA TYPE conversion block...');
             new_blocks = obj.add_block_in_the_middle(h, 'Simulink/Signal Attributes/Data Type Conversion', true, false);
+            
+            if ~ isempty(chosen_type)
+                for i=1:new_blocks.len
+                    fprintf('Setting newly added converter data-type to %s\n', chosen_type);
+                    set_param(new_blocks.get(i), 'OutDataTypeStr', chosen_type);
+                end
+            end
                  
         end
         

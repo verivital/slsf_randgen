@@ -1,5 +1,5 @@
 classdef util < handle
-    %UTIL Handy functions for SLSF Generator
+    %UTIL Handy functions
     %   Detailed explanation goes here
     
     properties
@@ -14,8 +14,11 @@ classdef util < handle
         
         function ret = strip_simulink_prefix(s)
             ret = s;
-            if util.starts_with('simulink/', s)
+            if util.starts_with(s, 'simulink/')
                 ret = strsplit(s, 'simulink/');  % Stripping of the simulink tag
+                ret = ret{2};
+            elseif util.starts_with(s, 'Simulink/')
+                ret = strsplit(s, 'Simulink/');  % Stripping of the simulink tag
                 ret = ret{2};
             end
         end

@@ -1,7 +1,9 @@
-function [big_total, big_timedout] = neoreport(datefrom)
+function [big_total, big_timedout] = neoreport(datefrom, break_after_single)
     %%% datefrom is string in format 'yyyy-MM-dd-HH-mm-ss'
     
-    break_after_single = true;
+    if nargin <= 1
+        break_after_single = true;
+    end
 
     report_dir = cfg.REPORTSNEO_DIR;
 
