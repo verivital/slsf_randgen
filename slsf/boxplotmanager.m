@@ -73,7 +73,7 @@ classdef boxplotmanager < handle
             f = figure;
             set(f,'name',my_title);
             
-            whisker = 70;
+            whisker = Inf;
             
             if sort_groups
                 group_order =   sort(categories(categorical(cellstr(obj.group))));
@@ -85,7 +85,9 @@ classdef boxplotmanager < handle
             end
             
 %             title(my_title);
-            xlabel(x_label);
+            if ~isempty(x_label)
+                xlabel(x_label);
+            end
             ylabel(y_label);
             set(gca, 'YScale', 'log');
         end
@@ -97,7 +99,12 @@ classdef boxplotmanager < handle
                 d = obj.all_data.get(k);
                 d = cell2mat(d.data);
 %                 fprintf('\t\t %s | \t\t Min: %.2f | \t\t Max: %.2f | \t\t Med: %.2f \n',k, min(d), max(d), median(d));
-                fprintf('\t\t %s | \t\t \\idt{%d}{%d}{%d}{%d}{%d} \n',k, min(d), max(d), round(median(d)), round(mean(d)), round(std(d)));
+                
+                if util.starts_with(obj.my_title, 'Compile Time')
+                    fprintf('\t\t %s | \t\t \\idt{%.2f}{%.2f}{%.2f}{%.2f}{%.2f} \n',k, min(d), max(d), median(d), mean(d), std(d));
+                else
+                    fprintf('\t\t %s | \t\t \\idt{%d}{%d}{%d}{%d}{%d} \n',k, min(d), max(d), round(median(d)), round(mean(d)), round(std(d)));
+                end
                 
             end
         end

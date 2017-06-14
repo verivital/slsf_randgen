@@ -99,7 +99,7 @@ classdef boxplotmanager_grouped < handle
             
             box_colors = {'k', 'm', 'r', 'b', [0 .5 0], 'c', 'y'};
             
-            whisker = 70;
+            whisker = Inf;
             
             for i=1:obj.subgroup_data.len
                 sg_name = obj.subgroup_names.get(i);

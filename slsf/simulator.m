@@ -961,9 +961,13 @@ classdef simulator < handle
                 end
             end
         end
+    end
+    
+    methods(Static)
         
-        
-        function ret = get_connected_components(obj, slb)
+        function ret = get_connected_components(slb)
+            
+            fprintf('Inside gcc\n');
             
             ret = mycell();
             

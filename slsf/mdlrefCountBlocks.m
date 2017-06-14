@@ -99,7 +99,7 @@ for i = 1:length(mDep)
     [t,s{i}] = sldiagnostics(mDep{i},'CountBlocks');
 
 
-%     disp([mDep{i} ' has ' num2str(s{i}(1).count) ' blocks'])
+    disp([mDep{i} ' has ' num2str(s{i}(1).count) ' blocks'])
 
 
 end
