@@ -1,6 +1,6 @@
 # CyFuzz: A Differential Testing Framework for Cyber-Physical Systems Development Environments
 
-Welcome to the CyFuzz project! Check out our [homepage](https://github.com/verivital/slsf_randgen/wiki) for latest news, source code and to contribute.
+Welcome to the CyFuzz project! Check out our [homepage](https://github.com/verivital/slsf_randgen/wiki) for latest news, running the tools and to contribute.
 
 ## Acknowledgement
 
