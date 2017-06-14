@@ -28,6 +28,9 @@ classdef slbnode < handle
         dft_status = [];
         
         is_outports_actionports = false;    % Whether the output ports of this blocks are always connected to action ports (e.g. If blocks)
+        
+        dfmutex_blocks = [];      % list. Data-flow mutually exclusive blocks. Other nodes which are related to this node and can not be in some data-flow path without a Delay . E.g. If-else action subsystems 
+%         is_delay_block = false;     % Whether the block is a delay block
     end
     
     methods
@@ -37,6 +40,7 @@ classdef slbnode < handle
             obj.my_id = my_id;
             
             obj.is_visited = false;
+%             obj.dfmutex_blocks = mycell();
         end
         
         function obj = replace_child(obj, chld_position, new_chld, child_p)

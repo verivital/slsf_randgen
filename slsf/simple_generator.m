@@ -1240,10 +1240,18 @@ classdef simple_generator < handle
             if_blk_node = obj.slb.nodes{id_if};
             if_blk_node.is_outports_actionports = true;
             
+            last_action_ss_id = output_base + num_outputs;
+            first_action_ss_id = output_base + 1;
+            
             for i=1:num_outputs
                 action_block_id = output_base + i;
                 add_line(obj.sys, [obj.slb.all{id_if} '/' int2str(i)], [obj.slb.all{action_block_id} '/Ifaction'], 'autorouting','on')
                 obj.slb.connect_nodes(id_if, i, action_block_id, slbnode.ACTION_PORT);
+                % Set "mutually exclusive data-flow dependant blocks"
+                action_block_node = obj.slb.nodes{action_block_id};
+                action_block_node.dfmutex_blocks = [[first_action_ss_id : action_block_id-1],  [action_block_id+1 : last_action_ss_id]];    % All blocks except the action block
+                fprintf('Mut-Ex data flow blocks found for block %d:', action_block_id);
+                disp(action_block_node.dfmutex_blocks);
             end
         end
         

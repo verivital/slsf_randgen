@@ -1,5 +1,5 @@
 classdef mymap < handle
-    %MYMAP HashMap
+    %MYMAP HashMap Implementation
     %   Detailed explanation goes here
     
     properties

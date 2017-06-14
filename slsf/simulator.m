@@ -273,7 +273,9 @@ classdef simulator < handle
             
             [new_delay_blocks, g] = obj.add_block_in_the_middle(tn.n.handle, new_block_type, false, true, int2str(tn.which_input_port));
             
-            assert(new_delay_blocks.len == 1); % There will be only one such block
+%             fprintf('These many new delays blocks have been added: %d\n', new_delay_blocks.len);
+            
+            assert(new_delay_blocks.len == 1); % There will be only one such block. If assertion fails, check whether number of new blocks is zero. this could mean that specific input port was not found (e.g. value of -1)
             
             h = new_delay_blocks.get(1);  
             
@@ -292,7 +294,7 @@ classdef simulator < handle
         end
         
         function obj = remove_cycles(obj, slb)
-            fprintf('-- Starting cycle remover--\n');
+            fprintf('-- Starting cycle remover (%s)--\n', obj.generator.sys);
             nodes_to_fix = mycell();
            
             WHITE = 0; % Unvisited
@@ -310,13 +312,23 @@ classdef simulator < handle
                 end
             end
            
-            fprintf('Total %d back-edges found\n,', nodes_to_fix.len);
+            fprintf('Total %d nodes-to-fix  found, some of which are back-edges.\n', nodes_to_fix.len);
+            
+            already_fixed = mymap();
            
             for out_i=1:nodes_to_fix.len
-                obj.pre_fix_loop(nodes_to_fix.get(out_i), slb);
+                cur_tn = nodes_to_fix.get(out_i);
+                cur_key = sprintf('%d_%d', cur_tn.n.my_id, cur_tn.which_input_port);
+                
+                if already_fixed.contains(cur_key)
+                    fprintf('Already fixed this node-port, skipping: %s\n', cur_key);
+                else
+                    already_fixed.put(cur_key, true);
+                    obj.pre_fix_loop(cur_tn, slb);
+                end
             end
            
-            fprintf('--- End Cycle Remover -- \n');
+            fprintf('--- End Cycle Remover (%s) -- \n', obj.generator.sys);
             
             if cfg.PAUSE_BETWEEN_CYCLE_REMOVING
                 pause();
@@ -325,6 +337,24 @@ classdef simulator < handle
             function dfs_visit(v)
 %                 fprintf('\t[DFS-GRAY] %d\n', n.my_id)
                 colors(v.n.my_id) = GRAY;
+                
+                % MutEx data-flow blocks
+                for medf_i = 1:numel(v.n.dfmutex_blocks)
+                    target_block = v.n.dfmutex_blocks(medf_i);
+                    if colors(target_block) == GRAY
+                        fprintf('(!! MEDF) block found: %d --> %d (current)\n', target_block, v.n.my_id);
+                        fprintf('(MEDF) My current parent: %d\n', v.which_parent_block.my_id);
+                        if v.which_parent_block.is_outports_actionports
+                            fprintf('MEDF: No need to fix current block as parent is an IF block.\n');
+                        elseif v.which_parent_block.my_id ~= target_block
+                            nodes_to_fix.add(v); % If there are no other blocks between them
+                            fprintf('MEDF: Will fix current block\n');
+                        else
+                            fprintf('MEDF: No need to fix current block\n');
+                        end
+                    end
+                end
+                
                 for i=1:numel(v.n.out_nodes)
                     for j=1:numel(v.n.out_nodes{i})
                         chld = v.n.out_nodes{i}{j};
@@ -927,7 +957,7 @@ classdef simulator < handle
                 p = ports(j);
                 
                 if ~isempty(specific_port) && ~strcmp(specific_port, p.Type)
-%                     fprintf('Skipping due to specific port. current: %s\n', p.Type);
+%                     fprintf('Skipping due to specific port. current: %s; desired: %s\n', p.Type, specific_port);
                     continue;
                 end
                 

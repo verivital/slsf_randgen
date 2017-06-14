@@ -447,5 +447,5 @@ function sgtest(skip_first)
     
     cfg.print_warnings();
 
-    fprintf('------ BYE from SGTEST. Report saved in %s.mat file. Call neoreport(''%s''); to get detailed report. -------\n', nowtime_str, nowtime_str);
+    fprintf('------ BYE from SGTEST. Report saved in reportsneo/%s directory. Call neoreport(''%s''); to get detailed report. -------\n', nowtime_str, nowtime_str);
 end

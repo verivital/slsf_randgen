@@ -1,5 +1,5 @@
 classdef subsystem_generator < hier_generator
-    % Generates submodels e.g. For Each Block
+    % Generates subsystems e.g. If-Action subsystems
     %   Detailed explanation goes here
     
     properties
