@@ -1,5 +1,5 @@
 classdef slblockdata < handle
-    %SLBLOCKDATA Contains information about a built-in block
+    %SLBLOCKDATA Contains PARSED information about a built-in block
     %   We collected the information parsing Simulink documentations
     %   `slblockdocparser` Parsed the documentation.
     
@@ -10,6 +10,7 @@ classdef slblockdata < handle
         out_data_type_param = [];
         default_out_param = [];
         is_source;
+        is_signed_only = false % Determine by the attribute '6' at Block-data type support page. Implies this block doesn't support unsigned
     end
     
     methods

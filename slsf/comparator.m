@@ -7,7 +7,7 @@ classdef comparator < handle
         data;                       % Data we receive from generator
         refined_data;               % After we process the `data`;
         try_count;
-        my = [];  
+        my = [];                        % Instance of `singleresult` class
         max_log_len_mismatch_allowed; % How many log len mismatches are allowed?
         
     end

@@ -66,6 +66,10 @@ classdef mycell < handle
             fprintf('\n');
         end
         
+        function obj = nargin_test(obj, x)
+            fprintf('Nargin: %d\n', nargin);
+        end
+        
     end
     
 end

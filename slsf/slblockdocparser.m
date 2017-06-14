@@ -1,10 +1,11 @@
 classdef (Sealed) slblockdocparser < handle
     %SLBLOCKDOCPARSER Parses Simulink documenation to collect info
     %   about Simulink blocks. Information are stored in `slblockdata`
-    %   instances.
+    %   instances. Support for input data-types were retrived from
+    %   `showblockdatatypetable ` command.
     
     properties (Constant = true)
-        DTYPES = {[], [], 'double', 'single', 'boolean', 'int'};
+        DTYPES = {[], [], 'double', 'single', 'boolean', 'int32'};
         INP_PARSE_START = 3;
         INP_PARSE_END = 6;
     end
@@ -69,7 +70,7 @@ classdef (Sealed) slblockdocparser < handle
         end
         
         function obj = parse_block_data_type_support(obj)
-            fprintf('Reading block data type supports...\n');
+            fprintf('Reading block data type supports (Input data-types support info)...\n');
             
             fid = [];
             
@@ -83,14 +84,14 @@ classdef (Sealed) slblockdocparser < handle
                 while true
                     
                     %%%%%% Read next line %%%%%%
-                    fprintf('New LIne:\n');
+%                     fprintf('New LIne:\n');
                     tline = fgetl(fid);
                     
                     if ~ ischar(tline)
                         break;
                     end
                     
-                    disp(tline)
+%                     disp(tline)
                     
                     tokens = strsplit(tline, {'#'}, 'CollapseDelimiters', false);
                     
@@ -125,7 +126,10 @@ classdef (Sealed) slblockdocparser < handle
                         continue;
                     end
                     
-                    blname = tokens{2};
+                    blname = strsplit(tokens{2}, {' ('});
+                    
+                    blname = blname{1};
+                    
                     bl_obj = slblockdata();
 %                     bl_obj.myname = blname;
 
@@ -133,6 +137,15 @@ classdef (Sealed) slblockdocparser < handle
                         if util.starts_with(tokens{i}, 'X')
                             bl_obj.in_dtypes.add(obj.DTYPES{i});
 %                             fprintf('Block %s: %s\n', blname, obj.DTYPES{i});
+
+                            special_attributes = regexp(tokens{i}, '[\d]+', 'match');
+                            
+                            for sp_at_i = 1:numel(special_attributes)
+                                if strcmp(special_attributes{sp_at_i}, '6')
+                                    bl_obj.is_signed_only = true;
+                                end
+                            end
+                            
                         end
                     end
                     
@@ -236,7 +249,7 @@ classdef (Sealed) slblockdocparser < handle
                         try
                             get_param(['simulink/' libname '/' blname], 'name');
                             skip_block = false;
-                            fprintf('New SL Block: %s\n', blname);
+%                             fprintf('New SL Block: %s\n', blname);
                             blobj = libmap.create_if_not_exists(blname, 'slblockdata');
                         catch e
                             skip_block = true;
@@ -260,6 +273,8 @@ classdef (Sealed) slblockdocparser < handle
                         dtypes = strsplit(tokens{3}, '|');
                         
                         int_added = false;
+                        uint_added = false;
+                        
                         for j=1:numel(dtypes)
                             cur_d = strtrim(dtypes{j});
                             if cur_d(1) == '{'
@@ -270,15 +285,19 @@ classdef (Sealed) slblockdocparser < handle
 %                                     fprintf('Inherited\n');
                                 else
                                     if strcmp(cur_d_stripped, 'double')
-                                        blobj.out_dtypes.add('double');
+                                        blobj.out_dtypes.add(obj.DTYPES{3});
                                     elseif strcmp(cur_d_stripped, 'single')
-                                        blobj.out_dtypes.add('single');
+                                        blobj.out_dtypes.add(obj.DTYPES{4});
                                     elseif strcmp(cur_d_stripped, 'boolean')
-                                        blobj.out_dtypes.add('boolean');
-                                    elseif ~int_added && (util.starts_with(cur_d_stripped, 'int') || util.starts_with(cur_d_stripped, 'uint'))
-                                        blobj.out_dtypes.add('int');
+                                        blobj.out_dtypes.add(obj.DTYPES{5});
+                                    elseif ~int_added && util.starts_with(cur_d_stripped, 'int')
+                                        blobj.out_dtypes.add(obj.DTYPES{6});
                                         int_added = true;
+                                    elseif ~uint_added && util.starts_with(cur_d_stripped, 'uint')
+                                        blobj.out_dtypes.add('uint');
+                                        uint_added = true;
                                     end
+                                    
                                 end
                             end
                         end

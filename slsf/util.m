@@ -1,5 +1,5 @@
 classdef util < handle
-    %UTIL Handy functions for SLSF Generator
+    %UTIL Handy functions
     %   Detailed explanation goes here
     
     properties
@@ -10,6 +10,17 @@ classdef util < handle
         function ret = mvn(s)
             % Make a valid name using parameter `s`
             ret = matlab.lang.makeValidName(s);
+        end
+        
+        function ret = strip_simulink_prefix(s)
+            ret = s;
+            if util.starts_with(s, 'simulink/')
+                ret = strsplit(s, 'simulink/');  % Stripping of the simulink tag
+                ret = ret{2};
+            elseif util.starts_with(s, 'Simulink/')
+                ret = strsplit(s, 'Simulink/');  % Stripping of the simulink tag
+                ret = ret{2};
+            end
         end
         
         function ret = starts_with(s1, s2)
@@ -26,26 +37,84 @@ classdef util < handle
         function h = select_me_or_parent(inner, my_level)
             % If `inner` is a block inside a subsystem, then get the parent
             % block.
-            
+
             if nargin < 2
                 my_level = 1;
             end
             
-            disp('INSIDE: Select me or parent');
             my_full_name = getfullname(inner);
+            fprintf('Select Me Or Parent --> Subject: %s\n', my_full_name);
+            
+            if cfg.SUBSYSTEM_FIX
+                slash_pos = strfind(my_full_name, '/');
+                       
+                all = strsplit(my_full_name, '/');
+
+                i = numel(all) + 1;
+
+                if util.starts_with(all{i-1}, cfg.BLOCK_NAME_PREFIX)
+                    fprintf('select me\n');
+                    h = inner;
+                    return;
+                end
+                j = -1;
+                while i>0
+                    i = i - 1;
+                    j = j + 1;
+                    if util.starts_with(all{i}, cfg.BLOCK_NAME_PREFIX)
+                        break;
+                    end
+                end
+    %             numel(slash_pos)
+    %             j
+                h = my_full_name(1:slash_pos(numel(slash_pos) + 1 - j) - 1);
+                fprintf('select some parent: %s\n', h);
+                
+            else
+                slash_pos = strfind(my_full_name, '/');
+
+                desired_slash_pos = my_level + 1;
+
+                if numel(slash_pos) < desired_slash_pos
+                    disp('Not Fetching Parent!');
+                    h = inner;
+                else
+                    h = my_full_name(1: (slash_pos(desired_slash_pos) - 1));
+                    fprintf('Fetched this parent: %s\n', getfullname(h));
+                end
+            end
+        end
+        
+        function h = select_parent(my_full_name, my_level)
+            % If `inner` is a block inside a subsystem, then get the parent
+            % block.
+            
             fprintf('Subject: %s\n', my_full_name);
             
             slash_pos = strfind(my_full_name, '/');
+                       
+            all = strsplit(my_full_name, '/');
             
-            desired_slash_pos = my_level + 1;
+            i = numel(all) + 1;
             
-            if numel(slash_pos) < desired_slash_pos
-                disp('Not Fetching Parent!');
-                h = inner;
-            else
-                h = my_full_name(1: (slash_pos(desired_slash_pos) - 1));
-                fprintf('Fetched this parent: %s\n', getfullname(h));
+            if util.starts_with(all{i-1}, 'bl')
+                fprintf('select me\n');
+                return;
             end
+            j = -1;
+            while i>0
+                i = i - 1;
+                j = j + 1;
+                if util.starts_with(all{i}, 'bl')
+                    break;
+                end
+            end
+%             numel(slash_pos)
+%             j
+            
+            fprintf('select some parent:%s\n', my_full_name(1:slash_pos(numel(slash_pos) + 1 - j) - 1));
+            
+            
         end
         
         
@@ -135,15 +204,32 @@ classdef util < handle
         
         
         function all_blocks = getBlocksOfLibrary(lib)
-            all_blocks = find_system(['Simulink/' lib])
+            all_blocks = find_system(['simulink/' lib]);
         end
         
         
         function getBlocksOfLibrary_PrettyPrint(lib)
-            all_blocks = find_system(['Simulink/' lib]);
+            all_blocks = find_system(['simulink/' lib]);
             
             for i=1:numel(all_blocks)
                 disp(all_blocks{i})
+            end
+        end
+        
+        function ret= getLibOfAllBlocks()
+            ret = mymap();
+            load_system('simulink');
+            libs = {'Discrete', 'Sources', 'Sinks', 'Continuous', 'Discontinuities', 'Signal Attributes',...
+                'Signal Routing', 'Math Operations', 'Logic and Bit Operations', 'Lookup Tables', 'User-Defined Functions', 'Ports & Subsystems', 'Additional Math & Discrete'};
+            for i = 1:numel(libs)
+                c_lib = libs{i};
+                all_blocks = util.getBlocksOfLibrary(c_lib);
+                for j = 1:numel(all_blocks)
+                    c_block = all_blocks{j};
+                    blocktype = get_param(c_block, 'blocktype');
+%                     fprintf('Block %s; Type %s\n', c_block, blocktype);
+                    ret.put(blocktype, c_lib);
+                end
             end
         end
         
@@ -193,7 +279,7 @@ classdef util < handle
             for i = 1:numel(hay)
                 if strcmp(needle, hay{i}) == 1
                     found = true;
-                    return
+                    return;
                 end
             end
         end
@@ -205,10 +291,11 @@ classdef util < handle
             for i = 1:numel(hay)
                 if needle == hay{i}
                     found = true;
-                    return
+                    return;
                 end
             end
         end
+        
         
         function inspect_parameters(elem)
             x = get_param(elem, 'ObjectParameters');
@@ -358,6 +445,25 @@ classdef util < handle
                 fprintf('%d:%d\t',i, counter(i));
             end
             fprintf('\n===================\n');
+        end
+        
+        function ret = is_type_equivalent(out_type, in_type, in_signed_only)
+            fprintf('Called type equivalence check: out: %s; in: %s\n', out_type, in_type);
+            ret = false;
+            
+            if strcmp(out_type, 'uint') && strcmp(in_type, 'int') && ~in_signed_only
+                ret = true;
+            elseif strcmp(out_type, 'int') && strcmp(in_type, 'uint') 
+                ret = true;
+            end
+            
+        end
+        
+        function find_system(sys)
+            x = find_system(sys, 'SearchDepth','1','FindAll','on', 'LookUnderMasks', 'all', 'FollowLinks','on', 'type','line');
+            for i=1:numel(x)
+                get_param(x(i), 'type')
+            end
         end
         
     end

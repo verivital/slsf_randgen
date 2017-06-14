@@ -1,6 +1,6 @@
-% This is entry point to the Random Generator.
-% Run this script from the command line. Change configurations in cfg.m
-% class.
+% Entry-point to run CyFuzz experiments.
+% Run this script from Matlab command line. Change configurations in cfg.m
+% class. You should not be changing anything in this file.
 
 function sgtest(skip_first)
 
@@ -40,7 +40,7 @@ function sgtest(skip_first)
         try
             copyfile(WS_FILE_NAME, [REPORTS_BASE filesep WS_FILE_NAME_ACTUAL]);
         catch e
-            disp('FATAL: did not find previous state of random generator. Try setting `LOAD_RNG_STATE = false` in `cfg.m` file');
+            disp('FATAL: did not find previously saved state of `random number generator (RNG)`. Are you running this script for the first time in this machine? Then set `LOAD_RNG_STATE = false` in `cfg.m` file before first-time run.');
             return;
         end
         disp('Restoring RNG state from disc')
@@ -62,11 +62,11 @@ function sgtest(skip_first)
     end
 
     if isempty(rng_state) || rand_start_over
-        disp('~~ RandomNumbers: Starting Over ~~');
+        disp('~~ RandomNumberGenerator: Starting Over ~~');
         rng(0,'twister');           % Random Number Generator  - Initialize
         mdl_counter = 0;
     else
-        disp('~~ RandomNumbers: Storing from previous state ~~');
+        disp('~~ RandomNumberGenerator: Loading from previous saved state ~~');
         rng(rng_state);
     end
 
@@ -84,7 +84,7 @@ function sgtest(skip_first)
 
     % Script is Starting %
 
-    fprintf('Loading Simulink...\n');
+    fprintf('Loading Simulink... (will take a while)\n');
     load_system('Simulink');
 
     num_total_sim = 0;
@@ -107,7 +107,10 @@ function sgtest(skip_first)
 
     l_logged = [];
     all_siglog = mycell(cfg.NUM_TESTS);
-    all_models = mycell(cfg.NUM_TESTS);             % Store some stats regarding all models e.g. number of blocks in the model
+    all_models = mycell(cfg.NUM_TESTS);             % Store some stats before running simulation for all models e.g. number of blocks in the model
+    all_models_sr = cell(1, cfg.NUM_TESTS);         % Store instance of savedresult class for each model
+    
+    dtc_stat = mycell(cfg.NUM_TESTS); % data-type conversion stats
 
     block_selection = mymap();                  % Stats on library selection
     total_time = [];                            % Time elapsed so far since the start of the experiment
@@ -132,6 +135,9 @@ function sgtest(skip_first)
 
         mdl_counter = mdl_counter + 1;
         model_name = strcat('sampleModel', int2str(mdl_counter));
+        
+        sr = savedresult(model_name);
+        all_models_sr{ind} = sr;
 
         sg = simple_generator(cfg.NUM_BLOCKS, model_name, cfg.SIMULATE_MODELS, cfg.CLOSE_MODEL, cfg.LOG_SIGNALS, cfg.SIMULATION_MODE, cfg.COMPARE_SIM_RESULTS);
         sg.max_hierarchy_level = cfg.MAX_HIERARCHY_LEVELS;
@@ -165,6 +171,9 @@ function sgtest(skip_first)
 
         try
             sim_res = sg.go();
+            
+            sg.my_result.update_saved_result(sr);
+            
     %         l_logged = sg.my_result.logdata;
 
     %         total_time = toc();
@@ -186,6 +195,14 @@ function sgtest(skip_first)
             % Runtime
 
             runtime.add(sg.my_result.runtime);
+            
+            if cfg.STOP_IF_DTC_ERROR && ( 0< sg. my_result.dc_sim)
+                fprintf('Analysis used %d converters\n', sg. my_result.dc_analysis);
+                fprintf('Extra converter (%d) was necessary. Stopping for investigation \n', sg. my_result.dc_sim);
+                return;
+            end
+            
+            dtc_stat.add({sg.my_result.dc_analysis, sg. my_result.dc_sim});
 
             if ~ sim_res
 
@@ -196,7 +213,7 @@ function sgtest(skip_first)
                 c = struct;
                 c.m_no = model_name;
                 e = sg.my_result.exc;
-                
+                                
                 if isempty(e)
                     abrupt_return = true;
                     throw(MException('SL:RandGen:TestTerminatedWithoutExceptions',... 
@@ -223,7 +240,12 @@ function sgtest(skip_first)
     %                     continue;
 
                     case {'RandGen:SL:ErrAfterNormalSimulation'}
+                        
+                        sr.errors = sg.my_result.main_exc;
+                        sr.is_err_after_normal_sim = true;
+                        
                         err_key = ['AfterError_' e.message];
+                        
                         e_later = util.map_inc(e_later, e.message);
 
                         if cfg.LOG_ERR_MODEL_NAMES
@@ -256,10 +278,14 @@ function sgtest(skip_first)
                 e_map = util.map_inc(e_map, e.identifier);
 
                 if cfg.STOP_IF_ERROR
-                    disp('BREAKING FROM MAIN LOOP AS ERROR OCCURRED IN SIMULATION');
-                    break_main_loop = true;
+                    if util.cell_str_in(cfg.CONTINUE_ERRORS_LIST, e.identifier)
+                        fprintf('An error occured, but SGTEST is not stopping even STOP_IF_ERROR is set to true. You asked me to do this for this specific error in cfg.m file.\n');
+                    else
+                        disp('BREAKING FROM MAIN LOOP AS ERROR OCCURRED IN SIMULATION');
+                        break_main_loop = true;
+                    end
                 elseif cfg.STOP_IF_LISTED_ERRORS && util.cell_str_in(cfg.STOP_ERRORS_LIST, e.identifier)
-                    disp('BREAKING FROM MAIN LOOP --- ERROR IS LISTED IN cfg.m FILE.');
+                    disp('BREAKING FROM MAIN LOOP --- You asked me to stop for this specific error in the cfg.m FILE.');
                     break_main_loop = true;
                 end
 
@@ -289,9 +315,10 @@ function sgtest(skip_first)
 
             end
         catch e
+            %%%%%%%%%%%%% "OTHER ERROR" %%%%%%%%%%%
             % Exception occurred when simulating, but the error was not caught.
             % Reason: code bug/unhandled errors. ALWAYS INSPECT THESE ERRORS!!
-            disp('EEEEEEEEEEEEEEEEEEEE Unhandled Error In Simulation EEEEEEEEEEEEEEEEEEEEEEEEEE');
+            warning('EEEEEEEEEEEEEEEEEEEE Unhandled Error In YOUR CODE! EEEEEEEEEEEEEEEEEEEEEEEEEE');
     %         e
     %         e.message
     %         e.cause
@@ -315,9 +342,13 @@ function sgtest(skip_first)
             util.cond_save_model(true, model_name, OTHER_ERR_MODEL_STORAGE, sg.my_result);
 
             if cfg.STOP_IF_OTHER_ERROR
-                disp('Stopping: STOP_IF_OTHER_ERROR=True. WARNING: This will not be saved in reports.');
-                break_main_loop = true;
-    %             break;
+                
+                if util.cell_str_in(cfg.CONTINUE_ERRORS_LIST, e.identifier)
+                    fprintf('Continuing SGTEST script, although an "other error" occured. This is specified in cfg.m file.\n');
+                else
+                    disp('Stopping: STOP_IF_OTHER_ERROR=True. WARNING: This will not be saved in reports.');
+                    break_main_loop = true;
+                end
             end
 
             if cfg.CLOSE_MODEL
@@ -351,6 +382,7 @@ function sgtest(skip_first)
             'num_compare_error', 'num_other_error', 'num_timedout_sim', 'e_map', ... 
             'err_model_names', 'compare_err_model_names', 'other_err_model_names', ...
             'e_later', 'log_len_mismatch_count', 'log_len_mismatch_names', 'all_siglog', 'all_models', 'block_selection', 'runtime',...
+            'dtc_stat', 'all_models_sr',...
             '-append');
 
         if cfg.DELETE_MODEL && isempty(cfg.USE_PRE_GENERATED_MODEL)
@@ -358,13 +390,16 @@ function sgtest(skip_first)
             delete([sg.sys '.slx']);  % TODO Warning: when running a pre-generated model this will delete it! So keep the model in a different directory and add that directory in Matlab path.
         end
 
-        % Delete sub-models
+        % Close and/or Delete sub-models
         sg.my_result.hier_models.print_all('Printing sub models...');
         for i = 1:sg.my_result.hier_models.len
-            if cfg.CLOSE_MODEL
-                close_system(sg.my_result.hier_models.get(i));  % TODO closing subsystem, so will not be visible for inspection if desired.
+            if cfg.CLOSE_MODEL || (sim_res && cfg.CLOSE_OK_MODELS)
+                close_system(sg.my_result.hier_models.get(i), 0);  % TODO closing subsystem, so will not be visible for inspection if desired.
             end
-            delete([sg.my_result.hier_models.get(i) '.slx']);
+            
+            if cfg.DELETE_MODEL
+                delete([sg.my_result.hier_models.get(i) '.slx']);
+            end
         end
 
         delete(sg);
@@ -412,5 +447,5 @@ function sgtest(skip_first)
     
     cfg.print_warnings();
 
-    fprintf('------ BYE from SGTEST. Report saved in %s.mat -------\n', nowtime_str);
+    fprintf('------ BYE from SGTEST. Report saved in %s.mat file. Call neoreport(''%s''); to get detailed report. -------\n', nowtime_str, nowtime_str);
 end
