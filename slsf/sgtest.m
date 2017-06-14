@@ -1,6 +1,6 @@
-% This is entry-point to all CyFuzz experiments.
-% Run this script from the command line. Change configurations in cfg.m
-% class. 
+% Entry-point to run CyFuzz experiments.
+% Run this script from Matlab command line. Change configurations in cfg.m
+% class. You should not be changing anything in this file.
 
 function sgtest(skip_first)
 
@@ -40,7 +40,7 @@ function sgtest(skip_first)
         try
             copyfile(WS_FILE_NAME, [REPORTS_BASE filesep WS_FILE_NAME_ACTUAL]);
         catch e
-            disp('FATAL: did not find previous state of random generator. Try setting `LOAD_RNG_STATE = false` in `cfg.m` file');
+            disp('FATAL: did not find previously saved state of `random number generator (RNG)`. Are you running this script for the first time in this machine? Then set `LOAD_RNG_STATE = false` in `cfg.m` file before first-time run.');
             return;
         end
         disp('Restoring RNG state from disc')
@@ -62,11 +62,11 @@ function sgtest(skip_first)
     end
 
     if isempty(rng_state) || rand_start_over
-        disp('~~ RandomNumbers: Starting Over ~~');
+        disp('~~ RandomNumberGenerator: Starting Over ~~');
         rng(0,'twister');           % Random Number Generator  - Initialize
         mdl_counter = 0;
     else
-        disp('~~ RandomNumbers: Storing from previous state ~~');
+        disp('~~ RandomNumberGenerator: Loading from previous saved state ~~');
         rng(rng_state);
     end
 
@@ -84,7 +84,7 @@ function sgtest(skip_first)
 
     % Script is Starting %
 
-    fprintf('Loading Simulink...\n');
+    fprintf('Loading Simulink... (will take a while)\n');
     load_system('Simulink');
 
     num_total_sim = 0;
@@ -447,5 +447,5 @@ function sgtest(skip_first)
     
     cfg.print_warnings();
 
-    fprintf('------ BYE from SGTEST. Report saved in %s.mat -------\n', nowtime_str);
+    fprintf('------ BYE from SGTEST. Report saved in %s.mat file. Call neoreport(''%s''); to get detailed report. -------\n', nowtime_str, nowtime_str);
 end

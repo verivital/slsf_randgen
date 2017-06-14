@@ -70,7 +70,7 @@ classdef mymap < handle
         end
         
         function ret  = key(obj, index)
-            %  WARNING only call this after calling `keys()` first
+            %  WARNING only call this after calling `keys()` or `len_keys()`
             %  otherwise you might not get updated values.
             ret = obj.data_keys{index};
         end
@@ -91,7 +91,44 @@ classdef mymap < handle
                 fprintf('%s; \t', k);
             end
             fprintf('\n');
+
         end
+        
+        function ret = len_keys(obj)
+            ret = numel(obj.keys());
+        end
+        
+        function [vectorTemp, sortedVector] = sort_by_value(obj)
+            len = numel(obj.keys());
+            keys = obj.data_keys;
+            vectorTemp = strings(len,1);
+            vectorTemp(:,1)=keys;
+            
+            countTemp = zeros(len,2);
+            for k = 1:len
+               countTemp(k,1)=k;
+               countTemp(k,2)=obj.data.(keys{k});
+            end
+            sortedVector = sortrows(countTemp,2);
+        end
+        
+        function obj = inc(obj, k)
+            if obj.contains(k)
+                obj.put(k, obj.get(k) + 1);
+            else
+                obj.put(k, 1);
+            end
+        end
+        
+        function obj = insert_or_add(obj, k, v)
+            if obj.contains(k)
+                obj.put(k, obj.get(k) + v);
+            else
+                obj.put(k, v);
+            end
+
+        end
+        
     end
     
 end

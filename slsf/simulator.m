@@ -1134,11 +1134,14 @@ classdef simulator < handle
                 end
             end
         end
+    end
+    
+    methods(Static)
         
-        
-        function ret = get_connected_components(obj, slb)
-            % This function is no longer needed. Was previously
-            % (incorrectly) used to remove all cycles.
+
+        function ret = get_connected_components(slb)
+            
+            fprintf('Inside gcc\n');
             
             ret = mycell();
             

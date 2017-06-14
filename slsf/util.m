@@ -204,15 +204,32 @@ classdef util < handle
         
         
         function all_blocks = getBlocksOfLibrary(lib)
-            all_blocks = find_system(['Simulink/' lib])
+            all_blocks = find_system(['simulink/' lib]);
         end
         
         
         function getBlocksOfLibrary_PrettyPrint(lib)
-            all_blocks = find_system(['Simulink/' lib]);
+            all_blocks = find_system(['simulink/' lib]);
             
             for i=1:numel(all_blocks)
                 disp(all_blocks{i})
+            end
+        end
+        
+        function ret= getLibOfAllBlocks()
+            ret = mymap();
+            load_system('simulink');
+            libs = {'Discrete', 'Sources', 'Sinks', 'Continuous', 'Discontinuities', 'Signal Attributes',...
+                'Signal Routing', 'Math Operations', 'Logic and Bit Operations', 'Lookup Tables', 'User-Defined Functions', 'Ports & Subsystems', 'Additional Math & Discrete'};
+            for i = 1:numel(libs)
+                c_lib = libs{i};
+                all_blocks = util.getBlocksOfLibrary(c_lib);
+                for j = 1:numel(all_blocks)
+                    c_block = all_blocks{j};
+                    blocktype = get_param(c_block, 'blocktype');
+%                     fprintf('Block %s; Type %s\n', c_block, blocktype);
+                    ret.put(blocktype, c_lib);
+                end
             end
         end
         
@@ -440,6 +457,13 @@ classdef util < handle
                 ret = true;
             end
             
+        end
+        
+        function find_system(sys)
+            x = find_system(sys, 'SearchDepth','1','FindAll','on', 'LookUnderMasks', 'all', 'FollowLinks','on', 'type','line');
+            for i=1:numel(x)
+                get_param(x(i), 'type')
+            end
         end
         
     end

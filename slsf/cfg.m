@@ -1,22 +1,21 @@
 classdef cfg
     %CFG User-changable configurations
-    %   Detailed explanation goes here
+    %   Change various configure parameters here before calling `sgtest`
+    %   script to run an experiment. Refer to the CyPhy 2016 paper to
+    %   understand various "phases" of experiment.
     
     properties(Constant = true)
-        NUM_TESTS = 100;                          % Number of test models to generate
-        CSMITH_CREATE_C = false;                % Will call Csmith to create C files. Set to False if reproducing.
+        NUM_TESTS = 1;                                % Number of random models to generate (and use in differntial testing)
+        CSMITH_CREATE_C = false;                % Whether to call Csmith to create C files. Set to False if reproducing previous experiment.
         
-        SIMULATE_MODELS = true;                 % Simulate generated model
+        SIMULATE_MODELS = true;                 % To invoke "Analyze Model" and "Fix Errors" phase 
 
-        LOG_SIGNALS = true;                     % Log all block-output signals for comparison. Note: it disregards `USE_PRE_GENERATED_MODEL` setting.
+        LOG_SIGNALS = true;                         % Log all block-output signals for comparison ("Log Signals" phase). Note: it disregards `USE_PRE_GENERATED_MODEL` setting.
 
-        COMPARE_SIM_RESULTS = false;             % Compare simulation results obtained by logging signals.
-        
-        
-        % If following is non-empty and a string, then instead of generating a model, will use value of this variable as an already generated model. 
-        % Put empty ``[]'' to randomly generate models.
+        COMPARE_SIM_RESULTS = true;         % Compare simulation results obtained by logging signals ("Compare" phases),
+       
 
-        USE_PRE_GENERATED_MODEL = [];           
+        USE_PRE_GENERATED_MODEL = [];         % If non-empty and a string, then instead of generating random model, will use value of this variable (already generated model) in log signal/comparison phases.   
 %          USE_PRE_GENERATED_MODEL = 'sampleModel246';  % Instead of randomly
 %          generating model will use this particular model for further
 %          phases of CyFuzz
@@ -28,12 +27,12 @@ classdef cfg
         STOP_IF_ERROR = false;                  % Stop the script when meet the first simulation error
         STOP_IF_OTHER_ERROR = true;             % Stop the script for errors not related to simulation e.g. unhandled exceptions or code bug. ALWAYS KEEP IT TRUE to detect my own bugs.
 
-        CLOSE_MODEL = true;                    % Close models after simulation
-        CLOSE_OK_MODELS = true;                % Close models for which simulation ran OK
+        CLOSE_MODEL = true;                    % Close models after experiment
+        CLOSE_OK_MODELS = true;                % Close "OK" models (refer to CyPhy paper)
         
         FINAL_CLEAN_UP = true;                 % Will delete models and related artifacts (e.g. binaries) for the model
 
-        GENERATE_TYPESMART_MODELS = true;      % Will create models that respects data-type compatibility
+        GENERATE_TYPESMART_MODELS = true;      % Will create models that respects data-type compatibility between blocks.
         
         NUM_BLOCKS = [75 100];
         CHILD_MODEL_NUM_BLOCKS = [20 30];
