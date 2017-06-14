@@ -61,6 +61,11 @@ classdef difftester < handle
                 end
                 
                 obj.my_result.store_runtime(singleresult.SIGNAL_LOGGING);
+                
+                if cfg.PRESENTATION_MODE
+                    fprintf('---- CyFuzz: Signal Logging Phase Completed ---- \n');
+                    pause();
+                end
 
                 ret = obj.compare_sim_results(i);
 

@@ -1,9 +1,11 @@
 classdef hier_generator < simple_generator
-    %HIER_GENERATOR Summary of this class goes here
-    %   Detailed explanation goes here
+    %HIER_GENERATOR Generates child models
+    %   These models can be used in a parent model using the
+    %   Model_Reference block.
     
     properties
         root_result = [];     % To hold instance of the `singleresult` class of top-most model
+        root_generator = []; % The topmost model's generator 
     end
     
     methods

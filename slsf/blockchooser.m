@@ -9,31 +9,28 @@ classdef blockchooser < handle
         % wheel), probability of each category is denoted by the field
         % `num`.  NOTE THAT MAXIMUM VALUE OF num CAN BE 1.0
         
-        categories = {
-            struct('name', 'Discrete', 'num', 0.8)
-%             struct('name', 'Continuous', 'num', 0)
-%             struct('name', 'Math Operations', 'num', 10)
-%             struct('name', 'Logic and Bit Operations', 'num', 10)
-            struct('name', 'Sinks', 'num', 0.1)
-            struct('name', 'Sources', 'num', 0.1)
-        };
+        categories;
     
         
-    
-        allowlist = {
-            struct('name', 'simulink/Ports & Subsystems/Model', 'num', 0.1)
-            struct('name', 'simulink/Ports & Subsystems/For Each Subsystem', 'num', 0.1)
-        };
-%         allowlist = {};
+%     
+%         allowlist = {
+%             struct('name', 'simulink/Ports & Subsystems/Model', 'num', 0)
+%             struct('name', 'simulink/Ports & Subsystems/For Each Subsystem', 'num', 0)
+%         };
+        allowlist = {};
 
-        all_cats = [];                       % Will be processed later
+        all_cats = [];                       % Not all elementes of `categories` will not be considered. 
+        % This list is the ultimately selected candidate list.
     
-        blocklist = struct;
-        
-        hierarchy_blocks = mymap();
-        submodel_blocks = mymap();
+        blocklist; 
+%         hierarchy_blocks;
+%         submodel_blocks;
         
         selection_stat = [];
+        
+        docfixed = [];
+        
+        hier_block_count = 0;
     end
     
     methods
@@ -42,50 +39,71 @@ classdef blockchooser < handle
         function obj=blockchooser()
             % CONSTRUCTOR %
             
-            % Blacklist some blocks
-            obj.blocklist.(util.mvn('simulink/Sources/From File')) = 1;
-            obj.blocklist.(util.mvn('simulink/Sources/FromWorkspace')) = 1;
-            obj.blocklist.(util.mvn('simulink/Sources/EnumeratedConstant')) = 1;
-            obj.blocklist.(util.mvn('simulink/Discrete/Discrete Derivative')) = 1;
-            obj.blocklist.(util.mvn('simulink/Math Operations/FindNonzeroElements')) = 1;
-            obj.blocklist.(util.mvn('simulink/Continuous/VariableTransport Delay')) = 1;
-            obj.blocklist.(util.mvn('simulink/Sinks/StopSimulation')) = 1;
-%             obj.blocklist.(util.mvn('simulink/Continuous/PID Controller (2DOF)')) = 1;
-
-            % List the hierarchy blocks
-            obj.hierarchy_blocks.put('simulink/Ports & Subsystems/Model', 1);
-
-            % List the submodel-blocks
-            obj.submodel_blocks.put('simulink/Ports & Subsystems/For Each Subsystem', 1);
+            % Following instructions are supposed to DEEP COPY
+            
+            helper = slblocklibcfg.getInstance();
+            
+            obj.categories = helper.categories;
+            obj.blocklist = helper.blocklist;
+%             obj.hierarchy_blocks = helper.hierarchy_blocks;
+%             obj.submodel_blocks = helper.submodel_blocks;
+            
+            obj.docfixed = slblockdocfixed.getInstance();
         end
         
         
         function ret = is_hierarchy_block(obj, bname)
-            ret = obj.hierarchy_blocks.contains(bname);
+            ret = obj.docfixed.get(bname, slblockdocfixed.HIER);
+            if isempty(ret)
+                ret = false;
+            end
         end
         
         function ret = is_submodel_block(obj, bname)
-            ret = obj.submodel_blocks.contains(bname);
+            ret = obj.docfixed.get(bname, slblockdocfixed.SUBSYS);
+            if isempty(ret)
+                ret = false;
+            end
+        end
+        
+        function ret = is_other_hier_block(obj, bname)
+            ret = obj.docfixed.get(bname, slblockdocfixed.OTHER_HIER);
+            if isempty(ret)
+                ret = false;
+            end
         end
         
         
         function obj = process_cats(obj, can_not_choose_hierarchy_blocks)
             fprintf('PROCESSING ALL CATEGORIES...\n');
-            obj.all_cats = obj.categories;
-            num_all_cats = numel(obj.categories);
+            obj.all_cats = {};
+            num_all_cats = 0;
             
-            for i = 1:numel(obj.allowlist)
-                c = obj.allowlist{i};
+            for i = 1:numel(obj.categories)
+                c = obj.categories{i};
                 
-                if can_not_choose_hierarchy_blocks && (obj.hierarchy_blocks.contains(c.name) || obj.submodel_blocks.contains(c.name))
+                if can_not_choose_hierarchy_blocks && (obj.is_hierarchy_block(c.name) || obj.is_submodel_block(c.name) || obj.is_other_hier_block(c.name))
                     fprintf('Can not add %s: max level reached.\n', c.name);
                     continue;
                 end
                 
                 num_all_cats = num_all_cats + 1;
                 obj.all_cats{num_all_cats} = c;
-%                 obj.all_cats{num_all_cats} = struct('name', c.name, 'num', c.num, 'is_scalar', true);
+                
             end
+            
+%             for i = 1:numel(obj.allowlist)
+%                 c = obj.allowlist{i};
+%                 
+%                 if can_not_choose_hierarchy_blocks && (obj.hierarchy_blocks.contains(c.name) || obj.submodel_blocks.contains(c.name))
+%                     fprintf('Can not add %s: max level reached.\n', c.name);
+%                     continue;
+%                 end
+%                 
+%                 num_all_cats = num_all_cats + 1;
+%                 obj.all_cats{num_all_cats} = c;
+% %                 obj.all_cats{num_all_cats} = struct('name', c.name, 'num', c.num, 'is_scalar', true);
+%             end
         end
         
         function obj = do_selection_stat(obj, counter, num_choose)
@@ -99,6 +117,10 @@ classdef blockchooser < handle
         
         function ret = get(obj, cur_hierarchy_level, max_hierarchy_level, num_choose)
             % Selects block names randomly
+            % WARNING: Doesn't identify hierarchy models completely. Only
+            % looks for them if obj.category element is block instead of a
+            % library.
+            
             ret = mycell(-1);
             can_not_choose_hierarchy_blocks = cur_hierarchy_level >= max_hierarchy_level;
             
@@ -113,41 +135,57 @@ classdef blockchooser < handle
             counts = util.roulette_wheel(obj.all_cats, num_choose);
             obj.do_selection_stat(counts, num_choose);
             
-            for i=1:numel(obj.categories)
-                c = obj.categories{i};
+%             is_discrete = false;
+            
+            for i=1:numel(obj.all_cats)
+                c = obj.all_cats{i};
+                
+                is_discrete = strcmpi(c.name, 'Discrete');
+                
                 fprintf('Choosing %d elements from %s\n', counts(i), c.name);
                 
-                all_blocks = find_system(['Simulink/' c.name]);
-                num_all_blocks = numel(all_blocks) - 1; % Skip the first
-                
-                rand_vals = randi([2, num_all_blocks], 1, counts(i)); % Generates starting at 2
-            
-                for index = 1:counts(i)
-                    now_blk = all_blocks{rand_vals(index)};
+                if c.is_blk
+                    for index = 1:counts(i)
+                        ret.add({c.name, is_discrete});
+                    end 
                     
-                    while isfield(obj.blocklist, util.mvn(now_blk))
-                        i_rand = randi([2, num_all_blocks], 1, 1);
-                        now_blk = all_blocks{i_rand};
+                    if obj.is_hierarchy_block(c.name)
+                        % WARNING: Not doing following in the else block. TODO
+                        obj.hier_block_count = obj.hier_block_count + counts(i);
                     end
+                else
+                    all_blocks = find_system(['simulink/' c.name]);
+                    num_all_blocks = numel(all_blocks) - 1; % Skip the first
 
-                    ret.add(now_blk);
-                end                
+                    rand_vals = randi([2, num_all_blocks], 1, counts(i)); % Generates starting at 2
+
+                    for index = 1:counts(i)
+                        now_blk = all_blocks{rand_vals(index)};
+
+                        while isfield(obj.blocklist, util.mvn(now_blk))
+                            i_rand = randi([2, num_all_blocks], 1, 1);
+                            now_blk = all_blocks{i_rand};
+                        end
+
+                        ret.add({now_blk, is_discrete});
+                    end 
+                end
              
             end
             
-            fprintf('Now adding must-have blocks... \n');
-            counts_counter = numel(obj.all_cats) - numel(obj.allowlist) + 1
-            
-            for i=counts_counter:numel(obj.all_cats)
-                cur = obj.all_cats{i}.name;
-                
-                fprintf('About to add BLOCK %s FROM ALLOWLIST %d times\n', cur, counts(i));
-                
-                for j=1:counts(i)
-                    ret.add(cur);
-                end
-
-            end
+%             fprintf('Now adding must-have blocks... \n');
+%             counts_counter = numel(obj.all_cats) - numel(obj.allowlist) + 1;
+%             
+%             for i=counts_counter:numel(obj.all_cats)
+%                 cur = obj.all_cats{i}.name;
+%                 
+%                 fprintf('About to add BLOCK %s FROM ALLOWLIST %d times\n', cur, counts(i));
+%                 
+%                 for j=1:counts(i)
+%                     ret.add({cur, false}); % 2nd element is boolean: is the block discrete
+%                 end
+% 
+%             end
         end
         
         

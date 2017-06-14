@@ -31,3 +31,9 @@ slsf/reports/loglenmismatch/*.slx
 slsf/reports/success/*.slx
 *.asv
 slsf/temp
+in.c
+out.c
+pro_output.c
+*.pyc
+temptestprocsmith.c
+slsf/reportsneo/*

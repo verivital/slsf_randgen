@@ -4,22 +4,35 @@ classdef mycell < handle
     
     properties
         data;
-        capacity;
+        capacity = [];
         len;
     end
     
     methods
         
         function obj = mycell(capacity)
-            obj.capacity = capacity;
             
-            if capacity == -1
-                obj.data = {};
-            else
-                obj.data = cell(1, obj.capacity);
+            if nargin < 1
+                capacity = -1;
             end
             
-            obj.len = 0;
+            
+            
+            if iscell(capacity)
+                obj.data = capacity;
+                obj.len = numel(capacity);
+                
+            else
+                obj.capacity = capacity;
+                
+                if capacity == -1
+                    obj.data = {};
+                else
+                    obj.data = cell(1, obj.capacity);
+                end
+
+                obj.len = 0;
+            end
         end
         
         
@@ -31,6 +44,12 @@ classdef mycell < handle
         
         function ret = get(obj, indx)
             ret = obj.data{indx};
+        end
+        
+        function obj = extend(obj, other_cell)
+            for i=1:other_cell.len
+                obj.add(other_cell.get(i));
+            end
         end
         
         
@@ -45,6 +64,10 @@ classdef mycell < handle
             end
             
             fprintf('\n');
+        end
+        
+        function obj = nargin_test(obj, x)
+            fprintf('Nargin: %d\n', nargin);
         end
         
     end

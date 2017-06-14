@@ -1,11 +1,13 @@
-function [big_total, big_timedout] = getreport(datefrom)
+function [big_total, big_timedout] = neoreport(datefrom, break_after_single)
     %%% datefrom is string in format 'yyyy-MM-dd-HH-mm-ss'
     
-    break_after_single = true;
+    if nargin <= 1
+        break_after_single = true;
+    end
 
-    report_dir = 'reports';
+    report_dir = cfg.REPORTSNEO_DIR;
 
-    file_list = dir([report_dir filesep '*.mat']);
+    file_list = dir([report_dir]);
 
     date_from = datetime(datefrom,'InputFormat','yyyy-MM-dd-HH-mm-ss');
 
@@ -21,6 +23,8 @@ function [big_total, big_timedout] = getreport(datefrom)
     big_timedout = [];
     big_compare = [];
     
+    big_dc = mycell();
+    
     
     rt_bs = 0;
     rt_pc = 0;
@@ -32,18 +36,31 @@ function [big_total, big_timedout] = getreport(datefrom)
     big_block_sel = mymap();
     
     num_blocks = 0;
+    
+    later_errors = struct;
 
 
     for i = 1:numel(file_list)
+        
         cur_file = file_list(i).name;
-        cur_files = strsplit(cur_file, '.');
-
-        f_date = datetime(cur_files(1),'InputFormat','yyyy-MM-dd-HH-mm-ss');
+        
+        if ~file_list(i).isdir || strcmp(cur_file, '.') || strcmp(cur_file, '..')
+%             disp('Not a directory.... ignoring.');
+            continue;
+        end
+        
+        
+        f_date = datetime(cur_file,'InputFormat','yyyy-MM-dd-HH-mm-ss');
 
         if f_date >= date_from
             fprintf('Processing file %s...\n', cur_file);
 
-            load([report_dir filesep cur_file]);
+            try
+                load([report_dir filesep cur_file filesep 'reports.mat']);
+            catch e
+                disp('Didnt find reports.mat file. Skipping....');
+                continue;
+            end
 
             cur_file_index = cur_file_index + 1;
 
@@ -58,6 +75,8 @@ function [big_total, big_timedout] = getreport(datefrom)
             big_total(cur_file_index) = num_total_sim;
             big_timedout(cur_file_index) = num_timedout_sim;
             big_compare(cur_file_index) = num_compare_error;
+            
+            big_dc.add(dtc_stat);
             
             for j = 1:all_models.len
                 cur = all_models.get(j);
@@ -89,10 +108,43 @@ function [big_total, big_timedout] = getreport(datefrom)
                     rt_sl = rt_sl + d(singleresult.SIGNAL_LOGGING);
                     rt_comp = rt_comp + d(singleresult.COMPARISON);
                 else
-                    fprintf('NOT SUCCESSFUL! Skipping...\N');
+%                     fprintf('NOT SUCCESSFUL! Skipping...\n');
                 end
 
             end
+            
+%             fprintf('Errors Listing \n');
+    
+           for am_i = 1:numel(all_models_sr)
+                if isempty(all_models_sr{am_i})
+                    continue;
+                end
+                                
+                c = all_models_sr{am_i};
+                
+                if c.is_err_after_normal_sim
+                    fprintf('Found Err aftder normal sim\n');
+                    e = c.errors;
+                    switch e.identifier
+                        case {'MATLAB:MException:MultipleErrors'}
+                           
+                            for ae_i = 1:numel(e.cause)
+                                ae = e.cause{ae_i};
+                                later_errors =  util.map_inc(later_errors,ae.identifier);
+                            end
+                            
+                        otherwise
+                            later_errors =  util.map_inc(later_errors,e.identifier);
+                    end
+                end
+                    
+           end
+
+%             fn = fieldnames(e_later)
+%             for eli=1:numel(fn)
+%                 k = fn{i};
+%                 fprintf('%s\t%d\n', e_later.(k));
+%             end
 
             if break_after_single
                 break;
@@ -139,4 +191,18 @@ function [big_total, big_timedout] = getreport(datefrom)
     fprintf('Avg. Blocks: %.2f\n', num_blocks/num_sim);
     
     fprintf('Total files: %d\n', cur_file_index);
+    
+    fprintf('Data Conversion statistics\n');
+    
+    for i = 1:big_dc.len
+        c = big_dc.get(i);
+        for j=1:c.len
+            x = c.get(j);
+            fprintf('%d-%d \t %d \t %d \n', i, j, x{1}, x{2})
+        end
+    end
+    
+    fprintf('---- Errors after normal simulation---\n');
+    
+    later_errors
 end

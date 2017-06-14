@@ -103,7 +103,18 @@ classdef blockconfigure < handle
             d.(util.mvn('simulink/Continuous/VariableTransportDelay')) = t;
             
             
+            % simulink/Logic and BitOperations/Combinatorial Logic
+            t = {
+                bcprops('TruthTable', {'int', [0 1]}, [2 1], 'm')
+            };
+            d.(util.mvn('simulink/Logic and BitOperations/Combinatorial Logic')) = t;
             
+            % simulink/Discrete/Difference -- to prevent the
+            % Internal rule which is problematic
+            t = {
+                bcprops('OutDataTypeStr', {'Inherit: Inherit via back propagation'}, [], 'e')
+            };
+            d.(util.mvn('simulink/Discrete/Difference')) = t;
             
             % Save All
             
