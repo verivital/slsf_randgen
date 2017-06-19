@@ -5,7 +5,7 @@ classdef cfg
     %   understand various "phases" of experiment.
     
     properties(Constant = true)
-        NUM_TESTS = 1;                                % Number of random models to generate (and use in differntial testing)
+        NUM_TESTS = 100;                                % Number of random models to generate (and use in differntial testing)
         CSMITH_CREATE_C = false;                % Whether to call Csmith to create C files. Set to False if reproducing previous experiment.
         
         SIMULATE_MODELS = true;                 % To invoke "Analyze Model" and "Fix Errors" phase 
@@ -24,17 +24,17 @@ classdef cfg
 
         SKIP_IF_LAST_CRASHED = false;            % Skip one model if last time Matlab crashed trying to run the same model.
         
-        STOP_IF_ERROR = true;                  % Stop the script when meet the first simulation error
+        STOP_IF_ERROR = false;                  % Stop the script when meet the first simulation error
         STOP_IF_OTHER_ERROR = true;             % Stop the script for errors not related to simulation e.g. unhandled exceptions or code bug. ALWAYS KEEP IT TRUE to detect my own bugs.
 
-        CLOSE_MODEL = false;                    % Close models after experiment
+        CLOSE_MODEL = true;                    % Close models after experiment
         CLOSE_OK_MODELS = true;                % Close "OK" models (refer to CyPhy paper)
         
         FINAL_CLEAN_UP = true;                 % Will delete models and related artifacts (e.g. binaries) for the model
 
         GENERATE_TYPESMART_MODELS = false;      % Will create models that respects data-type compatibility between blocks.
         
-        NUM_BLOCKS = [10 15];
+        NUM_BLOCKS = [50 75];
         CHILD_MODEL_NUM_BLOCKS = [20 30];
         SUBSYSTEM_NUM_BLOCKS = [20 30];
         IF_ACTION_SUBSYS_NUM_BLOCKS = [5 15];
@@ -103,8 +103,10 @@ classdef cfg
         
         REPORTSNEO_DIR = 'reportsneo';  % Reports will be stored in this directory
         
-        STOP_IF_LISTED_ERRORS = true;  % If any of the errors from the list below occurs, break even if STOP_IF_ERROR == true.
+        STOP_IF_LISTED_ERRORS = true;  % If any of the errors from the list below occurs, break even if STOP_IF_ERROR == false.
         STOP_ERRORS_LIST = {};
+%         STOP_ERRORS_LIST = {'Simulink:Engine:BlkWithPortInLoop'};
+        
 %         STOP_ERRORS_LIST = {'Simulink:Engine:SolverConsecutiveZCNum', 'Simulink:blocks:SumBlockOutputDataTypeIsBool'};
 
 %         CONTINUE_ERRORS_LIST = {'SL:RandGen:TestTerminatedWithoutExceptions'};                      % Don't stop sgtest if these errors occur.

@@ -307,7 +307,7 @@ classdef simulator < handle
             for out_i=1:slb.NUM_BLOCKS
                 n = slb.nodes{out_i};
                 if colors(n.my_id) == WHITE
-%                     fprintf('[OUTER-DFS] visiting %d\n', n.my_id);
+                    fprintf('[OUTER-DFS] visiting %d\n', n.my_id);
                     dfs_visit(slbnodetags(n));
                 end
             end
@@ -335,38 +335,50 @@ classdef simulator < handle
             end
            
             function dfs_visit(v)
-%                 fprintf('\t[DFS-GRAY] %d\n', n.my_id)
+%                 fprintf('\t[DFS-GRAY] %d\n', v.n.my_id)
                 colors(v.n.my_id) = GRAY;
-                
-                % MutEx data-flow blocks
-                for medf_i = 1:numel(v.n.dfmutex_blocks)
-                    target_block = v.n.dfmutex_blocks(medf_i);
-                    if colors(target_block) == GRAY
-                        fprintf('(!! MEDF) block found: %d --> %d (current)\n', target_block, v.n.my_id);
-                        fprintf('(MEDF) My current parent: %d\n', v.which_parent_block.my_id);
-                        if v.which_parent_block.is_outports_actionports
-                            fprintf('MEDF: No need to fix current block as parent is an IF block.\n');
-                        elseif v.which_parent_block.my_id ~= target_block
-                            nodes_to_fix.add(v); % If there are no other blocks between them
-                            fprintf('MEDF: Will fix current block\n');
-                        else
-                            fprintf('MEDF: No need to fix current block\n');
-                        end
-                    end
-                end
                 
                 for i=1:numel(v.n.out_nodes)
                     for j=1:numel(v.n.out_nodes{i})
                         chld = v.n.out_nodes{i}{j};
                        
-%                         fprintf('\t\t\t[Child] %d ---> %d, color %d\n',n.my_id, chld.my_id, colors(chld.my_id));
+%                         fprintf('\t\t\t[Child] %d ---> ** %d ** , color %d\n',v.n.my_id, chld.my_id, colors(chld.my_id));
                        
                         tn = slbnodetags(chld);
                         tn.which_input_port = v.n.out_nodes_otherport{i}{j};
                         tn.which_parent_block = v.n;
                         tn.which_parent_port = [i, j];
+                        
+                        
+                        if colors(chld.my_id ~= GRAY)
+                            % MutEx data-dependency error fixing. No need
+                            % to do this if child is GRAY meaning having a
+                            % back-edge, this will be fixed anyway.
+                            
+                            for medf_i = 1:numel(chld.dfmutex_blocks)
+                                target_block = chld.dfmutex_blocks(medf_i);
+                                if colors(target_block) == GRAY
+                                    fprintf('\t(!! MEDF) block found: %d --> %d (current chld)\n', target_block, chld.my_id);
+                                    fprintf('\t(MEDF) My current parent: %d\n', v.n.my_id);
+                                    if v.n.is_outports_actionports
+                                        fprintf('\tMEDF: No need to fix current chld as parent is an IF block.\n');
+                                    elseif v.n.my_id ~= target_block
+                                        nodes_to_fix.add(tn); % If there are no other blocks between them
+                                        fprintf('\tMEDF: Will fix current chld\n');
+                                    else
+                                        fprintf('\tMEDF: No need to fix current chld\n');
+                                    end
+                                end
+                            end
+%                         else
+%                             fprintf('\t[-/\-] Chld is gray, so not worrying about MEDF.');
+                        end
+                        
+                        % Following code actually "visits" children as
+                        % necessary.
 
                         if colors(chld.my_id) == WHITE
+%                             fprintf('Will visit white child.\n');
                             dfs_visit(tn);
                         elseif colors(chld.my_id) == GRAY
                             fprintf('(!) Back edge: bl_%d::%d ---> bl_%d::%d\n', v.n.my_id, i, chld.my_id, v.n.out_nodes_otherport{i}{j});
@@ -378,11 +390,13 @@ classdef simulator < handle
                             else
                                 nodes_to_fix.add(tn);
                             end
+%                         else
+%                             fprintf('Black child, do nothing. \n');
                         end
                     end
                 end
                
-%                 fprintf('\t[DFS-BLACK] %d\n', n.my_id);
+%                 fprintf('\t[DFS-BLACK] %d\n', v.n.my_id);
                 colors(v.n.my_id) = BLACK;
             end
         end
