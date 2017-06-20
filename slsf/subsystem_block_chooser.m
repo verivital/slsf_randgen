@@ -1,5 +1,5 @@
 classdef subsystem_block_chooser < blockchooser
-    % Chooses blocks for submodels
+    % Chooses blocks for subsystems
     %   Detailed explanation goes here
     
     properties

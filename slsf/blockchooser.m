@@ -1,5 +1,6 @@
 classdef blockchooser < handle
-    %BLOCKCHOOSER Choose which blocks to use in random generator
+    %BLOCKCHOOSER Randomly selects which blocks the random generator will
+    %use
     %Can blocklist some blocks
     %   Detailed explanation goes here
     
@@ -53,6 +54,7 @@ classdef blockchooser < handle
         
         
         function ret = is_hierarchy_block(obj, bname)
+            % Returns true if the block-type (bname) is Model Reference
             ret = obj.docfixed.get(bname, slblockdocfixed.HIER);
             if isempty(ret)
                 ret = false;
@@ -60,6 +62,8 @@ classdef blockchooser < handle
         end
         
         function ret = is_submodel_block(obj, bname)
+            % Returns true if the block-type (bname) is some type of
+            % SubSystem
             ret = obj.docfixed.get(bname, slblockdocfixed.SUBSYS);
             if isempty(ret)
                 ret = false;

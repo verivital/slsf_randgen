@@ -120,6 +120,9 @@ classdef (Sealed) slblockdocfixed < handle
           obj.d.put('Ports & Subsystems/If Action Subsystem',...
               struct(obj.SUBSYS, true));
           
+          obj.d.put('Ports & Subsystems/For Iterator Subsystem',...
+              struct(obj.SUBSYS, true));
+          
           
       end
       

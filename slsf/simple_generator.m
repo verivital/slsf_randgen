@@ -27,8 +27,8 @@ classdef simple_generator < handle
         pre_analysis_only = false;              % If true then will return from Fix Errors phase after `pre analysis'
         is_subsystem = true;
         
-        blkcfg;
-        blkchooser = [];                 
+        blkcfg = [];    % instance of blockconfigure; determines how some block parameters are configured
+        blkchooser = [];                 % instance of blockchooser; determines how to randomly select blocks
         
         max_hierarchy_level = [];
         current_hierarchy_level = [];
@@ -244,8 +244,10 @@ classdef simple_generator < handle
                 obj.NUM_BLOCKS = util.rand_int(obj.NUM_BLOCKS(1), obj.NUM_BLOCKS(2), 1);
                 fprintf('NUM_BLOCKS chosen to %d \n', obj.NUM_BLOCKS);
             end
-             
-            obj.blkcfg = blockconfigure();
+            
+            if isempty(obj.blkcfg)
+                obj.blkcfg = blockconfigure();
+            end
             obj.my_result = singleresult(obj.sys, obj.record_runtime);
             
             obj.my_result.init_runtime_recording();
@@ -777,8 +779,10 @@ classdef simple_generator < handle
             
             try
                 if obj.assign_sampletime_for_discrete
+%                     fprintf('Will assign sampletime 1');
                     sampletime = '1';
                 else
+%                     fprintf('Will assign inherited sampletime -1');
                     sampletime = '-1';
                 end
                 set_param(h, 'SampleTime', sampletime);  % TODO random choose sample time?
@@ -793,7 +797,8 @@ classdef simple_generator < handle
         
         
         function ret = draw_blocks(obj)
-            % Draw blocks in the screen
+            % Puts blocks in the newly created  empty model, starts
+            % configuring and constructing them.
             ret = true;
             
             disp('DRAWING BLOCKS...');
@@ -894,7 +899,7 @@ classdef simple_generator < handle
                 
                 % Construct the block if it is a subsystem block
                 if obj.blkchooser.is_submodel_block(blk_type)
-                    fprintf('Submodel block %s found.\n', this_blk_name);
+                    fprintf('SubSystem block %s found.\n', this_blk_name);
                     obj.handle_subsystem_creation(this_blk_name, obj.sys, blk_type);
                 end
 
@@ -1078,15 +1083,26 @@ classdef simple_generator < handle
             COMPARE_SIM_RESULTS = false;
             
             full_model_name = [parent_model blk_name];
-            assign_sample_time_for_discrete = true;
+            assign_sample_time_for_discrete = obj.assign_sampletime_for_discrete;
             
-            if strcmp(blk_type, 'simulink/Ports & Subsystems/Subsystem')
-                num_blks =cfg.SUBSYSTEM_NUM_BLOCKS;
-            elseif strcmp(blk_type, sprintf('simulink/Ports &\nSubsystems/If Action\nSubsystem'))
-                num_blks = cfg.IF_ACTION_SUBSYS_NUM_BLOCKS;
-                assign_sample_time_for_discrete = false;
-            else
-                fatal('subsystem type not matched: %s', blk_type);
+            bconfigure = [];    % block configure: instance of blockconfigure class;
+            
+            switch blk_type
+            
+                case {'simulink/Ports & Subsystems/Subsystem'}
+                    num_blks =cfg.SUBSYSTEM_NUM_BLOCKS;
+                    bchooser = subsystem_block_chooser();
+                case {sprintf('simulink/Ports & Subsystems/For Iterator Subsystem')}
+                    num_blks =cfg.SUBSYSTEM_NUM_BLOCKS;
+                    assign_sample_time_for_discrete = false;
+                    bchooser = foriterator_block_chooser();
+                    bconfigure = foriterator_blockconfigure();
+                case {sprintf('simulink/Ports &\nSubsystems/If Action\nSubsystem')}
+                    num_blks = cfg.IF_ACTION_SUBSYS_NUM_BLOCKS;
+                    assign_sample_time_for_discrete = false;
+                    bchooser = subsystem_block_chooser();
+                otherwise
+                    fatal('subsystem type not matched: %s', blk_type);
             end
             
             hg = subsystem_generator(num_blks, full_model_name, SIMULATE_MODELS, CLOSE_MODEL, LOG_SIGNALS, SIMULATION_MODE, COMPARE_SIM_RESULTS);                      
@@ -1113,7 +1129,8 @@ classdef simple_generator < handle
 
             hg.root_generator.descendant_generators.put(full_model_name, hg);
             
-            hg.blkchooser = subsystem_block_chooser();
+            hg.blkchooser = bchooser;
+            hg.blkcfg = bconfigure();
             hg.init();
             
             try

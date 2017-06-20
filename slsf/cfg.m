@@ -5,7 +5,7 @@ classdef cfg
     %   understand various "phases" of experiment.
     
     properties(Constant = true)
-        NUM_TESTS = 100;                                % Number of random models to generate (and use in differntial testing)
+        NUM_TESTS = 50;                                % Number of random models to generate (and use in differntial testing)
         CSMITH_CREATE_C = false;                % Whether to call Csmith to create C files. Set to False if reproducing previous experiment.
         
         SIMULATE_MODELS = true;                 % To invoke "Analyze Model" and "Fix Errors" phase 
@@ -34,7 +34,7 @@ classdef cfg
 
         GENERATE_TYPESMART_MODELS = false;      % Will create models that respects data-type compatibility between blocks.
         
-        NUM_BLOCKS = [50 75];
+        NUM_BLOCKS = [15 20];
         CHILD_MODEL_NUM_BLOCKS = [20 30];
         SUBSYSTEM_NUM_BLOCKS = [20 30];
         IF_ACTION_SUBSYS_NUM_BLOCKS = [5 15];
@@ -71,7 +71,8 @@ classdef cfg
             struct('name', 'Sinks', 'is_blk', false, 'num', 0.2)
             struct('name', 'Sources', 'is_blk', false, 'num', 0.2)
 %             struct('name', 'simulink/Ports & Subsystems/Subsystem', 'is_blk', true, 'num', 0.05)
-            struct('name', 'simulink/Ports & Subsystems/If', 'is_blk', true, 'num', .05)
+%             struct('name', 'simulink/Ports & Subsystems/If', 'is_blk', true, 'num', .05)
+            struct('name', 'simulink/Ports & Subsystems/For Iterator Subsystem', 'is_blk', true, 'num', .05)
 %             struct('name', 'simulink/User-Defined Functions/S-Function', 'is_blk', true, 'num', 0.20)
 %             struct('name', 'simulink/Ports & Subsystems/Model', 'is_blk', true, 'num', 0.06)
         };
