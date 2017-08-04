@@ -10,6 +10,7 @@ classdef simulator < handle
         
         fixed_blocks;
         
+        signal_logging;     % What value of signal logging to use when invoking the `sim` command
         
         % Data type fixer related
         last_handle = [];
@@ -34,6 +35,12 @@ classdef simulator < handle
             obj.generator = generator;
             obj.max_try = max_try;
             obj.fixed_blocks = mymap();
+            
+            if obj.generator.use_signal_logging_api
+                obj.signal_logging = 'on';
+            else
+                obj.signal_logging = 'off';
+            end
         end
         
         
@@ -69,7 +76,7 @@ classdef simulator < handle
 %             myTimer = timer('StartDelay',obj.simulation_timeout, 'TimerFcn',['set_param(''' obj.generator.sys ''',''SimulationCommand'',''stop'')']);
             start(myTimer);
             try
-                sim(obj.generator.sys);
+                sim(obj.generator.sys, 'SignalLogging', obj.signal_logging);
                 disp(['RETURN FROM SIMULATION. STATUS: ' obj.sim_status ]);
                 stop(myTimer);
 

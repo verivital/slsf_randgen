@@ -94,6 +94,7 @@ classdef slblocks < handle
                     n.is_source = true;
                     obj.sources.add(n);
                 end
+                n.is_sink = docref.is_sink;
             else
 %                 warning(['No Doc Ref found for ' search_names{2}]);
 %                 throw(MException('SL:RandGen:NoDocRefFound', 'no doc ref found'));

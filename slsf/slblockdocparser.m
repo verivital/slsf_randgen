@@ -118,6 +118,12 @@ classdef (Sealed) slblockdocparser < handle
                                 is_source_block = false;
                             end
                             
+                             if strcmp(libname, 'Sinks')
+                                is_sink_block = true;
+                            else
+                                is_sink_block = false;
+                            end
+                            
                         end
                     end
                     
@@ -150,7 +156,8 @@ classdef (Sealed) slblockdocparser < handle
                     end
                     
                     bl_obj.is_source = is_source_block;
-
+                    bl_obj.is_sink = is_sink_block;
+                    
                     libmap.put(blname, bl_obj);
                     
                     

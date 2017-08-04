@@ -25,6 +25,8 @@ classdef slbnode < handle
         my_id;
         
         is_source = false;
+        is_sink = false;
+        
         dft_status = [];
         
         is_outports_actionports = false;    % Whether the output ports of this blocks are always connected to action ports (e.g. If blocks)

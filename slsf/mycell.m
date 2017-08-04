@@ -3,9 +3,14 @@ classdef mycell < handle
     %   Detailed explanation goes here
     
     properties
+        len;
+%         data;
+%         capacity = [];
+    end
+    
+    properties (Access=private)
         data;
         capacity = [];
-        len;
     end
     
     methods
@@ -13,7 +18,7 @@ classdef mycell < handle
         function obj = mycell(capacity)
             
             if nargin < 1
-                capacity = -1;
+                capacity = 1;
             end
             
             
@@ -21,15 +26,15 @@ classdef mycell < handle
             if iscell(capacity)
                 obj.data = capacity;
                 obj.len = numel(capacity);
-                
+                obj.capacity = obj.len;
             else
                 obj.capacity = capacity;
                 
-                if capacity == -1
-                    obj.data = {};
-                else
-                    obj.data = cell(1, obj.capacity);
-                end
+%                 if capacity == -1
+%                     obj.data = {};
+%                 else
+                obj.data = cell(1, obj.capacity);
+%                 end
 
                 obj.len = 0;
             end
@@ -37,6 +42,12 @@ classdef mycell < handle
         
         
         function obj = add(obj, elem)
+            
+            if obj.len == obj.capacity
+                obj.data(obj.capacity+1 : obj.capacity*2) = cell(1, obj.capacity);
+                obj.capacity = obj.capacity * 2;
+            end
+            
             obj.len = obj.len + 1;
             obj.data{obj.len} = elem;
         end
@@ -46,7 +57,12 @@ classdef mycell < handle
             ret = obj.data{indx};
         end
         
+        function ret = get_cell(obj)
+            ret = obj.data(1:obj.len);
+        end
+        
         function obj = extend(obj, other_cell)
+            % TODO: This implementation is horribly ineficient
             for i=1:other_cell.len
                 obj.add(other_cell.get(i));
             end

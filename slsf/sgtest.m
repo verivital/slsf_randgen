@@ -85,7 +85,7 @@ function sgtest(skip_first)
     % Script is Starting %
 
     fprintf('Loading Simulink... (will take a while)\n');
-    load_system('Simulink');
+    load_system('simulink');
 
     num_total_sim = 0;
     num_suc_sim = 0;

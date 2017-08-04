@@ -10,6 +10,7 @@ classdef slblockdata < handle
         out_data_type_param = [];
         default_out_param = [];
         is_source;
+        is_sink;
         is_signed_only = false % Determine by the attribute '6' at Block-data type support page. Implies this block doesn't support unsigned
     end
     
@@ -18,6 +19,7 @@ classdef slblockdata < handle
             obj.in_dtypes = mycell();
             obj.out_dtypes = mycell();
             obj.is_source = false;
+            obj.is_sink = false;
         end
         
     end
