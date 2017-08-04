@@ -170,6 +170,9 @@ classdef analyze_complexity < handle
         
         grand_total_block_count = 0;
         grand_total_connections_count = 0;
+        
+        % Local CF related
+        cf_expdir;
     end
     
     methods
@@ -329,7 +332,8 @@ classdef analyze_complexity < handle
                     obj.examples = obj.cfg.github_complex;
                     obj.analyze_all_models_from_a_class();
                 case analyze_complexity.EXP_CYFUZZ
-                    obj.examples = obj.cfg.cyfuzz;
+                    obj.examples = analyze_complexity_cfg.get_local_models(obj.cf_expdir);
+                    obj.examples = obj.examples.get_cell()
                     obj.analyze_all_models_from_a_class();
                 case analyze_complexity.EXP_CYFUZZ_OLD
                     obj.examples = obj.cfg.old_cyfuzz;
@@ -1119,6 +1123,22 @@ classdef analyze_complexity < handle
     end
     
     methods(Static)
+        
+        function ac = go_local(exp_dir)
+            % Entry point to run analysis for some CyFuzz models on an
+            % experiment folder
+            
+            disp('--- Complexity Analysis for Local CF models --');
+            ac = analyze_complexity();
+            ac.cf_expdir = exp_dir;
+            ac.start(analyze_complexity.EXP_CYFUZZ);
+            
+            % Get results for all experiments
+            
+            ac.get_metric_for_all_experiments();
+
+        end
+        
         function ac = go()
             % Entry point to run ALL analysis
             base_dir = 'publicmodels';

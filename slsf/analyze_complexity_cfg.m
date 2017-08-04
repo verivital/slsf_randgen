@@ -57,8 +57,8 @@ classdef analyze_complexity_cfg < handle
             'realtime_pacer_example', 'dcIntrocomplete'}
         mc_rest = {'PDQuadrotor', 'GearSelect_Testrig', 'PV_MPPT', 'PV_model_Param', 'PV_module'}
         
-%         scripts_to_run = {};
-        scripts_to_run = {'InitializeCSTHDisturbedStdOp1', 'InitializeCSTHDisturbedStdOp2', 'install_3dscope', 'startup_DCT_Model', 'Machine_Parameters_new'};
+        scripts_to_run = {};
+%         scripts_to_run = {'InitializeCSTHDisturbedStdOp1', 'InitializeCSTHDisturbedStdOp2', 'install_3dscope', 'startup_DCT_Model', 'Machine_Parameters_new'};
     end
     
     methods
@@ -134,6 +134,23 @@ classdef analyze_complexity_cfg < handle
 %                 all_files.add(x{1});
             end
             fprintf('\n');
+        end
+        
+        function all_files = get_local_models(exp_date)
+            target_dir = 'success';
+            cur_path = ['reportsneo' filesep exp_date filesep  target_dir]
+            addpath(genpath(cur_path));
+            
+            all_files = mycell();
+            
+            slx_files = dir([cur_path filesep 'sampleModel*.slx']);
+            for i=1:numel(slx_files)
+                x = strsplit(slx_files(i).name, '.slx');
+                assert(numel(x) == 2)
+%                 fprintf('''%s'', ', x{1});
+                all_files.add(x{1});
+            end
+%             fprintf('\n');
         end
         
         function ret = get_models(loc, prelist)
