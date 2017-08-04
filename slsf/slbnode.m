@@ -98,9 +98,9 @@ classdef slbnode < handle
             in = obj.get_input_type();
             
             fprintf('------ out-------\t');
-            disp(out.data);
+            disp(out.get_cell());
             fprintf('------- in --------\t');
-            disp(in.data);
+            disp(in.get_cell());
             
             % Warning: Following logic is flawed if there are multiple out
             % types. E.g. let out type = {int, double} and in_type =
