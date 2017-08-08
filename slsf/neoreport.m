@@ -25,6 +25,8 @@ function [big_total, big_timedout] = neoreport(datefrom, break_after_single)
     
     big_dc = mycell();
     
+    big_num_fe_attempts = 0;
+    
     
     rt_bs = 0;
     rt_pc = 0;
@@ -32,6 +34,7 @@ function [big_total, big_timedout] = neoreport(datefrom, break_after_single)
     rt_sl = 0;
     rt_comp = 0;
     rt_tot = 0;
+    rt_tot_count = 0; % For how many models counted
     
     big_block_sel = mymap();
     
@@ -95,18 +98,31 @@ function [big_total, big_timedout] = neoreport(datefrom, break_after_single)
                 big_block_sel.put(k, (prev + block_selection.get(k)))
             end
             
+            
+            for j=1:numel(all_models_sr)
+                cur_saved_res = all_models_sr{j};
+                if cur_saved_res.is_successful
+                    big_num_fe_attempts = big_num_fe_attempts + cur_saved_res.num_fe_attempts;
+                end
+            end
+            
+            assert(runtime.len == numel(all_models_sr));
+            
+            
             for j = 1:runtime.len
                 d = runtime.get(j);
 
                 % only count successful ones
+                cur_saved_res = all_models_sr{j};
 
-                if d(singleresult.COMPARISON) > 0
+                if cur_saved_res.is_successful
 
                     rt_bs = rt_bs + d(singleresult.BLOCK_SEL);
                     rt_pc = rt_pc + d(singleresult.PORT_CONN);
                     rt_fas = rt_fas + d(singleresult.FAS);
                     rt_sl = rt_sl + d(singleresult.SIGNAL_LOGGING);
                     rt_comp = rt_comp + d(singleresult.COMPARISON);
+                    rt_tot_count = rt_tot_count + 1;
                 else
 %                     fprintf('NOT SUCCESSFUL! Skipping...\n');
                 end
@@ -187,21 +203,38 @@ function [big_total, big_timedout] = neoreport(datefrom, break_after_single)
     fprintf('Avg. SL \t %.2f \t %.2f\n', rt_sl/num_suc, rt_sl/rt_tot*100);
     fprintf('Avg. CMP \t %.2f \t %.2f\n', rt_comp/num_suc, rt_comp/rt_tot*100);
     fprintf('Avg. TOT \t %.2f \n', rt_tot/num_suc);
+    fprintf('>>> Counted runtime for %d models <<< \n', rt_tot_count);
     
     fprintf('Avg. Blocks: %.2f\n', num_blocks/num_sim);
     
     fprintf('Total files: %d\n', cur_file_index);
     
     fprintf('Data Conversion statistics\n');
+    fprintf('Experiment-Model number \t Num-Analyzed \tNum-FixError \n');
+    
+    big_dtc_num_a = 0; % Total DTC block added by analysis
+    big_dtc_num_fe = 0; % otal DTC block added by Fix Error phase
     
     for i = 1:big_dc.len
         c = big_dc.get(i);
         for j=1:c.len
             x = c.get(j);
-            fprintf('%d-%d \t %d \t %d \n', i, j, x{1}, x{2})
+            fprintf('%d-%d \t %d \t %d \n', i, j, x{1}, x{2});
+            big_dtc_num_a = big_dtc_num_a + x{1};
+            big_dtc_num_fe = big_dtc_num_fe + x{2};
         end
     end
     
+    %     big_dtc_num_a
+    %     big_dtc_num_fe
+    
+    fprintf('Avg. # of DTC by analysis: %.2f\n', big_dtc_num_a/num_sim);
+    fprintf('Avg. # of DTC by FixError: %.2f\n', big_dtc_num_fe/num_sim);
+    
+    big_num_fe_attempts
+    fprintf('--- Avg. Fix Error Attempts: %.2f ---\n', big_num_fe_attempts/num_suc);
+    
+
     fprintf('---- Errors after normal simulation---\n');
     
     later_errors

@@ -173,6 +173,7 @@ function sgtest(skip_first)
             sim_res = sg.go();
             
             sg.my_result.update_saved_result(sr);
+            sr.is_successful = sim_res;
             
     %         l_logged = sg.my_result.logdata;
 
@@ -279,7 +280,7 @@ function sgtest(skip_first)
 
                 if cfg.STOP_IF_ERROR
                     if util.cell_str_in(cfg.CONTINUE_ERRORS_LIST, e.identifier)
-                        fprintf('An error occured, but SGTEST is not stopping even STOP_IF_ERROR is set to true. You asked me to do this for this specific error in cfg.m file.\n');
+                        fprintf('An error occured, but SGTEST is not stopping even STOP_IF_ERROR is set to true. You configured for this specific error in cfg.m file.\n');
                     else
                         disp('BREAKING FROM MAIN LOOP AS ERROR OCCURRED IN SIMULATION');
                         break_main_loop = true;

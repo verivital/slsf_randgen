@@ -6,6 +6,8 @@ classdef savedresult < handle
         model_name;
         errors = []; % All final errors associated with this model
         is_err_after_normal_sim = false;
+        is_successful;
+        num_fe_attempts = 0;
         
     end
     

@@ -457,7 +457,11 @@ classdef simulator < handle
             
             obj.fxd = slblockdocfixed.getInstance();
             
-            obj.remove_cycles(slb);
+            if cfg.ELIMINATE_FEEDBACK_LOOPS
+                obj.remove_cycles(slb);
+            else
+                warning('Removing cycles (feedback loops) is turned off!');
+            end
             
             if cfg.GENERATE_TYPESMART_MODELS
                 obj.ts_datatype_analysis(slb);
@@ -485,7 +489,7 @@ classdef simulator < handle
                 end
                 
                 found = false;
-                
+                obj.generator.my_result.num_fe_attempts = obj.generator.my_result.num_fe_attempts + 1;
                 try
                     obj.sim();
                     disp('Success simulating in SIMULATOR.M module!');
@@ -870,7 +874,7 @@ classdef simulator < handle
         
         
         function obj = fix_alg_loop(obj, e)
-            assert(false);
+            assert(~cfg.ELIMINATE_FEEDBACK_LOOPS || false);
 %             throw(MException('RandGen:SL:AlgebraicLoopDiscovered', 'By construction, there should be no algebraic loops!'));
             
             % Fix Algebraic Loop 
@@ -1144,7 +1148,7 @@ classdef simulator < handle
                 
                 aloops = Simulink.BlockDiagram.getAlgebraicLoops(obj.generator.sys);
                 
-                assert(numel(aloops) == 0);
+                assert(~cfg.ELIMINATE_FEEDBACK_LOOPS || numel(aloops) == 0);
             
                 if numel(aloops) == 0
                     fprintf('No Algebraic loop. Returning...\n');
@@ -1162,7 +1166,7 @@ classdef simulator < handle
 
                         fprintf('j blk: %s \t effective blk: %s\n',get_param(j_block, 'name'), get_param(effective_j_blk, 'name'));
 
-                        if util.cell_in(visited_handles.data, effective_j_blk)
+                        if util.cell_in(visited_handles.get_cell(), effective_j_blk)
                             fprintf('Blk already visited\n');
                         else
 
