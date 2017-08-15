@@ -102,7 +102,7 @@ classdef simple_generator < handle
             obj.hierarchy_old_models = mycell();
             obj.descendant_generators = mymap();
             
-            obj.blk_construction = mymap('Simulink/User-Defined Functions/S-Function', 'bc_sfunction', 'simulink/Ports & Subsystems/If', 'bc_if');
+            obj.blk_construction = mymap('simulink/User-Defined Functions/S-Function', 'bc_sfunction', 'simulink/Ports & Subsystems/If', 'bc_if');
             obj.pre_block_connection = mycell();
             obj.post_block_connection = mycell();
         end
