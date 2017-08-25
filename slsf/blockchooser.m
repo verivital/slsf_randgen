@@ -10,21 +10,21 @@ classdef blockchooser < handle
         % `num`.  NOTE THAT MAXIMUM VALUE OF num CAN BE 1.0
         
         categories = {
-            struct('name', 'Discrete', 'num', 0.8)
-%             struct('name', 'Continuous', 'num', 0)
+            struct('name', 'Discrete', 'num', 0.3)
+             struct('name', 'Continuous', 'num', 0.3)
 %             struct('name', 'Math Operations', 'num', 10)
 %             struct('name', 'Logic and Bit Operations', 'num', 10)
-            struct('name', 'Sinks', 'num', 0.1)
-            struct('name', 'Sources', 'num', 0.1)
+            struct('name', 'Sinks', 'num', 0.2)
+            struct('name', 'Sources', 'num', 0.2)
         };
     
         
     
-        allowlist = {
-            struct('name', 'simulink/Ports & Subsystems/Model', 'num', 0.1)
-            struct('name', 'simulink/Ports & Subsystems/For Each Subsystem', 'num', 0.1)
-        };
-%         allowlist = {};
+        %allowlist = {
+         %   struct('name', 'simulink/Ports & Subsystems/Model', 'num', 0.1)
+          %  struct('name', 'simulink/Ports & Subsystems/For Each Subsystem', 'num', 0.05)
+        %};
+         allowlist = {};
 
         all_cats = [];                       % Will be processed later
     

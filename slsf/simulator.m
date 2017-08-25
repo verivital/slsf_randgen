@@ -6,7 +6,7 @@ classdef simulator < handle
         generator;
         max_try;
         
-        simulation_timeout = 18;        % After this many seconds simulation will be killed. 
+        simulation_timeout = 1500;        % After this many seconds simulation will be killed. 
         sim_status = [];
         
         
