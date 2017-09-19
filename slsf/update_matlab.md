@@ -21,20 +21,22 @@ click "Edit virtual machine settings" [screenshot](https://www.dropbox.com/s/a0m
 
 ## Configure host machine to use the new Matlab
 
- - Open terminal and enter following commands:
+Open terminal and enter following commands:
 
     sudo su # Will ask for password
     mkdir /media/mlnew
-    echo "/dev/sdb /media/mlnew auto auto,user,exec 0 0" >> /etc/fstab        
+    echo "/dev/sdb /media/mlnew auto auto,user,exec 0 0" >> /etc/fstab
     exit
 
- - Make sure you entered exit so that you are no logner superuser.
- - Open `~/.zshrc` file in some text editor (e.g. `gedit ~/.zshrc`)
- - Comment-out this line: (i.e. by putting `#` before it)
+Next:
+
+- Make sure you entered exit so that you are no logner superuser.
+- Open `~/.zshrc` file in some text editor (e.g. `gedit ~/.zshrc`)
+- Comment-out this line: (i.e. by putting `#` before it)
 
     # export PATH=$PATH:/$CSMITH_PATH/src:/home/cyfuzz/installations/matlab/bin
 
- - Enter this line:
+Enter this line:
 
     export PATH=$PATH:/$CSMITH_PATH/src:/media/mlnew/r2017a/bin
 
