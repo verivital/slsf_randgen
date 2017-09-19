@@ -5,14 +5,14 @@ classdef cfg
     %   understand various "phases" of experiment.
     
     properties(Constant = true)
-        NUM_TESTS = 50;                                % Number of random models to generate (and use in differntial testing)
+        NUM_TESTS = 1;                                % Number of random models to generate (and use in differntial testing)
         CSMITH_CREATE_C = false;                % Whether to call Csmith to create C files. Set to False if reproducing previous experiment.
         
         SIMULATE_MODELS = true;                 % To invoke "Analyze Model" and "Fix Errors" phase 
 
         LOG_SIGNALS = true;                         % Log all block-output signals for comparison ("Log Signals" phase). Note: it disregards `USE_PRE_GENERATED_MODEL` setting.
 
-        COMPARE_SIM_RESULTS = false;         % Compare simulation results obtained by logging signals ("Compare" phases),
+        COMPARE_SIM_RESULTS = true;         % Compare simulation results obtained by logging signals ("Compare" phases),
        
 
         USE_PRE_GENERATED_MODEL = [];         % If non-empty and a string, then instead of generating random model, will use value of this variable (already generated model) in log signal/comparison phases.   
@@ -20,7 +20,7 @@ classdef cfg
 %          generating model will use this particular model for further
 %          phases of CyFuzz
 
-        LOAD_RNG_STATE = true;                  % Set this `true` if we want to create NEW models each time the script is run. Set to `false` if generating same models at each run of the script is desired. For first time running in a new computer set to false, as this will fail first time if set to true.
+        LOAD_RNG_STATE = false;                  % Set this `true` if we want to create NEW models each time the script is run. Set to `false` if generating same models at each run of the script is desired. For first time running in a new computer set to false, as this will fail first time if set to true.
 
         SKIP_IF_LAST_CRASHED = false;            % Skip one model if last time Matlab crashed trying to run the same model.
         
@@ -32,7 +32,7 @@ classdef cfg
         
         FINAL_CLEAN_UP = true;                 % Will delete models and related artifacts (e.g. binaries) for the model
 
-        GENERATE_TYPESMART_MODELS = true;      % Will create models that respects data-type compatibility between blocks.
+        GENERATE_TYPESMART_MODELS = false;      % Will create models that respects data-type compatibility between blocks.
         ELIMINATE_FEEDBACK_LOOPS = true;
         
         NUM_BLOCKS = [75 100];
@@ -66,16 +66,11 @@ classdef cfg
         
         SL_BLOCKLIBS = {
            struct('name', 'Discrete', 'is_blk', false, 'num', 0.3)
-            struct('name', 'Continuous', 'is_blk', false,  'num', 0.3)
-   %         struct('name', 'Math Operations', 'is_blk', false, 'num', .15)
-%             struct('name', 'Logic and Bit Operations', 'is_blk', false, 'num', 0.15)
+            struct('name', 'Continuous', 'is_blk', false,  'num', 0.29)
             struct('name', 'Sinks', 'is_blk', false, 'num', 0.2)
             struct('name', 'Sources', 'is_blk', false, 'num', 0.2)
-%             struct('name', 'simulink/Ports & Subsystems/Subsystem', 'is_blk', true, 'num', 0.05)
-%             struct('name', 'simulink/Ports & Subsystems/If', 'is_blk', true, 'num', .05)
-%             struct('name', 'simulink/Ports & Subsystems/For Iterator Subsystem', 'is_blk', true, 'num', .05)
-%             struct('name', 'simulink/User-Defined Functions/S-Function', 'is_blk', true, 'num', 0.20)
-%             struct('name', 'simulink/Ports & Subsystems/Model', 'is_blk', true, 'num', 0.06)
+         %   struct('name', 'simulink/Ports & Subsystems/Subsystem', 'is_blk', true, 'num', 0.05)
+         %   struct('name', 'simulink/Ports & Subsystems/Model', 'is_blk', true, 'num', 0.05)
         };
     
         % Won't use following SL blocks in generated models:
@@ -84,6 +79,8 @@ classdef cfg
             'simulink/Sources/From File'
             'simulink/Sources/FromWorkspace'
             'simulink/Sources/EnumeratedConstant'
+            'simulink/Sources/FromSpreadsheet'
+            'simulink/Sources/InBusElement'
             'simulink/Discrete/Discrete Derivative'
             'simulink/Discrete/Resettable Delay'                        % For testing DFT analysis
             'simulink/Math Operations/FindNonzeroElements'
