@@ -32,7 +32,8 @@ Next:
 
 - Make sure you entered exit so that you are no logner superuser.
 - Open `~/.zshrc` file in some text editor (e.g. `gedit ~/.zshrc`)
-- Comment-out this line: (i.e. by putting `#` before it)
+
+Then, Comment-out this line: (i.e. by putting `#` before it)
 
     # export PATH=$PATH:/$CSMITH_PATH/src:/home/cyfuzz/installations/matlab/bin
 
