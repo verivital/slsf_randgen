@@ -1,11 +1,10 @@
 classdef comparator < handle
-    %COMPARATOR Compare between two simulation results
+    %COMPARATOR Compare between two or more simulation results
     %   Detailed explanation goes here
     
     properties
-%         generator;
-        data;                       % Data we receive from generator
-        refined_data;               % After we process the `data`;
+        data;                       % Data we receive from difftester
+        refined_data;               % Processed the `data`;
         try_count;
         my = [];                        % Instance of `singleresult` class
         max_log_len_mismatch_allowed; % How many log len mismatches are allowed?
@@ -17,7 +16,6 @@ classdef comparator < handle
         
         function obj = comparator(my_result, data, try_count)
             % CONSTRUCTOR %
-%             obj.generator = generator;
             obj.my = my_result;
             obj.data = data;
             obj.try_count = try_count;
@@ -127,13 +125,13 @@ classdef comparator < handle
             obj.refined_data = cell(1, numel(obj.data));
             
             for i = 1:numel(obj.data)
-                % This loop iterates through ALL simulations.
+                % This loop iterates through ALL varied simulations.
                 single_simulation = struct;
                 
                 cur_dataset = obj.data{i};
                 
                 for j = 1:cur_dataset.numElements
-                    % This iterates through all blocks of a particular
+                    % Iterates through all blocks's outputs of a particular
                     % simulation
                     new_data = struct;
                     
@@ -142,8 +140,7 @@ classdef comparator < handle
                     new_data.Time = s_dataset.Values.Time;
                     new_data.Data = s_dataset.Values.Data;
                     
-                    bp = char(s_dataset.BlockPath.convertToCell());
-%                     fprintf('Now inserting data in\n');
+                    bp = char(s_dataset.BlockPath.convertToCell()); % Getting block's name and output port number
                     
                     single_simulation.(util.mvn([bp '_' int2str(s_dataset.PortIndex)])) = new_data;
                 end

@@ -17,11 +17,11 @@ classdef difftester < handle
         
         root_var_of_results = [];
         
-        signal_logging_value = [];      % on or off, to be passed to sim command
+        signal_logging_value = [];      % on or off, to be passed to sim command, will be determined by `logging_method_siglog`
         
         sim_mode_for_my_result = struct('accelerator', singleresult.ACC, 'rapid', singleresult.RACC);
         
-        logging_method_siglog = true;       % If true, uses Signal Logging API. Otherwise adds Outport blocks to every block of top-level model.
+        logging_method_siglog = cfg.USE_SIGNAL_LOGGING_API;       % If true, uses Signal Logging API. Otherwise adds Outport blocks to every block of top-level model.
         
     end
     
@@ -51,7 +51,7 @@ classdef difftester < handle
             
             for i=1:obj.num_log_len_mismatch
                     
-                obj.simulate_for_data_logging();
+                obj.simulate_for_data_logging(); % Simulates the model variying SUT options and records signals
                 
                 obj.my_result.is_ok(singleresult.NORMAL_SIGLOG)
 
@@ -66,16 +66,36 @@ classdef difftester < handle
                     fprintf('---- CyFuzz: Signal Logging Phase Completed ---- \n');
                     pause();
                 end
+                
+                obj.create_and_log_signal_for_emi(); % Create EMI-variants and log signals by simulating them
 
-                ret = obj.compare_sim_results(i);
+                ret = obj.compare_sim_results(i); % Compares the recorded signals
 
-%                 if ~ obj.my_result.is_log_len_mismatch
                 if ret
                     break; % No need to run again, since we are successful in the first attempt.
                 end
 
             end
             
+        end
+        
+        function obj = create_and_log_signal_for_emi(obj)
+            if ~ cfg.EMI_TESTING
+                return;
+            end
+            
+            emi_tester = emitester(obj.sys, obj.my_result);
+            sim_data = emi_tester.go(obj);
+            
+            for i = 1:sim_data.len
+                obj.simulation_data{obj.get_num_of_non_emi_simulations() + i} = sim_data.get(i);
+            end
+            
+        end
+        
+        
+        function ret = get_num_of_non_emi_simulations(obj)
+            ret = numel(obj.simulation_mode_values) * numel(obj.simulation_mode) + 1;
         end
         
         
@@ -102,6 +122,8 @@ classdef difftester < handle
         
         
         function ret = simulate_log_signal_normal_mode(obj)
+            % Simulates the model in Normal mode and records/logs signals
+            
             fprintf('[!] Simulating in NORMAL SIGNAL LOGGING mode...\n');
             ret = true;
             
@@ -110,22 +132,21 @@ classdef difftester < handle
             % TODO: Handle Timeout
             
             try
-                simOut = sim(obj.sys, 'SimulationMode', 'normal', 'SignalLogging','on');
+%                 sim_output = sim(obj.sys, 'SimulationMode', 'normal', 'SignalLogging','on');
+                sim_output = obj.get_logged_simulation_data(obj.sys, 'normal', 'off');
                 obj.my_result.set_ok(singleresult.NORMAL_SIGLOG);
             catch e
                 fprintf('ERROR SIMULATION (Logging) in Normal mode');
-                e
+                getReport(e)
                 
                 obj.my_result.set_err(singleresult.NORMAL_SIGLOG, MException('RandGen:SL:ErrAfterNormalSimulation', e.identifier))
                 obj.my_result.main_exc = e;
                 
-%                 obj.my_result.set_error_acc_mode(e, 'NormalMode');
-%                 obj.last_exc = MException('RandGen:SL:ErrAfterNormalSimulation', e.identifier);
 
                 ret = false;
                 return;
             end
-            obj.simulation_data{1} = simOut.get(obj.root_var_of_results);
+            obj.simulation_data{1} = obj.retrieve_sim_data(sim_output);
 
             % Save and close the system
             fprintf('Saving Model...\n');
@@ -136,21 +157,20 @@ classdef difftester < handle
         
         
         function obj = simulate_for_data_logging(obj)
+            % Simulates a model varying SUT options and EMI testing
+            
             if isempty(obj.simulation_mode)
                 fprintf('No simulation mode provided. returning...\n');
             end
-            
-%             obj.my_result.set_ok_acc_mode();    % Will be over-written if not ok
-            
-            obj.simulation_data = cell(1, (numel(obj.simulation_mode_values) * numel(obj.simulation_mode) + 1)); % 1 extra for normal mode
-            
+                        
+            obj.simulation_data = cell(1, (obj.get_num_of_non_emi_simulations + emitester.get_total_emi_variant())); 
 
             if ~ obj.simulate_log_signal_normal_mode()
                 % Return if normally simulating threw error.
                 return
             end
             
-            % Simulation Modes
+            % Vary simulation modes
             for ti = 1:numel(obj.simulation_mode)
                 for i = 1:numel(obj.simulation_mode_values)
                     inc_i = i + 1;
@@ -169,7 +189,8 @@ classdef difftester < handle
                     obj.my_result.start(obj.sim_mode_for_my_result.(simu_mode));
 
                     try
-                        simOut = sim(obj.sys, 'SimulationMode', simu_mode, 'SimCompilerOptimization', mode_val, 'SignalLogging', obj.signal_logging_value);
+%                         sim_data = sim(obj.sys, 'SimulationMode', simu_mode, 'SimCompilerOptimization', mode_val, 'SignalLogging', obj.signal_logging_value);
+                        sim_data = obj.get_logged_simulation_data(obj.sys, simu_mode, mode_val);
                         obj.my_result.set_ok(obj.sim_mode_for_my_result.(simu_mode));
                     catch e
                         fprintf('ERROR SIMULATION in later modes'); % TODO Mode name hardcoded
@@ -179,7 +200,7 @@ classdef difftester < handle
                         return;
                     end
 
-                    obj.simulation_data{inc_i} = simOut.get(obj.root_var_of_results);
+                    obj.simulation_data{inc_i} = obj.retrieve_sim_data(sim_data);
 
                     % Delete generated stuffs
                     fprintf('Deleting generated stuffs...\n');
@@ -203,6 +224,7 @@ classdef difftester < handle
    
                 end
             end
+           
             
             % Delete the saved model
 %             fprintf('Deleting model...\n');
@@ -210,6 +232,16 @@ classdef difftester < handle
             
             
         end
+        
+         function ret  = get_logged_simulation_data(obj, sys, simulation_mode, optimization_value)
+             fprintf('[-->] Simulating %s, Mode: %s \n', sys, simulation_mode);
+            ret = sim(sys, 'SimulationMode', simulation_mode, 'SimCompilerOptimization', optimization_value, 'SignalLogging', obj.signal_logging_value);
+         end
+        
+         function ret = retrieve_sim_data(obj, simOut)
+             ret =  simOut.get(obj.root_var_of_results);
+         end
+        
         
         function close(obj)
             close_system(obj.sys, 0);

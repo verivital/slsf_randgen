@@ -119,7 +119,11 @@ classdef cfg
         HIERARCHY_NEW_OLD_RATIO = {struct('name', 'new', 'num', 0.7)
             struct('name', 'old', 'num', 0.3)
         };
-
+    
+        % EMI Related
+        
+        EMI_TESTING = true;
+        NUM_STATIC_EMI_VARS = 3;
 
         % Debugging Related
         

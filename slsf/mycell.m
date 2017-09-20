@@ -1,11 +1,12 @@
 classdef mycell < handle
-    %MYCELL Wrapper to `cell` for easy dynamic list usage
-    %   Detailed explanation goes here
+    %MYCELL Wrapper to `cell` for easy dynamically-growing array usage
+    %   Usage: get(index) to return any data at particular index; add(data)
+    %   to add `data` at the end of the dynamic array. In constructor, you
+    %   can optionally pass capacity. the `len` property returns current
+    %   size. 
     
     properties
         len;
-%         data;
-%         capacity = [];
     end
     
     properties (Access=private)
@@ -21,8 +22,7 @@ classdef mycell < handle
                 capacity = 1;
             end
             
-            
-            
+
             if iscell(capacity)
                 obj.data = capacity;
                 obj.len = numel(capacity);
@@ -62,7 +62,7 @@ classdef mycell < handle
         end
         
         function obj = extend(obj, other_cell)
-            % TODO: This implementation is horribly ineficient
+            % TODO: This implementation is horribly inefficient
             for i=1:other_cell.len
                 obj.add(other_cell.get(i));
             end
