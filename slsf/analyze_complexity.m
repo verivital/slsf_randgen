@@ -15,10 +15,10 @@ classdef analyze_complexity < handle
         BP_LIBCOUNT_GROUPLEN = 7;  % length of group for Metric 9
         BP_ALL_EXPERIMENTS_GROUPLEN = 2;  % length of group for those boxplots which have all experiments inside them
         % Different classes of simulink models (i.e. different experiment types)
-        EXP_EXAMPLES = 'e';   % Examples and demos that come with Simulink 
+        EXP_EXAMPLES = 't';   % Examples and demos that come with Simulink 
         EXP_GITHUB = 'g1';
         EXP_GITHUB_COMPLEX = 'g2'
-        EXP_MATLAB_CENTRAL = 'm';
+        EXP_MATLAB_CENTRAL = 'w';
         EXP_RESEARCH = 'o';  % Academic and industrial research
         
         EXP_CYFUZZ = 'c';
@@ -73,6 +73,9 @@ classdef analyze_complexity < handle
         NUM_CORR = 6;
         
         
+        % Strongly connected components
+        CALCULATE_SCC = true;
+        
     end
     
     properties
@@ -104,7 +107,7 @@ classdef analyze_complexity < handle
 %         boxPlotBlockCountHierarchyWise;
 %         boxPlotChildRepresentingBlockCount;
         
-%         bp_scc; % Strongly connected components
+        bp_scc; % Strongly connected components
         bp_SFunctions;
         bp_lib_count;
         bp_compiletime;
@@ -123,14 +126,14 @@ classdef analyze_complexity < handle
         % model classes
         model_classes;
         
-        max_level = 10;  % Max hierarchy levels to follow
+        max_level = 7;  % Max hierarchy levels to follow
         
         blocktype_library_map; % Map, key is blocktype, value is the library
         libcount_single_model;  % Map, keys are block-library; values are count (how many time a block from that library occurred in a single model)
         blk_count;  % Aggregated block count excluding hidden and masked blocks
         blk_count_masked;   % Aggregated block count including masked and hidden .. using sldiagnostic API
         descendants_count;  % Count all children and grandchildren for the top model - aggregated result.
-%         scc_count;
+        scc_count;  % Strongly connected component
         
         max_unique_blocks = 18;
         max_hardware_types = 5;
@@ -211,8 +214,10 @@ classdef analyze_complexity < handle
             obj.bp_matlab_cyclomatic = boxplotmanager(obj.BP_ALL_EXPERIMENTS_GROUPLEN);
             obj.bp_matlab_cyclomatic.calc_stats = true;
             
-%             obj.bp_scc = boxplotmanager(obj.BP_ALL_EXPERIMENTS_GROUPLEN);
-%             obj.bp_scc.calc_stats = true;
+            if analyze_complexity.CALCULATE_SCC
+                obj.bp_scc = boxplotmanager(obj.BP_ALL_EXPERIMENTS_GROUPLEN);
+                obj.bp_scc.calc_stats = true;
+            end
             
             obj.bp_connections_aggregated_count = boxplotmanager(obj.BP_ALL_EXPERIMENTS_GROUPLEN); %Metric 22
             obj.bp_connections_aggregated_count.calc_stats = true;
@@ -361,24 +366,32 @@ classdef analyze_complexity < handle
             obj.bp_child_model_reuse.draw('Child Model Reuse #1', 'Model Classes', 'Reuse rate (%)');
             obj.bp_compiletime.draw('Compile Time #12', '', 'Compilation time (sec)');
             obj.bp_block_count.draw('Block Count Aggregated #2', 'Model Classes', 'Blocks');
-%             obj.bp_scc.draw('SCC', 'Model Classes', 'SCC count');
+            
+            if analyze_complexity.CALCULATE_SCC
+                obj.bp_scc.draw('SCC', 'Model Classes', 'SCC count');
+            end
+            
             obj.bp_hier_depth_count.draw('Maximum Hierarchy Depth #4', '', 'Hierarchy depth');
             obj.bp_matlab_cyclomatic.draw('MathWorks Cyclomatic Complexity', '', 'Cyclomatic Complexity');
-            obj.bp_connections_aggregated_count.draw('Aggregated Connections Count #22', 'Model classes', 'Connections');
-            obj.bp_unique_block_aggregated_count.draw('Aggregated Unique Block Count #23', 'Model classes', 'Blocks');
-            obj.bp_algebraic_loop_count.draw('Algebraic Loops Count', 'Model classes', 'Loop');
+            obj.bp_connections_aggregated_count.draw('Aggregated Connections Count #22', '', 'Connections');
+            obj.bp_unique_block_aggregated_count.draw('Aggregated Unique Block Count #23', '', 'Unq. Blocks');
+            obj.bp_algebraic_loop_count.draw('Algebraic Loops Count', '', 'Loop');
             obj.bp_descendants_count.draw('Child-representing blocks count (Aggregated)', '', 'Blocks');
-            obj.bp_simulation_time.draw('Model Simulation Time #17', 'Model classes', 'Simulation Duration');
+            obj.bp_simulation_time.draw('Model Simulation Time #17', '', 'Simulation Duration');
             
             % Group draw
-            obj.bp_block_count_level_wise.group_draw('Block Count (level wise)', 'Hierarchy level', 'Blocks', true);
+            obj.bp_block_count_level_wise.group_draw('Block Count (level wise)', 'Hierarchy Level', 'Blocks', true);
             obj.bp_lib_count.group_draw('Library participation', 'Simulink library', 'Blocks (%)'); 
             obj.bp_connections_depth_count.group_draw('Connections Count (level wise)', 'Hierarchy Level', 'Connections', true);
       
             
             obj.bp_compiletime.get_stat();
             obj.bp_block_count.get_stat();
-%             obj.bp_scc.get_stat();
+            
+            if analyze_complexity.CALCULATE_SCC
+                obj.bp_scc.get_stat();
+            end
+            
             obj.bp_hier_depth_count.get_stat();
             obj.bp_matlab_cyclomatic.get_stat();
             obj.bp_connections_aggregated_count.get_stat();
@@ -506,7 +519,11 @@ classdef analyze_complexity < handle
                 obj.connectionsLevelMap = mymap();
                 obj.libcount_single_model = mymap();
                 obj.blk_count = 0;
-%                 obj.scc_count = 0;
+                
+                if analyze_complexity.CALCULATE_SCC
+                    obj.scc_count = 0;
+                end
+                
                 obj.descendants_count = 0;
                  obj.blk_count_masked = 0; % Metric 2
                  
@@ -554,8 +571,9 @@ classdef analyze_complexity < handle
                 end
                 
                 % SCC
-%                 obj.bp_scc.add(obj.scc_count, obj.exptype);
-                
+                if analyze_complexity.CALCULATE_SCC
+                    obj.bp_scc.add(obj.scc_count, obj.exptype);
+                end
                 
 %                 fprintf('My block count: %d; SLDIAG block count: %d\n', obj.blk_count, blk_count_sldiag);
                 assert(abs(obj.blk_count - blk_count_sldiag) < 200);
@@ -984,17 +1002,22 @@ classdef analyze_complexity < handle
                     count=count+1;
                     obj.blk_count = obj.blk_count + 1;
                     
-%                     slb.process_new_block(currentBlock);
+                    if analyze_complexity.CALCULATE_SCC
+                        slb.process_new_block(currentBlock);
+                    end
                     
                 end
             end
             
 %             fprintf('\n');
             
-%             fprintf('Get SCC for %s\n', char(sys));
-%             con_com = simulator.get_connected_components(slb);
-%             fprintf('[ConComp] Got %d connected comps\n', con_com.len);
-%             obj.scc_count = obj.scc_count + con_com.len;
+            if analyze_complexity.CALCULATE_SCC
+                fprintf('Get SCC for %s\n', char(sys));
+                con_com = simulator.get_connected_components(slb);
+                fprintf('[ConComp] Got %d connected comps\n', con_com.len);
+
+                obj.scc_count = obj.scc_count + con_com.len;
+            end
             
             mapKey = int2str(depth);
             
@@ -1135,9 +1158,9 @@ classdef analyze_complexity < handle
             
             % Call as many experiments you want to run
             ac.start(analyze_complexity.EXP_EXAMPLES);
-            ac.start(analyze_complexity.EXP_SIMPLE);
-            ac.start(analyze_complexity.EXP_COMPLEX);
-            ac.start(analyze_complexity.EXP_RESEARCH);
+%             ac.start(analyze_complexity.EXP_SIMPLE);
+%             ac.start(analyze_complexity.EXP_COMPLEX);
+%             ac.start(analyze_complexity.EXP_RESEARCH);
             
 %             ac.start(analyze_complexity.EXP_CYFUZZ);
 %             ac.start(analyze_complexity.EXP_CYFUZZ_OLD);
@@ -1151,8 +1174,8 @@ classdef analyze_complexity < handle
                         
             % Get results for all experiments
             
-            ac.get_metric_for_all_experiments();
-            ac.do_corr_analysis();
+            ac.get_metric_for_all_experiments(); 
+%             ac.do_corr_analysis();
             
 %             fprintf('Special Github models');
 %             ac.github_special.print_all([]);

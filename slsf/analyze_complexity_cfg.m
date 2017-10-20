@@ -29,7 +29,9 @@ classdef analyze_complexity_cfg < handle
         
 %         cyfuzz = {'untitled6'};
         
-        cyfuzz = {'sampleModel1000', 'sampleModel1002', 'sampleModel1004', 'sampleModel1012', 'sampleModel1018', 'sampleModel1024', 'sampleModel1028', 'sampleModel1032', 'sampleModel1033', 'sampleModel1034', 'sampleModel1035', 'sampleModel904', 'sampleModel908', 'sampleModel917', 'sampleModel925', 'sampleModel928', 'sampleModel930', 'sampleModel937', 'sampleModel938', 'sampleModel941', 'sampleModel944', 'sampleModel945', 'sampleModel946', 'sampleModel947', 'sampleModel950', 'sampleModel953', 'sampleModel962', 'sampleModel964', 'sampleModel965', 'sampleModel967', 'sampleModel970', 'sampleModel971', 'sampleModel973', 'sampleModel974', 'sampleModel975', 'sampleModel977', 'sampleModel978', 'sampleModel979', 'sampleModel980', 'sampleModel984', 'sampleModel986', 'sampleModel988', 'sampleModel989', 'sampleModel990', 'sampleModel995', 'sampleModel996'};
+%         cyfuzz = {'sampleModel1000', 'sampleModel1002', 'sampleModel1004', 'sampleModel1012', 'sampleModel1018', 'sampleModel1024', 'sampleModel1028', 'sampleModel1032', 'sampleModel1033', 'sampleModel1034', 'sampleModel1035', 'sampleModel904', 'sampleModel908', 'sampleModel917', 'sampleModel925', 'sampleModel928', 'sampleModel930', 'sampleModel937', 'sampleModel938', 'sampleModel941', 'sampleModel944', 'sampleModel945', 'sampleModel946', 'sampleModel947', 'sampleModel950', 'sampleModel953', 'sampleModel962', 'sampleModel964', 'sampleModel965', 'sampleModel967', 'sampleModel970', 'sampleModel971', 'sampleModel973', 'sampleModel974', 'sampleModel975', 'sampleModel977', 'sampleModel978', 'sampleModel979', 'sampleModel980', 'sampleModel984', 'sampleModel986', 'sampleModel988', 'sampleModel989', 'sampleModel990', 'sampleModel995', 'sampleModel996'};
+%         cyfuzz = {'sampleModel1849', 'sampleModel1851', 'sampleModel1852', 'sampleModel1853', 'sampleModel1854', 'sampleModel1855', 'sampleModel1856', 'sampleModel1857', 'sampleModel1858', 'sampleModel1859', 'sampleModel1860', 'sampleModel1861', 'sampleModel1862', 'sampleModel1863', 'sampleModel1864', 'sampleModel1865', 'sampleModel1866', 'sampleModel1867', 'sampleModel1868', 'sampleModel1869', 'sampleModel1870', 'sampleModel1871', 'sampleModel1872', 'sampleModel1873', 'sampleModel1874', 'sampleModel1875', 'sampleModel1876', 'sampleModel1877', 'sampleModel1878', 'sampleModel1879', 'sampleModel1880', 'sampleModel1881', 'sampleModel1882', 'sampleModel1883', 'sampleModel1884', 'sampleModel1885', 'sampleModel1886', 'sampleModel1887', 'sampleModel1889', 'sampleModel1890', 'sampleModel1891', 'sampleModel1892', 'sampleModel1893', 'sampleModel1894', 'sampleModel1895', 'sampleModel1896', 'sampleModel1897', 'sampleModel1898' };
+        cyfuzz = {'sampleModel1327', 'sampleModel1328', 'sampleModel1329', 'sampleModel1330', 'sampleModel1331', 'sampleModel1332', 'sampleModel1333', 'sampleModel1334', 'sampleModel1336', 'sampleModel1337', 'sampleModel1338', 'sampleModel1339', 'sampleModel1340', 'sampleModel1341', 'sampleModel1342', 'sampleModel1343', 'sampleModel1344', 'sampleModel1345', 'sampleModel1346', 'sampleModel1347', 'sampleModel1348', 'sampleModel1349', 'sampleModel1350', 'sampleModel1351', 'sampleModel1352', 'sampleModel1353', 'sampleModel1354', 'sampleModel1355', 'sampleModel1357', 'sampleModel1358', 'sampleModel1359', 'sampleModel1360', 'sampleModel1361', 'sampleModel1362', 'sampleModel1363', 'sampleModel1365', 'sampleModel1366', 'sampleModel1367', 'sampleModel1368', 'sampleModel1369', 'sampleModel1370', 'sampleModel1371', 'sampleModel1372', 'sampleModel1373', 'sampleModel1374', 'sampleModel1375', 'sampleModel1376', 'sampleModel1377', 'sampleModel1378', 'sampleModel1379', 'sampleModel1380', 'sampleModel1381', 'sampleModel1382', 'sampleModel1383', 'sampleModel1384', 'sampleModel1385', 'sampleModel1386', 'sampleModel1387', 'sampleModel1388', 'sampleModel1389', 'sampleModel1390', 'sampleModel1391', 'sampleModel1392', 'sampleModel1393', 'sampleModel1394', 'sampleModel1395', 'sampleModel1396', 'sampleModel1397', 'sampleModel1398', 'sampleModel1399', 'sampleModel1400', 'sampleModel1401', 'sampleModel1403', 'sampleModel1404', 'sampleModel1405', 'sampleModel1406', 'sampleModel1408', 'sampleModel1409', 'sampleModel1410', 'sampleModel1411', 'sampleModel1412', 'sampleModel1413', 'sampleModel1414', 'sampleModel1415', 'sampleModel1416', 'sampleModel1417', 'sampleModel1418', 'sampleModel1419', 'sampleModel1420', 'sampleModel1421', 'sampleModel1422', 'sampleModel1424', 'sampleModel1425', 'sampleModel1426'};
         old_cyfuzz = {'sampleModel1', 'sampleModel10', 'sampleModel100', 'sampleModel11', 'sampleModel12', 'sampleModel13', 'sampleModel14', 'sampleModel15', 'sampleModel16', 'sampleModel17', 'sampleModel18', 'sampleModel19', 'sampleModel2', 'sampleModel21', 'sampleModel22', 'sampleModel23', 'sampleModel24', 'sampleModel25', 'sampleModel26', 'sampleModel27', 'sampleModel28', 'sampleModel3', 'sampleModel30', 'sampleModel31', 'sampleModel32', 'sampleModel33', 'sampleModel34', 'sampleModel35', 'sampleModel37', 'sampleModel38', 'sampleModel39', 'sampleModel4', 'sampleModel40', 'sampleModel41', 'sampleModel42', 'sampleModel44', 'sampleModel45', 'sampleModel46', 'sampleModel47', 'sampleModel48', 'sampleModel49', 'sampleModel5', 'sampleModel50', 'sampleModel51', 'sampleModel52', 'sampleModel53', 'sampleModel54', 'sampleModel55', 'sampleModel56', 'sampleModel57', 'sampleModel58', 'sampleModel59', 'sampleModel6', 'sampleModel60', 'sampleModel61', 'sampleModel62', 'sampleModel63', 'sampleModel64', 'sampleModel65', 'sampleModel66', 'sampleModel67', 'sampleModel68', 'sampleModel69', 'sampleModel7', 'sampleModel70', 'sampleModel71', 'sampleModel72', 'sampleModel74', 'sampleModel75', 'sampleModel76', 'sampleModel77', 'sampleModel78', 'sampleModel79', 'sampleModel8', 'sampleModel80', 'sampleModel81', 'sampleModel82', 'sampleModel83', 'sampleModel84', 'sampleModel85', 'sampleModel86', 'sampleModel87', 'sampleModel89', 'sampleModel9', 'sampleModel90', 'sampleModel91', 'sampleModel92', 'sampleModel94', 'sampleModel95', 'sampleModel97', 'sampleModel98', 'sampleModel99'};
         
         mc_complex_e = { 'EXTENSION1',  'EXTENSIONnewwithfuzzy',  'EXTENSIONwithfuellcell', 'Detailed_PMSG_one_machine', 'microgrid_Finalcircutperfect', 'Three_Phase_ACDCAC_PWMconverter',...
@@ -81,6 +83,7 @@ classdef analyze_complexity_cfg < handle
                 'asbGravWPrec', 'aeroblk_calibrated', 'aeroblk_self_cond_cntr',};
             examples_e = {'sldemo_mdlref_variants_enum', 'sldemo_mdlref_bus','sldemo_mdlref_conversion','sldemo_mdlref_counter_datamngt','sldemo_mdlref_dsm','sldemo_mdlref_dsm_bot','sldemo_mdlref_dsm_bot2','sldemo_mdlref_F2C'};
 
+%             obj.examples = {'HEV_SeriesParallel'};
             obj.examples = [examples_a, examples_b, examples_c, examples_d, examples_e];
 %             obj.examples = examples_e;
 %             obj.examples = {'sldemo_mdlref_counter_datamngt'};
@@ -138,6 +141,10 @@ classdef analyze_complexity_cfg < handle
         
         function ret = get_models(loc, prelist)
             
+            CHECK_LIB_END = true;   % Checks whether a model name ends with the lib i.e. it's a suffix
+            
+            ret = struct;
+            
             if nargin == 1
                 prelist = [];
             end
@@ -151,11 +158,41 @@ classdef analyze_complexity_cfg < handle
             all_files = mycell();
             children = mymap();
             final_ret = mycell();
+            simples = mycell();
+            tests = mycell();
+            libs = mycell();
+            name_conflicts = mycell();
+            model_path = mymap();  
             
             addpath(genpath(full_loc));
             
             all_path = genpath(full_loc);
             all_path=  strsplit(all_path, ';');
+            
+            lib_suffix = "lib";
+            
+            function ret = is_customlib(x, foldername)
+                ret = false; % Caution: Only for lib. Test status does not affect this value.
+                assert(numel(x) == 2)
+                
+                if model_path.contains(x{1})
+                    name_conflicts.add(x{1});
+                else
+                    model_path.put(x{1}, foldername);
+                end
+
+                if util.starts_with(x{1}, 'Lib_') || util.starts_with(x{1}, 'lib_')
+                    libs.add(x{1});
+                    ret = true;
+                elseif CHECK_LIB_END && endsWith(x{1}, lib_suffix, 'IgnoreCase',true)
+                    libs.add(x{1});
+                    ret = true;
+                end
+                
+                if contains(x{1}, 'test', 'IgnoreCase',true)
+                    tests.add(x{1});
+                end
+            end
             
             for a_i = 1:numel(all_path)
                 cur_path = all_path{a_i};
@@ -166,12 +203,13 @@ classdef analyze_complexity_cfg < handle
                 
                 fprintf('Exploring path %s\n', cur_path);
                 
+                
+                
+                
                 slx_files = dir([cur_path filesep '*.slx']);
                 for i=1:numel(slx_files)
                     x = strsplit(slx_files(i).name, '.slx');
-                    assert(numel(x) == 2)
-                    
-                    if util.starts_with(x{1}, 'Lib_') || util.starts_with(x{1}, 'lib_')
+                    if is_customlib(x, slx_files(i).folder)
                         continue;
                     end
                     
@@ -181,13 +219,9 @@ classdef analyze_complexity_cfg < handle
                 mdl_files = dir([cur_path filesep '*.mdl']);
                 for i=1:numel(mdl_files)
                     x = strsplit(mdl_files(i).name, '.mdl');
-                    assert(numel(x) == 2)
-                    
-                    if util.starts_with(x{1}, 'Lib_') || util.starts_with(x{1}, 'lib_')
+                    if is_customlib(x, mdl_files(i).folder)
                         continue;
                     end
-
-                    
                     all_files.add(x{1});
                 end
             end
@@ -197,6 +231,11 @@ classdef analyze_complexity_cfg < handle
                 try
                     [mDep,~] = find_mdlrefs(all_files.get(i));
                 catch
+                    try
+                         close_system(all_files.get(i));
+                    catch
+                    end
+                    
                     continue;
                 end
                 
@@ -221,7 +260,14 @@ classdef analyze_complexity_cfg < handle
                     if open_models
                         try
                             open_system(cur);
+%                             close_system(cur);
                         catch
+                            
+                            try
+                                close_system(cur);
+                            catch
+                            end
+                            
                             continue;
                         end
                         
@@ -232,13 +278,19 @@ classdef analyze_complexity_cfg < handle
                     end
                     
                     if ~isempty(prelist) && ~ util.cell_str_in(prelist, cur)
-                        fprintf('Skipping %s\n', cur);
+                        fprintf('[PreList] Skipping %s\n', cur);
                         continue;
                     end
                     
                     if mdlrefCountBlocks(cur) < block_count_threshold
-                        fprintf('Skipping %s; %d \n', cur, mdlrefCountBlocks(cur));
+                        fprintf('[BlockThreshold] Skipping %s; %d \n', cur, mdlrefCountBlocks(cur));
+                        simples.add(cur);
                         continue;
+                    end
+                    
+                    try
+                         close_system(cur);
+                    catch
                     end
                     
                     fprintf('\t\t** %s **\n', cur);
@@ -248,8 +300,16 @@ classdef analyze_complexity_cfg < handle
                 end
             end
             
-            ret = final_ret.data;
+%             ret = final_ret.data;
             strbuf = [strbuf ' };']
+            
+            ret.simples = simples;
+            ret.advances = final_ret;
+            ret.tests = tests;
+            ret.libs = libs;
+            ret.children = children;
+            ret.paths = model_path;
+            ret.duplicates = name_conflicts;
             
             fprintf('Found %d children ||| %d models \n', children.len_keys(), final_ret.len);
         end

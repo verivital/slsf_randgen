@@ -17,6 +17,8 @@ classdef boxplotmanager_grouped < handle
         
         label_orientation = 'horizontal';
         
+        add_eps = true; % For log(0)
+        
     end
     
     methods
@@ -54,7 +56,11 @@ classdef boxplotmanager_grouped < handle
         end
         
         function add(obj, d, g)
-            obj.data(obj.index, 1) = d;
+            if obj.add_eps
+                obj.data(obj.index, 1) = d + eps;
+            else
+                obj.data(obj.index, 1) = d;
+            end
             
             if numel(g) < obj.group_len
                 g = pad(g, obj.group_len);
