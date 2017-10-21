@@ -60,6 +60,7 @@ classdef analyze_complexity < handle
         META_NONNUMERIC_SIM_TIME = 'nonnums'; % # of models having non numeric simulation time
         META_NUM_BLOCKS = 'blk';
         META_NUM_CONNECTIONS = 'conns';
+        META_NUM_HIDDEN_CONNECTIONS = 'hconns';
 
         
         % Correlation 
@@ -69,8 +70,11 @@ classdef analyze_complexity < handle
         COR_CONNS = 4;
         COR_HIER = 5;
         COR_CRB = 6;
+        COR_NCS = 7;    % Number of SubSystems
+        COR_HCONNS = 8;
+        COR_SCC = 9;
         
-        NUM_CORR = 6;
+        NUM_CORR = 9;
         
         
         % Strongly connected components
@@ -92,6 +96,7 @@ classdef analyze_complexity < handle
         
         % array containing blockTypes to check for child models in a model
         childModelList = {'SubSystem','ModelReference'};
+        ncs_type = 'SubSystem';
         % maps for storing metrics per model
         map;
         blockTypeMap;
@@ -99,6 +104,7 @@ classdef analyze_complexity < handle
         childModelMap;
         childModelPerLevelMap;
         connectionsLevelMap;
+        hconns_level_map;
         targetModelMap; % Metric 15
         
         % global vectors storing data for box plot for displaying some
@@ -119,8 +125,10 @@ classdef analyze_complexity < handle
         bp_algebraic_loop_count;
         bp_connections_depth_count; % Metric 21
         bp_connections_aggregated_count; % Metric 22
+        bp_hconns_aggregated_count;
         bp_unique_block_aggregated_count; % Metric 23
         bp_descendants_count; % Number of child-representing blocks
+        bp_ncs_count;
         bp_simulation_time; % Metric 17
         
         % model classes
@@ -133,6 +141,8 @@ classdef analyze_complexity < handle
         blk_count;  % Aggregated block count excluding hidden and masked blocks
         blk_count_masked;   % Aggregated block count including masked and hidden .. using sldiagnostic API
         descendants_count;  % Count all children and grandchildren for the top model - aggregated result.
+        ncs_count;
+        hidden_lines_count;
         scc_count;  % Strongly connected component
         
         max_unique_blocks = 18;
@@ -173,6 +183,7 @@ classdef analyze_complexity < handle
         
         grand_total_block_count = 0;
         grand_total_connections_count = 0;
+        grand_total_hconns_count = 0;
     end
     
     methods
@@ -222,12 +233,18 @@ classdef analyze_complexity < handle
             obj.bp_connections_aggregated_count = boxplotmanager(obj.BP_ALL_EXPERIMENTS_GROUPLEN); %Metric 22
             obj.bp_connections_aggregated_count.calc_stats = true;
             
+            obj.bp_hconns_aggregated_count = boxplotmanager(obj.BP_ALL_EXPERIMENTS_GROUPLEN);
+            obj.bp_hconns_aggregated_count.calc_stats = true;
+            
             obj.bp_unique_block_aggregated_count = boxplotmanager(obj.BP_ALL_EXPERIMENTS_GROUPLEN); % Metric 23
             obj.bp_unique_block_aggregated_count.calc_stats = true;
             
             obj.bp_algebraic_loop_count = boxplotmanager(obj.BP_ALL_EXPERIMENTS_GROUPLEN);
             obj.bp_descendants_count = boxplotmanager(obj.BP_ALL_EXPERIMENTS_GROUPLEN);
             obj.bp_descendants_count.calc_stats = true;
+            
+            obj.bp_ncs_count = boxplotmanager(obj.BP_ALL_EXPERIMENTS_GROUPLEN);
+            obj.bp_ncs_count.calc_stats = true;
             
             obj.bp_simulation_time = boxplotmanager(obj.BP_ALL_EXPERIMENTS_GROUPLEN);
             obj.bp_simulation_time.calc_stats = true;
@@ -363,20 +380,28 @@ classdef analyze_complexity < handle
             % of models
             % Compile Time
             
-            obj.bp_child_model_reuse.draw('Child Model Reuse #1', 'Model Classes', 'Reuse rate (%)');
+            obj.bp_child_model_reuse.draw('Child Model Reuse #1', '', 'Reuse rate (%)');
             obj.bp_compiletime.draw('Compile Time #12', '', 'Compilation time (sec)');
-            obj.bp_block_count.draw('Block Count Aggregated #2', 'Model Classes', 'Blocks');
+            obj.bp_block_count.draw('Block Count Aggregated #2', '', 'Blocks');
             
             if analyze_complexity.CALCULATE_SCC
-                obj.bp_scc.draw('SCC', 'Model Classes', 'SCC count');
+                obj.bp_scc.is_y_log = false;
+                obj.bp_scc.draw('SCC', '', 'SCC count');
             end
             
-            obj.bp_hier_depth_count.draw('Maximum Hierarchy Depth #4', '', 'Hierarchy depth');
+            obj.bp_hier_depth_count.is_y_log = false;
+            obj.bp_hier_depth_count.draw('Maximum Hierarchy Depth #4', '', 'Hierarchy Depth');
+            
             obj.bp_matlab_cyclomatic.draw('MathWorks Cyclomatic Complexity', '', 'Cyclomatic Complexity');
             obj.bp_connections_aggregated_count.draw('Aggregated Connections Count #22', '', 'Connections');
-            obj.bp_unique_block_aggregated_count.draw('Aggregated Unique Block Count #23', '', 'Unq. Blocks');
+            obj.bp_hconns_aggregated_count.draw('Aggregated Hidden Connections Count #22', '', 'Connections With Hidden');
+            
+            obj.bp_unique_block_aggregated_count.is_y_log = false;
+            obj.bp_unique_block_aggregated_count.draw('Aggregated Unique Block Count #23', '', 'Unique Blocks');
+            
             obj.bp_algebraic_loop_count.draw('Algebraic Loops Count', '', 'Loop');
-            obj.bp_descendants_count.draw('Child-representing blocks count (Aggregated)', '', 'Blocks');
+            obj.bp_descendants_count.draw('Child-representing blocks count (Aggregated)', '', 'Child-model Blocks');
+            obj.bp_ncs_count.draw('NCS (Aggregated)', '', 'SubSystems');
             obj.bp_simulation_time.draw('Model Simulation Time #17', '', 'Simulation Duration');
             
             % Group draw
@@ -395,8 +420,10 @@ classdef analyze_complexity < handle
             obj.bp_hier_depth_count.get_stat();
             obj.bp_matlab_cyclomatic.get_stat();
             obj.bp_connections_aggregated_count.get_stat();
+            obj.bp_hconns_aggregated_count.get_stat();
             obj.bp_unique_block_aggregated_count.get_stat();
             obj.bp_descendants_count.get_stat();
+            obj.bp_ncs_count.get_stat();
             obj.bp_simulation_time.get_stat();
            
             totalModelsCount = 0.0;
@@ -517,6 +544,7 @@ classdef analyze_complexity < handle
                 obj.childModelPerLevelMap = mymap();
                 obj.childModelMap = mymap();
                 obj.connectionsLevelMap = mymap();
+                obj.hconns_level_map = mymap();
                 obj.libcount_single_model = mymap();
                 obj.blk_count = 0;
                 
@@ -525,6 +553,8 @@ classdef analyze_complexity < handle
                 end
                 
                 obj.descendants_count = 0;
+                obj.hidden_lines_count = 0;
+                obj.ncs_count = 0;
                  obj.blk_count_masked = 0; % Metric 2
                  
                 % Corr coeff
@@ -573,6 +603,7 @@ classdef analyze_complexity < handle
                 % SCC
                 if analyze_complexity.CALCULATE_SCC
                     obj.bp_scc.add(obj.scc_count, obj.exptype);
+                    obj.corr_curr(obj.COR_SCC) = obj.scc_count;
                 end
                 
 %                 fprintf('My block count: %d; SLDIAG block count: %d\n', obj.blk_count, blk_count_sldiag);
@@ -581,6 +612,15 @@ classdef analyze_complexity < handle
                 
                 obj.bp_descendants_count.add(obj.descendants_count, obj.exptype);
                 obj.corr_curr(obj.COR_CRB) = obj.descendants_count;
+                
+                obj.bp_ncs_count.add(obj.ncs_count, obj.exptype);
+                obj.corr_curr(obj.COR_NCS) = obj.ncs_count;
+                
+                obj.bp_hconns_aggregated_count.add(obj.hidden_lines_count, obj.exptype);
+                obj.corr_curr(obj.COR_HCONNS) = obj.hidden_lines_count;
+                obj.grand_total_hconns_count = obj.grand_total_hconns_count + obj.hidden_lines_count;
+                obj.cur_exp_meta.insert_or_add(analyze_complexity.META_NUM_CONNECTIONS, obj.hidden_lines_count);
+                
                 
 %                 fprintf('CC: %d\n', obj.data{obj.di, obj.CYCLOMATIC});
                 if ~isempty(obj.data{obj.di, obj.CYCLOMATIC})
@@ -678,6 +718,8 @@ classdef analyze_complexity < handle
                 count = count + countLevel;
 %                 end
             end
+            
+            
             obj.bp_connections_aggregated_count.add(count,obj.exptype);
             obj.corr_curr(obj.COR_CONNS) = count;
             
@@ -936,11 +978,15 @@ classdef analyze_complexity < handle
             
             count=0;
             childCountLevel=0;
+            subsystem_count = 0;
             count_sfunctions = 0;
             
             [blockCount,~] =size(all_blocks);
             
             slb = slblocks_light(0);
+            
+            hidden_lines = 0;
+            hidden_block_type = 'From';
             
             %skip the root model which always comes as the first model
             for i=1:blockCount
@@ -990,6 +1036,7 @@ classdef analyze_complexity < handle
                                 % blocks. Also, masked ones won't show any
                                 % underlying implementation
                                 childCountLevel=childCountLevel+1;
+                                subsystem_count = subsystem_count + 1;
                             end
                         end
                     elseif util.cell_str_in({'S-Function'}, blockType) % TODO
@@ -997,6 +1044,10 @@ classdef analyze_complexity < handle
                         if ~ is_second_time
                             count_sfunctions = count_sfunctions + 1;
                         end
+                    elseif util.cell_str_in({hidden_block_type}, blockType) % TODO
+%                         if ~ is_second_time
+                            hidden_lines = hidden_lines + 1;
+%                         end    
                     end
                     
                     count=count+1;
@@ -1025,6 +1076,7 @@ classdef analyze_complexity < handle
             
             
             unique_lines = 0;
+            
             unique_line_map = mymap();
             
             for l_i = 1:numel(lines)
@@ -1058,8 +1110,11 @@ classdef analyze_complexity < handle
                 % If there are blocks, only then it makes sense to count
                 % connections
                 obj.connectionsLevelMap.insert_or_add(mapKey,unique_lines);
+%                 obj.hconns_level_map.insert_or_add(mapKey,hidden_lines);
                 
                 obj.descendants_count = obj.descendants_count + childCountLevel;
+                obj.hidden_lines_count = obj.hidden_lines_count + hidden_lines + unique_lines;
+                obj.ncs_count = obj.ncs_count + subsystem_count;
             
                 obj.childModelPerLevelMap.insert_or_add(mapKey, childCountLevel); %WARNING shouldn't we do this only when count>0?
             else
@@ -1175,7 +1230,7 @@ classdef analyze_complexity < handle
             % Get results for all experiments
             
             ac.get_metric_for_all_experiments(); 
-%             ac.do_corr_analysis();
+            ac.do_corr_analysis();
             
 %             fprintf('Special Github models');
 %             ac.github_special.print_all([]);

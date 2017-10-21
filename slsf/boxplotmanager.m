@@ -12,6 +12,7 @@ classdef boxplotmanager < handle
         calc_stats = false;
         all_data;   % For collecting status explicitly
         my_title; % Will be populated when calling draw();
+        is_y_log = true; % log scale for Y acis
     end
     
     methods
@@ -89,7 +90,10 @@ classdef boxplotmanager < handle
                 xlabel(x_label);
             end
             ylabel(y_label);
-            set(gca, 'YScale', 'log');
+            
+            if obj.is_y_log
+                set(gca, 'YScale', 'log');
+            end
         end
         
         function get_stat(obj)

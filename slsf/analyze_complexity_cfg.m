@@ -86,7 +86,7 @@ classdef analyze_complexity_cfg < handle
 %             obj.examples = {'HEV_SeriesParallel'};
             obj.examples = [examples_a, examples_b, examples_c, examples_d, examples_e];
 %             obj.examples = examples_e;
-%             obj.examples = {'sldemo_mdlref_counter_datamngt'};
+%             obj.examples = {'gototest'};
 
 
             
