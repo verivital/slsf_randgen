@@ -12,7 +12,8 @@ classdef boxplotmanager < handle
         calc_stats = false;
         all_data;   % For collecting status explicitly
         my_title; % Will be populated when calling draw();
-        is_y_log = true; % log scale for Y acis
+        is_y_log = true; % log scale for Y axis
+        add_eps = true;
     end
     
     methods
@@ -30,7 +31,12 @@ classdef boxplotmanager < handle
         end
         
         function add(obj, d, g)
-            obj.data(obj.index, 1) = d;
+            if obj.add_eps
+                obj.data(obj.index, 1) = d + eps;
+            else
+                obj.data(obj.index, 1) = d;
+            end
+%             obj.data(obj.index, 1) = d;
             
             if numel(g) < obj.group_len
                 g = pad(g, obj.group_len);

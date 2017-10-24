@@ -18,6 +18,7 @@ classdef boxplotmanager_grouped < handle
         label_orientation = 'horizontal';
         
         add_eps = true; % For log(0)
+        is_y_log = true; % log scale for Y axis
         
     end
     
@@ -145,7 +146,10 @@ classdef boxplotmanager_grouped < handle
 %             title(my_title);
             xlabel(x_label);
             ylabel(y_label);
-            set(gca, 'YScale', 'log')
+            
+            if obj.is_y_log
+                set(gca, 'YScale', 'log');
+            end
         end
         
 %         function draw(obj, my_title, x_label, y_label, sort_groups)

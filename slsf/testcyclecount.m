@@ -1,6 +1,6 @@
 function [ num_cycles ] = testcyclecount( model_name )
 %TESTCYCLECOUNT Return the number of simple cycles in the model `model_name`
-%   Currently it actually counts number of strongly connected components
+%   
     
     open_system(model_name); % Load the model
         
@@ -31,10 +31,10 @@ function [ num_cycles ] = testcyclecount( model_name )
     fprintf('Get SCC for %s\n', char(model_name));
     % This function will actually compute the number of strongly connected
     % components from the graph data-structure `slb`
-    con_com = simulator.get_connected_components(slb);
-    fprintf('[ConComp] Got %d connected comps\n', con_com.len);
+    con_com = getCountCycles(slb);
+    fprintf('[ConComp] Got %d cycles\n', con_com);
 
-    num_cycles = con_com.len;
+    num_cycles = con_com;
 
     % Close the model
     try

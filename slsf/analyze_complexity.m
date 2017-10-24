@@ -3,7 +3,7 @@ classdef analyze_complexity < handle
     %   Detailed explanation goes here
     
     properties(Constant = true)
-        % Excel File Columns
+        % Excel File Columns (Currently unused)
         MODEL_NAME = 1;
         BLOCK_COUNT_AGGR = 2;
         BLOCK_COUNT_ROOT = 3;
@@ -61,6 +61,9 @@ classdef analyze_complexity < handle
         META_NUM_BLOCKS = 'blk';
         META_NUM_CONNECTIONS = 'conns';
         META_NUM_HIDDEN_CONNECTIONS = 'hconns';
+        META_TARGET = 'target';
+        META_SOLVER = 'solver';
+        META_SIMMODE = 'simmode'; % simulation mode
 
         
         % Correlation 
@@ -73,12 +76,14 @@ classdef analyze_complexity < handle
         COR_NCS = 7;    % Number of SubSystems
         COR_HCONNS = 8;
         COR_SCC = 9;
+        COR_CYCLE = 10;
         
         NUM_CORR = 9;
         
         
         % Strongly connected components
         CALCULATE_SCC = true;
+        CALCULATE_CYCLES = false;
         
     end
     
@@ -102,10 +107,13 @@ classdef analyze_complexity < handle
         blockTypeMap;
         uniqueBlockMap;
         childModelMap;
+        sfun_reuse_map;
         childModelPerLevelMap;
         connectionsLevelMap;
         hconns_level_map;
         targetModelMap; % Metric 15
+        solver_map;
+        simmode_map;
         
         % global vectors storing data for box plot for displaying some
         % metrics that need to be calculated for all models in a list
@@ -114,12 +122,14 @@ classdef analyze_complexity < handle
 %         boxPlotChildRepresentingBlockCount;
         
         bp_scc; % Strongly connected components
+        bp_cycles;
         bp_SFunctions;
         bp_lib_count;
         bp_compiletime;
         bp_hier_depth_count; % Metric 4
         bp_block_count; % Metric 2
         bp_child_model_reuse;   % Metric 1
+        bp_sfun_reuse;
         bp_block_count_level_wise;  % Metric 3
         bp_matlab_cyclomatic;
         bp_algebraic_loop_count;
@@ -138,15 +148,18 @@ classdef analyze_complexity < handle
         
         blocktype_library_map; % Map, key is blocktype, value is the library
         libcount_single_model;  % Map, keys are block-library; values are count (how many time a block from that library occurred in a single model)
+        
         blk_count;  % Aggregated block count excluding hidden and masked blocks
         blk_count_masked;   % Aggregated block count including masked and hidden .. using sldiagnostic API
         descendants_count;  % Count all children and grandchildren for the top model - aggregated result.
         ncs_count;
         hidden_lines_count;
         scc_count;  % Strongly connected component
+        cycle_count;
         
         max_unique_blocks = 18;
         max_hardware_types = 5;
+        max_solver_types = 10;
         
         % Multi experiment environment
         exp_pointer = 0; % Will be incremented each time a new experiment is started
@@ -219,6 +232,8 @@ classdef analyze_complexity < handle
             obj.bp_block_count.calc_stats = true;
             
             obj.bp_child_model_reuse = boxplotmanager(obj.BP_ALL_EXPERIMENTS_GROUPLEN);
+            obj.bp_sfun_reuse = boxplotmanager(obj.BP_ALL_EXPERIMENTS_GROUPLEN);
+            
             obj.bp_hier_depth_count = boxplotmanager(obj.BP_ALL_EXPERIMENTS_GROUPLEN); % Metric 4
             obj.bp_hier_depth_count.calc_stats = true;
             
@@ -228,6 +243,11 @@ classdef analyze_complexity < handle
             if analyze_complexity.CALCULATE_SCC
                 obj.bp_scc = boxplotmanager(obj.BP_ALL_EXPERIMENTS_GROUPLEN);
                 obj.bp_scc.calc_stats = true;
+            end
+            
+            if analyze_complexity.CALCULATE_CYCLES
+                obj.bp_cycles = boxplotmanager(obj.BP_ALL_EXPERIMENTS_GROUPLEN);
+                obj.bp_cycles.calc_stats = true;
             end
             
             obj.bp_connections_aggregated_count = boxplotmanager(obj.BP_ALL_EXPERIMENTS_GROUPLEN); %Metric 22
@@ -303,28 +323,38 @@ classdef analyze_complexity < handle
         
         function do_corr_analysis(obj)
             fprintf('Total data: %d\n', obj.corr_index);
+            obj.corr_all
             fprintf('-=- Checking for normality -=- \n');
             
-            for i=1:obj.NUM_CORR
-                single_metric = obj.corr_all(:,i);
-                normalized_metric = (single_metric - nanmean(single_metric))/nanstd(single_metric) ;
-                disp(kstest( normalized_metric ));
+            try
+                for i=1:obj.NUM_CORR
+                    single_metric = obj.corr_all(:,i);
+                    normalized_metric = (single_metric - nanmean(single_metric))/nanstd(single_metric) ;
+                    disp(kstest( normalized_metric ));
+                end
+            catch e
+                fprintf('Err in normality test: \n');
+                e
+                obj.corr_all
+                return;
             end
             
             [Pm, Pp] = corrcoef(obj.corr_all, 'rows', 'pairwise')
+            fprintf('Spearman: \n');
             [Sm, Sp] = corr(obj.corr_all, 'type', 'Spearman', 'rows', 'pairwise')
+            fprintf('Kendall: \n');
             [Km, Kp] = corr(obj.corr_all, 'type', 'Kendall', 'rows', 'pairwise')
             
             
-            f = figure();
-            set(f, 'name', 'Correleation analysis');
-            plotmatrix(obj.corr_all);
+%             f = figure();
+%             set(f, 'name', 'Correleation analysis');
+%             plotmatrix(obj.corr_all); 
             
             
         end
         
         function start(obj, exptype)
-            % Start a single experiment
+            % Process a single model group `exptype`
             obj.exp_pointer = obj.exp_pointer + 1;
             obj.exp_names.add(exptype);
             obj.exptype = exptype;
@@ -380,13 +410,20 @@ classdef analyze_complexity < handle
             % of models
             % Compile Time
             
-            obj.bp_child_model_reuse.draw('Child Model Reuse #1', '', 'Reuse rate (%)');
-            obj.bp_compiletime.draw('Compile Time #12', '', 'Compilation time (sec)');
+            obj.bp_child_model_reuse.draw('Child Model Reuse #1', '', 'Child Reuse(%)');
+            obj.bp_sfun_reuse.draw('Sfunction Reuse #1', '', 'Sfun Reuse (%)');
+            
+            obj.bp_compiletime.draw('Compile Time #12', '', 'Compilation Time (sec)');
             obj.bp_block_count.draw('Block Count Aggregated #2', '', 'Blocks');
             
             if analyze_complexity.CALCULATE_SCC
                 obj.bp_scc.is_y_log = false;
-                obj.bp_scc.draw('SCC', '', 'SCC count');
+                obj.bp_scc.draw('SCC', '', 'SCC Count');
+            end
+            
+            if analyze_complexity.CALCULATE_CYCLES
+                obj.bp_cycles.is_y_log = false;
+                obj.bp_cycles.draw('Cycles', '', 'Cycle Count');
             end
             
             obj.bp_hier_depth_count.is_y_log = false;
@@ -402,11 +439,12 @@ classdef analyze_complexity < handle
             obj.bp_algebraic_loop_count.draw('Algebraic Loops Count', '', 'Loop');
             obj.bp_descendants_count.draw('Child-representing blocks count (Aggregated)', '', 'Child-model Blocks');
             obj.bp_ncs_count.draw('NCS (Aggregated)', '', 'SubSystems');
-            obj.bp_simulation_time.draw('Model Simulation Time #17', '', 'Simulation Duration');
+            obj.bp_simulation_time.draw('Model Simulation Time #17', '', 'Simulation Duration (sec)');
             
             % Group draw
             obj.bp_block_count_level_wise.group_draw('Block Count (level wise)', 'Hierarchy Level', 'Blocks', true);
-            obj.bp_lib_count.group_draw('Library participation', 'Simulink library', 'Blocks (%)'); 
+            obj.bp_lib_count.is_y_log = false;
+            obj.bp_lib_count.group_draw('Library participation', 'Simulink Library', 'Blocks (%)'); 
             obj.bp_connections_depth_count.group_draw('Connections Count (level wise)', 'Hierarchy Level', 'Connections', true);
       
             
@@ -415,6 +453,10 @@ classdef analyze_complexity < handle
             
             if analyze_complexity.CALCULATE_SCC
                 obj.bp_scc.get_stat();
+            end
+            
+            if analyze_complexity.CALCULATE_CYCLES
+                obj.bp_cycles.get_stat();
             end
             
             obj.bp_hier_depth_count.get_stat();
@@ -457,10 +499,17 @@ classdef analyze_complexity < handle
                 fprintf('\t\t Total: %d; \t\t Compiled: %d; \t\tHier: %d; \t\tNonNumST: %d\n',...
                     mt.get(obj.META_NUM_MODELS), mt.get(obj.META_NUM_COMPILE), mt.get(obj.META_NUM_HIER), non_num_sim_time);
                 
-                fprintf('\t\t & %d & %d & %d & %d & %d \\\\ \n',...
-                    mt.get(obj.META_NUM_MODELS), mt.get(obj.META_NUM_COMPILE), mt.get(obj.META_NUM_HIER), mt.get(obj.META_NUM_BLOCKS), mt.get(obj.META_NUM_CONNECTIONS));
+                fprintf('\t\t & %d & %d & %d & %d & %d & %d \\\\ \n',...
+                    mt.get(obj.META_NUM_MODELS), mt.get(obj.META_NUM_COMPILE), mt.get(obj.META_NUM_HIER), mt.get(obj.META_NUM_BLOCKS), mt.get(obj.META_NUM_CONNECTIONS), mt.get(obj.META_NUM_HIDDEN_CONNECTIONS));
                 
-                 
+                fprintf('\t\t\t Targets:\n');
+                fprintf(mt.get(obj.META_TARGET));
+                
+                fprintf('\t\t\t Solvers:\n');
+                fprintf(mt.get(obj.META_SOLVER));
+                
+                fprintf('\t\t\t Simulation Mode:\n');
+                fprintf(mt.get(obj.META_SIMMODE));
                 
                 obj.calculate_number_of_specific_blocks(mt.get(obj.META_BLOCK_TYPE_MAP));
             end
@@ -486,21 +535,14 @@ classdef analyze_complexity < handle
             obj.data = cell(1, 7);
             obj.di = 1;
             
-            % intializing vectors for box plot
-%             obj.boxPlotChildModelReuse = zeros(numel(obj.examples),1);
-            % max hierarchy level we add to our box plot is 5.
-%             obj.boxPlotBlockCountHierarchyWise = zeros(numel(obj.examples),obj.max_level);
-%             obj.boxPlotBlockCountHierarchyWise(:) = NaN; % Otherwise boxplot will have wrong statistics by considering empty cells as Zero. 
-            % we will only count upto level 5 as this is our requirement.
-            % some models may have more than 5 hierarchy levels but they are rare.
-%             obj.boxPlotChildRepresentingBlockCount = zeros(numel(obj.examples),obj.max_level); 
-%             obj.boxPlotChildRepresentingBlockCount(:) = NaN;
             
             % Metric 7
             obj.blockTypeMap = mymap();
             
             % Metric 15
             obj.targetModelMap = mymap();
+            obj.solver_map = mymap();
+            obj.simmode_map = mymap();
             
             % Metric 3
             obj.bp_block_count_level_wise.init_sg(obj.exptype);
@@ -529,7 +571,8 @@ classdef analyze_complexity < handle
                 fprintf('~~~~~~~~~~~~~~ %s ~~~~~~~~~~~~~~ \n', s);
                 
                 if obj.explored_models.contains(s)
-                    error('Duplicate model');
+                    continue;
+%                     error('Duplicate model');
                 end
                 
                 obj.explored_models.put(s, 1);
@@ -543,6 +586,7 @@ classdef analyze_complexity < handle
                 obj.uniqueBlockMap = mymap();
                 obj.childModelPerLevelMap = mymap();
                 obj.childModelMap = mymap();
+                obj.sfun_reuse_map = mymap();
                 obj.connectionsLevelMap = mymap();
                 obj.hconns_level_map = mymap();
                 obj.libcount_single_model = mymap();
@@ -551,6 +595,8 @@ classdef analyze_complexity < handle
                 if analyze_complexity.CALCULATE_SCC
                     obj.scc_count = 0;
                 end
+                
+                obj.cycle_count = 0;
                 
                 obj.descendants_count = 0;
                 obj.hidden_lines_count = 0;
@@ -565,6 +611,14 @@ classdef analyze_complexity < handle
                 cs = getActiveConfigSet(s);
                 obj.targetModelMap.inc(cs.get_param('TargetHWDeviceType'));
                 obj.obtain_simulation_time_metric(cs);
+                
+                model_solver = get_param(s,'SolverType');
+                if isempty(model_solver)
+                    model_solver = 'NA';
+                end
+                
+                obj.solver_map.inc(model_solver);
+                obj.simmode_map.inc(get_param(s, 'SimulationMode'));
 
                 % API function to obtain metrics
                 obj.do_single_model(s);
@@ -581,7 +635,8 @@ classdef analyze_complexity < handle
                 disp(obj.childModelMap.data);
                 
                 obj.bp_unique_block_aggregated_count.add(obj.uniqueBlockMap.len_keys(),obj.exptype);
-                obj.calculate_child_model_ratio(obj.childModelMap,i);
+                obj.calculate_child_model_ratio(obj.childModelMap,i); % Refactor to use generic_reuse
+                obj.calculate_generic_reuse(obj.sfun_reuse_map, obj.bp_sfun_reuse);
                 obj.calculate_number_of_blocks_hierarchy(obj.map,i);
                 obj.calculate_child_representing_block_count(obj.childModelPerLevelMap,i);
                 obj.calculate_lib_count(obj.libcount_single_model);
@@ -604,11 +659,22 @@ classdef analyze_complexity < handle
                 if analyze_complexity.CALCULATE_SCC
                     obj.bp_scc.add(obj.scc_count, obj.exptype);
                     obj.corr_curr(obj.COR_SCC) = obj.scc_count;
+                    
+                    obj.scc_count
+%                     obj.cycle_count
+                    
+%                     assert(obj.scc_count <= obj.cycle_count);
                 end
+                
+                if analyze_complexity.CALCULATE_CYCLES
+                    obj.bp_cycles.add(obj.cycle_count, obj.exptype);
+                    obj.corr_curr(obj.COR_CYCLE) = obj.cycle_count;
+                end
+                
                 
 %                 fprintf('My block count: %d; SLDIAG block count: %d\n', obj.blk_count, blk_count_sldiag);
                 assert(abs(obj.blk_count - blk_count_sldiag) < 200);
-                assert(obj.blk_count >= blk_count_sldiag);
+%                 assert(obj.blk_count >= blk_count_sldiag);
                 
                 obj.bp_descendants_count.add(obj.descendants_count, obj.exptype);
                 obj.corr_curr(obj.COR_CRB) = obj.descendants_count;
@@ -619,7 +685,7 @@ classdef analyze_complexity < handle
                 obj.bp_hconns_aggregated_count.add(obj.hidden_lines_count, obj.exptype);
                 obj.corr_curr(obj.COR_HCONNS) = obj.hidden_lines_count;
                 obj.grand_total_hconns_count = obj.grand_total_hconns_count + obj.hidden_lines_count;
-                obj.cur_exp_meta.insert_or_add(analyze_complexity.META_NUM_CONNECTIONS, obj.hidden_lines_count);
+                obj.cur_exp_meta.insert_or_add(analyze_complexity.META_NUM_HIDDEN_CONNECTIONS, obj.hidden_lines_count);
                 
                 
 %                 fprintf('CC: %d\n', obj.data{obj.di, obj.CYCLOMATIC});
@@ -689,6 +755,8 @@ classdef analyze_complexity < handle
             
             % Metric 15
             obj.display_metric15();
+            obj.calculate_solver_type();
+            obj.calculate_simmode_type();
         end
         
         
@@ -700,11 +768,45 @@ classdef analyze_complexity < handle
             if len > obj.max_hardware_types
                 startingPoint = len - obj.max_hardware_types;
             end
+            
+            temp_str_buf = '';
             for i=len:-1:startingPoint
-                fprintf('%25s | %3d\n',keyVector(sortedVector(i,1)),sortedVector(i,2));
-%                 fprintf('%s, ',keyVector(sortedVector(i,1))); 
+                temp_str_buf = [temp_str_buf sprintf('%25s | %3d\n',keyVector(sortedVector(i,1)),sortedVector(i,2))];
             end
-            fprintf('\n');
+            
+            obj.cur_exp_meta.put(obj.META_TARGET, temp_str_buf);
+        end
+        
+        function calculate_solver_type(obj)
+            fprintf('\nSolver Type Count\n');
+            [keyVector,sortedVector] = obj.solver_map.sort_by_value();
+            startingPoint = 1;
+            len = obj.solver_map.len_keys();
+            if len > obj.max_solver_types
+                startingPoint = len - obj.max_solver_types;
+            end
+            temp_str_buf = '';
+            for i=len:-1:startingPoint
+                temp_str_buf = [temp_str_buf sprintf('%25s | %3d\n',keyVector(sortedVector(i,1)),sortedVector(i,2))];
+            end
+            
+            obj.cur_exp_meta.put(obj.META_SOLVER, temp_str_buf);
+        end
+        
+        function calculate_simmode_type(obj)
+            fprintf('\nSimulation Mode Count\n');
+            [keyVector,sortedVector] = obj.simmode_map.sort_by_value();
+            startingPoint = 1;
+            len = obj.simmode_map.len_keys();
+            if len > obj.max_solver_types % TODO using MAX solver type
+                startingPoint = len - obj.max_solver_types;
+            end
+            temp_str_buf = '';
+            for i=len:-1:startingPoint
+                temp_str_buf = [temp_str_buf sprintf('%25s | %3d\n',keyVector(sortedVector(i,1)),sortedVector(i,2))];
+            end
+            
+            obj.cur_exp_meta.put(obj.META_SIMMODE, temp_str_buf);
         end
         
         function calculate_connections_level_wise(obj,m)
@@ -855,9 +957,9 @@ classdef analyze_complexity < handle
 %                     obj.boxPlotBlockCountHierarchyWise(modelCount,level)
 %                     =  v; %NO longer needed
                     % Cross-validation
-                    if level == 1
-                        assert(v == obj.data{modelCount + 1, obj.BLOCK_COUNT_ROOT});
-                    end 
+%                     if level == 1
+%                         assert(v == obj.data{modelCount + 1, obj.BLOCK_COUNT_ROOT});
+%                     end 
                 end
             end
         end
@@ -930,12 +1032,25 @@ classdef analyze_complexity < handle
             end
             
             if newModels > 0
-                % formula to calculate the reused model ratio
                 ratio = reusedModels/(newModels+reusedModels);
                 obj.bp_child_model_reuse.add(ratio, obj.exptype);
-%                 obj.boxPlotChildModelReuse(modelCount) = reusedModels/(newModels+reusedModels);
-%             else
-%                 obj.boxPlotChildModelReuse(modelCount) = NaN;
+            end
+        end
+        
+        function calculate_generic_reuse(obj,m, bp)
+            reusedModels = 0;
+            newModels = m.len_keys();
+            
+            for k = 1:newModels
+                x = m.get(m.key(k));
+                if x > 1
+                    reusedModels = reusedModels+x-1;
+                end
+            end
+            
+            if newModels > 0
+                ratio = reusedModels/(newModels+reusedModels);
+                bp.add(ratio, obj.exptype);
             end
         end
         
@@ -943,8 +1058,8 @@ classdef analyze_complexity < handle
             startTime = cs.get_param('StartTime');
             stopTime = cs.get_param('StopTime');
             try
-                startTime = eval(startTime)
-                stopTime = eval(stopTime)
+                startTime = eval(startTime);
+                stopTime = eval(stopTime);
                 if isfinite(stopTime) && isfinite(startTime)
                     
                     assert(isnumeric(startTime) && isnumeric(stopTime));
@@ -965,13 +1080,13 @@ classdef analyze_complexity < handle
                 mdlRefName = get_param(sys,'ModelName');
                 load_system(mdlRefName);
                 all_blocks = find_system(mdlRefName,'SearchDepth',1, 'LookUnderMasks', 'all', 'FollowLinks','on');
-                assert(strcmp(all_blocks(1), mdlRefName));
+%                 assert(strcmpi(all_blocks(1), mdlRefName));
                 all_blocks = all_blocks(2:end);
                 lines = find_system(mdlRefName,'SearchDepth','1','FindAll','on', 'LookUnderMasks', 'all', 'FollowLinks','on', 'type','line');
 %                 fprintf('[V] ReferencedModel %s; depth %d\n', char(mdlRefName), depth);
             else
                 all_blocks = find_system(sys,'SearchDepth',1, 'LookUnderMasks', 'all', 'FollowLinks','on');
-                assert(strcmp(all_blocks(1), sys));
+%                 assert(strcmpi(all_blocks(1), sys));
                 lines = find_system(sys,'SearchDepth','1','FindAll','on', 'LookUnderMasks', 'all', 'FollowLinks','on', 'type','line');
 %                 fprintf('[V] SubSystem %s; depth %d\n', char(sys), depth);
             end
@@ -1044,6 +1159,9 @@ classdef analyze_complexity < handle
                         if ~ is_second_time
                             count_sfunctions = count_sfunctions + 1;
                         end
+                        disp('Sfun name:');
+                        sfun_name = char(get_param(currentBlock, 'FunctionName'))
+                        obj.sfun_reuse_map.inc(sfun_name);
                     elseif util.cell_str_in({hidden_block_type}, blockType) % TODO
 %                         if ~ is_second_time
                             hidden_lines = hidden_lines + 1;
@@ -1068,6 +1186,11 @@ classdef analyze_complexity < handle
                 fprintf('[ConComp] Got %d connected comps\n', con_com.len);
 
                 obj.scc_count = obj.scc_count + con_com.len;
+            end
+            
+            if analyze_complexity.CALCULATE_CYCLES
+                fprintf('Computing Cycles...\n');
+                obj.cycle_count = obj.cycle_count + getCountCycles(slb);
             end
             
             mapKey = int2str(depth);
@@ -1154,44 +1277,47 @@ classdef analyze_complexity < handle
             metrics ={ 'mathworks.metrics.SimulinkBlockCount', 'mathworks.metrics.SubSystemCount', 'mathworks.metrics.SubSystemDepth', 'mathworks.metrics.CyclomaticComplexity', 'mathworks.metrics.LibraryLinkCount'};
             
             setAnalysisRoot(metric_engine, 'Root',  sys);
-            execute(metric_engine, metrics);
-            res_col = getMetrics(metric_engine, metrics);
-            
-            
-            for n=1:length(res_col)
-                if res_col(n).Status == 0
-                    result = res_col(n).Results;
+            try
+                execute(metric_engine, metrics);
+                res_col = getMetrics(metric_engine, metrics);
 
-                    for m=1:length(result)
-                        
-                        switch result(m).MetricID
-                            case 'mathworks.metrics.SimulinkBlockCount'
-                                if strcmp(result(m).ComponentPath, sys)
-                                    obj.data{obj.di, obj.BLOCK_COUNT_AGGR} = result(m).AggregatedValue;
-                                    obj.data{obj.di, obj.BLOCK_COUNT_ROOT} = result(m).Value;
-                                end
-                            case 'mathworks.metrics.CyclomaticComplexity'
-                                if strcmp(result(m).ComponentPath, sys)
-                                    obj.data{obj.di, obj.CYCLOMATIC} = result(m).AggregatedValue;
-                                end
-                            case 'mathworks.metrics.SubSystemCount'
-                                if strcmp(result(m).ComponentPath, sys)
-                                    obj.data{obj.di, obj.SUBSYSTEM_COUNT_AGGR} = result(m).AggregatedValue;
-                                end
-                            case 'mathworks.metrics.SubSystemDepth'
-                                if strcmp(result(m).ComponentPath, sys)
-                                    obj.data{obj.di, obj.SUBSYSTEM_DEPTH_AGGR} = result(m).Value;
-                                end
-                            case 'mathworks.metrics.LibraryLinkCount'
-                                 if strcmp(result(m).ComponentPath, sys)
-                                    obj.data{obj.di, obj.LIBRARY_LINK_COUNT} = result(m).Value;
-                                end
+
+                for n=1:length(res_col)
+                    if res_col(n).Status == 0
+                        result = res_col(n).Results;
+
+                        for m=1:length(result)
+
+                            switch result(m).MetricID
+                                case 'mathworks.metrics.SimulinkBlockCount'
+                                    if strcmp(result(m).ComponentPath, sys)
+                                        obj.data{obj.di, obj.BLOCK_COUNT_AGGR} = result(m).AggregatedValue;
+                                        obj.data{obj.di, obj.BLOCK_COUNT_ROOT} = result(m).Value;
+                                    end
+                                case 'mathworks.metrics.CyclomaticComplexity'
+                                    if strcmp(result(m).ComponentPath, sys)
+                                        obj.data{obj.di, obj.CYCLOMATIC} = result(m).AggregatedValue;
+                                    end
+                                case 'mathworks.metrics.SubSystemCount'
+                                    if strcmp(result(m).ComponentPath, sys)
+                                        obj.data{obj.di, obj.SUBSYSTEM_COUNT_AGGR} = result(m).AggregatedValue;
+                                    end
+                                case 'mathworks.metrics.SubSystemDepth'
+                                    if strcmp(result(m).ComponentPath, sys)
+                                        obj.data{obj.di, obj.SUBSYSTEM_DEPTH_AGGR} = result(m).Value;
+                                    end
+                                case 'mathworks.metrics.LibraryLinkCount'
+                                     if strcmp(result(m).ComponentPath, sys)
+                                        obj.data{obj.di, obj.LIBRARY_LINK_COUNT} = result(m).Value;
+                                    end
+                            end
                         end
+                    else
+    %                     disp(['No results for:', result(n).MetclcricID]);
                     end
-                else
-%                     disp(['No results for:', result(n).MetclcricID]);
+                    disp(' ');
                 end
-                disp(' ');
+            catch
             end
         end
     end
@@ -1206,6 +1332,10 @@ classdef analyze_complexity < handle
 %             addpath([base_dir filesep 'matalb_central_models']);
             addpath(genpath([base_dir filesep 'shafiulmc']));
             addpath(genpath([base_dir filesep 'ARCH']));
+            addpath(genpath([base_dir filesep 'mclina1']));
+            addpath(genpath([base_dir filesep 'mclina2']));
+            addpath(genpath([base_dir filesep 'mclina3']));
+            addpath(genpath([base_dir filesep 'sourceforge']));
             
             addpath('')
             disp('--- Complexity Analysis --');
@@ -1213,9 +1343,9 @@ classdef analyze_complexity < handle
             
             % Call as many experiments you want to run
             ac.start(analyze_complexity.EXP_EXAMPLES);
-%             ac.start(analyze_complexity.EXP_SIMPLE);
-%             ac.start(analyze_complexity.EXP_COMPLEX);
-%             ac.start(analyze_complexity.EXP_RESEARCH);
+            ac.start(analyze_complexity.EXP_SIMPLE);
+            ac.start(analyze_complexity.EXP_COMPLEX);
+            ac.start(analyze_complexity.EXP_RESEARCH);
             
 %             ac.start(analyze_complexity.EXP_CYFUZZ);
 %             ac.start(analyze_complexity.EXP_CYFUZZ_OLD);
