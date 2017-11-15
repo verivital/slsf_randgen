@@ -1,4 +1,4 @@
-function [big_total, big_timedout] = neoreport(datefrom, break_after_single)
+function [big_total, big_timedout,all_solvers] = neoreport(datefrom, break_after_single)
     %%% datefrom is string in format 'yyyy-MM-dd-HH-mm-ss'
     
     if nargin <= 1
@@ -27,6 +27,7 @@ function [big_total, big_timedout] = neoreport(datefrom, break_after_single)
     
     big_num_fe_attempts = 0;
     
+    all_solvers = mycell();
     
     rt_bs = 0;
     rt_pc = 0;
@@ -137,6 +138,10 @@ function [big_total, big_timedout] = neoreport(datefrom, break_after_single)
                 end
                                 
                 c = all_models_sr{am_i};
+                
+                for solver_i = 1:numel(c.solvers_used)
+                    all_solvers.add(c.solvers_used{solver_i});
+                end
                 
                 if c.is_err_after_normal_sim
                     fprintf('Found Err aftder normal sim\n');

@@ -235,6 +235,9 @@ classdef difftester < handle
         
          function ret  = get_logged_simulation_data(obj, sys, simulation_mode, optimization_value)
              fprintf('[-->] Simulating %s, Mode: %s \n', sys, simulation_mode);
+             if cfg.LOG_SOLVERS_USED
+                obj.my_result.solvers_used.add([get_param(sys,'SolverType') '; ' simulation_mode]);
+             end
             ret = sim(sys, 'SimulationMode', simulation_mode, 'SimCompilerOptimization', optimization_value, 'SignalLogging', obj.signal_logging_value);
          end
         

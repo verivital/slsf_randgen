@@ -8,6 +8,7 @@ classdef savedresult < handle
         is_err_after_normal_sim = false;
         is_successful;
         num_fe_attempts = 0;
+        solvers_used;
         
     end
     

@@ -95,7 +95,7 @@ classdef cfg
     
         % ALLOW LIST: LOOKS LIKE ALLOW_LIST IS NOT IMPLEMENTED.
     
-
+        LOG_SOLVERS_USED = true;    % Log which solvers were used
 
         SAVE_SIGLOG_IN_DISC = true; % Persistently save logged signals in dic
 
@@ -122,7 +122,7 @@ classdef cfg
     
         % EMI Related
         
-        EMI_TESTING = true;
+        EMI_TESTING = false;
         NUM_STATIC_EMI_VARS = 3;
 
         % Debugging Related

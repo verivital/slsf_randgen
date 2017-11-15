@@ -64,6 +64,8 @@ classdef singleresult < handle
         dc_analysis = 0;     % data-type conversions added during pre-simulation analysis phase
         dc_sim = 0;             % data-type conversions added during simulation (Fix Errors) phase
         num_fe_attempts = 0;    % Number of Fix Error attempts taken
+        
+        solvers_used;
                 
     end
     
@@ -75,13 +77,14 @@ classdef singleresult < handle
              obj.hier_models = mycell(-1);
              obj.sfuns = mycell();
              obj.block_sel_stat = mymap();
-
+             obj.solvers_used = mycell();
              
          end
          
          function sr = update_saved_result(obj, sr)
             sr.errors = obj.exc;
             sr.num_fe_attempts = obj.num_fe_attempts;
+            sr.solvers_used = obj.solvers_used.get_cell();
          end
          
          function obj = set_mode(obj, p, m)
