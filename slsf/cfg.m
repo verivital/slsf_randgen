@@ -12,7 +12,7 @@ classdef cfg
 
         LOG_SIGNALS = true;                         % Log all block-output signals for comparison ("Log Signals" phase). Note: it disregards `USE_PRE_GENERATED_MODEL` setting.
 
-        COMPARE_SIM_RESULTS = true;         % Compare simulation results obtained by logging signals ("Compare" phases),
+        COMPARE_SIM_RESULTS = false;         % Compare simulation results obtained by logging signals ("Compare" phases),
        
 
         USE_PRE_GENERATED_MODEL = [];         % If non-empty and a string, then instead of generating random model, will use value of this variable (already generated model) in log signal/comparison phases.   
@@ -20,19 +20,19 @@ classdef cfg
 %          generating model will use this particular model for further
 %          phases of CyFuzz
 
-        LOAD_RNG_STATE = false;                  % Set this `true` if we want to create NEW models each time the script is run. Set to `false` if generating same models at each run of the script is desired. For first time running in a new computer set to false, as this will fail first time if set to true.
+        LOAD_RNG_STATE = true;                  % Set this `true` if we want to create NEW models each time the script is run. Set to `false` if generating same models at each run of the script is desired. For first time running in a new computer set to false, as this will fail first time if set to true.
 
         SKIP_IF_LAST_CRASHED = false;            % Skip one model if last time Matlab crashed trying to run the same model.
         
-        STOP_IF_ERROR = false;                  % Stop the script when meet the first simulation error
+        STOP_IF_ERROR = true;                  % Stop the script when meet the first simulation error
         STOP_IF_OTHER_ERROR = true;             % Stop the script for errors not related to simulation e.g. unhandled exceptions or code bug. ALWAYS KEEP IT TRUE to detect my own bugs.
 
-        CLOSE_MODEL = true;                    % Close models after experiment
+        CLOSE_MODEL = false;                    % Close models after experiment
         CLOSE_OK_MODELS = true;                % Close "OK" models (refer to CyPhy paper)
         
         FINAL_CLEAN_UP = true;                 % Will delete models and related artifacts (e.g. binaries) for the model
 
-        GENERATE_TYPESMART_MODELS = false;      % Will create models that respects data-type compatibility between blocks.
+        GENERATE_TYPESMART_MODELS = true;      % Will create models that respects data-type compatibility between blocks.
         ELIMINATE_FEEDBACK_LOOPS = true;
         
         NUM_BLOCKS = [75 100];
@@ -45,7 +45,7 @@ classdef cfg
         SAVE_ALL_ERR_MODELS = true;             % Save the models which we can not simulate 
         LOG_ERR_MODEL_NAMES = true;             % Log error model names keyed by their errors
         SAVE_COMPARE_ERR_MODELS = true;         % Save models for which we got signal compare error after diff. testing
-        SAVE_SUCC_MODELS = true;                % Save successful simulation models in a folder
+        SAVE_SUCC_MODELS = false;                % Save successful simulation models in a folder
 
         PAUSE_BETWEEN_FIX_ERROR_STEPS = false;
         PAUSE_BETWEEN_CYCLE_REMOVING = false;
@@ -65,8 +65,9 @@ classdef cfg
         % library, set `is_blk` false. Set true for blocks.
         
         SL_BLOCKLIBS = {
-           struct('name', 'Discrete', 'is_blk', false, 'num', 0.3)
-            struct('name', 'Continuous', 'is_blk', false,  'num', 0.29)
+           struct('name', 'Discrete', 'is_blk', false, 'num', 0.2)
+            struct('name', 'Continuous', 'is_blk', false,  'num', 0.2)
+            struct('name', 'Logic and Bit Operations', 'is_blk', false,  'num', 0.2)
             struct('name', 'Sinks', 'is_blk', false, 'num', 0.2)
             struct('name', 'Sources', 'is_blk', false, 'num', 0.2)
          %   struct('name', 'simulink/Ports & Subsystems/Subsystem', 'is_blk', true, 'num', 0.05)

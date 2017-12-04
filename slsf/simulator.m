@@ -2,6 +2,10 @@ classdef simulator < handle
     %SIMULATOR Analyzes a random model and fixes errors from it
     %   Performs the "Analyze" and "Fix Error" phases of CyFuzz
     
+    properties(Constant=true)
+        FIRST_ORDER_HOLD = sprintf('simulink/Discrete/First-Order\nHold');
+    end
+    
     properties
         generator;
         max_try;
@@ -124,12 +128,12 @@ classdef simulator < handle
                 if c.n.is_visited
                     % E.g. A source block which was added even before the
                     % analysis began.
-                    fprintf('%d is already visited\n', c.n.my_id);
+%                     fprintf('%d is already visited\n', c.n.my_id);
                     continue;
                 end
 
 
-                fprintf('\t\t\t\tVisiting %d\n', c.n.my_id);
+%                 fprintf('\t\t\t\tVisiting %d\n', c.n.my_id);
                 c.n.is_visited = true;
                 obj.num_visited = obj.num_visited + 1;  
                 obj.visited_nodes(c.n.my_id) = 1;
@@ -238,7 +242,7 @@ classdef simulator < handle
                 
                 for vi = 1:numel(obj.visited_nodes)
                     if obj.visited_nodes(vi) == 0
-                        fprintf('\t Visiting: %d', vi);
+%                         fprintf('\t Visiting: %d', vi);
                         unvisited.add(vi);
                     end
                 end
@@ -272,6 +276,20 @@ classdef simulator < handle
         end
         
         
+        function obj = assign_discrete_sample_time_for_new_delays(obj, new_delay_blocks, g)
+            
+            for xc = 1:new_delay_blocks.len
+                h = new_delay_blocks.get(xc);  
+
+                if g.assign_sampletime_for_discrete
+                    set_param(h, 'SampleTime', '1');                  %       TODO sample time
+                else
+                    set_param(h, 'SampleTime', '-1'); 
+                end
+            end
+        end
+        
+        
         function new_block_node = pre_fix_loop(obj, tn, slb)
             % Add Delay block at a specific input port of tn. tn is the
             % Node (tagged node)
@@ -284,15 +302,10 @@ classdef simulator < handle
             
             assert(new_delay_blocks.len == 1); % There will be only one such block. If assertion fails, check whether number of new blocks is zero. this could mean that specific input port was not found (e.g. value of -1)
             
-            h = new_delay_blocks.get(1);  
-            
-            if g.assign_sampletime_for_discrete
-                set_param(h, 'SampleTime', '1');                  %       TODO sample time
-            else
-                set_param(h, 'SampleTime', '-1'); 
-            end
+            obj.assign_discrete_sample_time_for_new_delays(new_delay_blocks, g);
             
             % Register new block
+            h = new_delay_blocks.get(1);
             new_block_node = slb.register_new_block(h, new_block_type, get_param(h, 'name'));
           
             old_parent = tn.which_parent_block;
@@ -314,7 +327,7 @@ classdef simulator < handle
             for out_i=1:slb.NUM_BLOCKS
                 n = slb.nodes{out_i};
                 if colors(n.my_id) == WHITE
-                    fprintf('[OUTER-DFS] visiting %d\n', n.my_id);
+%                     fprintf('[OUTER-DFS] visiting %d\n', n.my_id);
                     dfs_visit(slbnodetags(n));
                 end
             end
@@ -620,6 +633,11 @@ classdef simulator < handle
                             done = obj.fix_st_gcd(e);
                             found = true;
                             
+                       case {'Simulink:SampleTime:InconsistentBlockBasedTs'}
+%                             disp('HEREEEEE');
+                            done = obj.add_blocks_and_configure(e,obj.FIRST_ORDER_HOLD, false, true, false);
+                            found = true;
+                            
                         case {'Simulink:blocks:NormModelRefBlkNotSupported'}
                             done = obj.fix_normal_mode_ref_block(e);
                             found = true;
@@ -835,6 +853,21 @@ classdef simulator < handle
             end
         end
         
+        function done = add_blocks_and_configure(obj, e, block_type, inp, oup, assign_discrete_st)
+            disp('Adding blocks and configuring...');
+            done = false;
+                        
+            for i = 1:numel(e.handles)
+                inner = e.handles{i};
+
+                h = util.select_me_or_parent(inner);
+                [handles, g] = obj.add_block_in_the_middle(h, block_type, inp, oup);
+                if assign_discrete_st
+                    obj.assign_discrete_sample_time_for_new_delays(handles, g);
+                end
+            end
+        end
+        
         function done = fix_model_ref_rate_transitions(obj, e)
             disp('FIXING Model reference rate transition errors...');
             done = false;
@@ -899,17 +932,16 @@ classdef simulator < handle
                     end
                     h = util.select_me_or_parent(current(i));
                     [new_delay_blocks, g] = obj.add_block_in_the_middle(h, 'Simulink/Discrete/Delay', false, true);
-                    for xc = 1:new_delay_blocks.len
-                        if g.assign_sampletime_for_discrete
-                            set_param(new_delay_blocks.get(xc), 'SampleTime', '1');                  %       TODO sample time
-                        else
-                            set_param(new_delay_blocks.get(xc), 'SampleTime', '-1');  
-                        end
-    %                     disp(h);
-                    end
-                    
-                    
-                    
+                    obj.assign_discrete_sample_time_for_new_delays(new_delay_blocks, g);
+%                     for xc = 1:new_delay_blocks.len
+%                         if g.assign_sampletime_for_discrete
+%                             set_param(new_delay_blocks.get(xc), 'SampleTime', '1');                  %       TODO sample time
+%                         else
+%                             set_param(new_delay_blocks.get(xc), 'SampleTime', '-1');  
+%                         end
+%     %                     disp(h);
+%                     end
+
                 end
                 
                 
