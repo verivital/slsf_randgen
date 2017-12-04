@@ -62,6 +62,8 @@ classdef metrics_util
             
             s = mycell();
             
+            fprintf('Simples\n');
+            
             for i=1: numel(grand_simples)
                 s.add(['''' grand_simples{i} '''']);
             end
@@ -74,6 +76,28 @@ classdef metrics_util
                 s.add(['''' grand_advanced{i} '''']);
             end
             
+            fprintf('Advanced\n');
+            
+            strjoin(s.data, ', ')
+            
+            fprintf('Libs\n');
+            
+            s = mycell();
+            
+            for i=1: numel(grand_libs)
+                s.add(['''' grand_libs{i} '''']);
+            end
+                        
+            strjoin(s.data, ', ')
+            
+            fprintf('Tests\n');
+            
+            s = mycell();
+            
+            for i=1: numel(grand_tests)
+                s.add(['''' grand_tests{i} '''']);
+            end
+                        
             strjoin(s.data, ', ')
         end
         

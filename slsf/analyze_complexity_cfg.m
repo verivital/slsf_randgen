@@ -154,6 +154,8 @@ classdef analyze_complexity_cfg < handle
         function ret = get_models(loc, prelist)
             
             CHECK_LIB_END = true;   % Checks whether a model name ends with the lib i.e. it's a suffix
+            CHECK_BLOCK_COUNT = false;
+            CHECK_CHILDREN = false;
             
             ret = struct;
             
@@ -262,27 +264,31 @@ classdef analyze_complexity_cfg < handle
                 end
             end
             
-            for i=1:all_files.len
-%                 fprintf('Analyzing %s\n', all_files.get(i));
-                try
-                    [mDep,~] = find_mdlrefs(all_files.get(i));
-                catch
+            if CHECK_CHILDREN
+            
+                for i=1:all_files.len
+    %                 fprintf('Analyzing %s\n', all_files.get(i));
                     try
-                         close_system(all_files.get(i));
+                        [mDep,~] = find_mdlrefs(all_files.get(i));
                     catch
-                    end
-                    
-                    continue;
-                end
-                
-                
+                        try
+                             close_system(all_files.get(i));
+                        catch
+                        end
 
-                for j = 1:length(mDep)
-%                     fprintf('Found children %s\n', mDep{j});
-                    if ~ strcmp(all_files.get(i), mDep{j})
-                        children.put(mDep{j}, 1);
+                        continue;
+                    end
+
+
+
+                    for j = 1:length(mDep)
+    %                     fprintf('Found children %s\n', mDep{j});
+                        if ~ strcmp(all_files.get(i), mDep{j})
+                            children.put(mDep{j}, 1);
+                        end
                     end
                 end
+                
             end
             
             strbuf = '{';
@@ -298,7 +304,7 @@ classdef analyze_complexity_cfg < handle
                         continue;
                     end
                     
-                    if mdlrefCountBlocks(cur) < block_count_threshold
+                    if CHECK_BLOCK_COUNT && mdlrefCountBlocks(cur) < block_count_threshold
                         fprintf('[BlockThreshold] Skipping %s; %d \n', cur, mdlrefCountBlocks(cur));
                         simples.add(cur);
                         
