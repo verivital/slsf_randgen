@@ -802,9 +802,9 @@ classdef simulator < handle
                 inner = e.handles{i};
 
                 h = util.select_me_or_parent(inner);
-                
-                if  obj.is_block_fixed_before(e.identifier, getfullname(h), true)
-                    fprintf('%s was already fixed for %s, so not trying this block again.\n', getfullname(h), e.identifier);
+                blk_search_key = [getfullname(h) ';' loc];
+                if  obj.is_block_fixed_before(e.identifier, blk_search_key , true)
+                    fprintf('%s was already fixed for %s, so not trying this block again.\n', blk_search_key, e.identifier);
                     done = true;
                     return;
                 else
@@ -822,14 +822,14 @@ classdef simulator < handle
 
                 switch loc
                     case {'output'}
-                        new_blocks = obj.add_block_in_the_middle(h, 'Simulink/Signal Attributes/Data Type Conversion', true, false);
+                        new_blocks = obj.add_block_in_the_middle(h, 'simulink/Signal Attributes/Data Type Conversion', true, false);
                         break;
                     case {'input'}
-                        new_blocks = obj.add_block_in_the_middle(h, 'Simulink/Signal Attributes/Data Type Conversion', false, true);
+                        new_blocks = obj.add_block_in_the_middle(h, 'simulink/Signal Attributes/Data Type Conversion', false, true);
                         break;
                     case {'both'}
-                        new_blocks = obj.add_block_in_the_middle(h, 'Simulink/Signal Attributes/Data Type Conversion', true, false);
-                        more_new = obj.add_block_in_the_middle(h, 'Simulink/Signal Attributes/Data Type Conversion', false, true);
+                        new_blocks = obj.add_block_in_the_middle(h, 'simulink/Signal Attributes/Data Type Conversion', true, false);
+                        more_new = obj.add_block_in_the_middle(h, 'simulink/Signal Attributes/Data Type Conversion', false, true);
                         new_blocks.extend(more_new);
                         break;
                     otherwise
