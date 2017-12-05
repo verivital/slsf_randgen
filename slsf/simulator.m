@@ -123,17 +123,23 @@ classdef simulator < handle
                 end
 
                 c = dfs.pop();
-                fprintf('\t\t\t\t\t\t\t\t\t\t\t\tPopped %d\n', c.n.my_id);
+                if cfg.PRINT_TYPESMART
+                    fprintf('\t\t\t\t\t\t\t\t\t\t\t\tPopped %d\n', c.n.my_id);
+                end
                 
                 if c.n.is_visited
                     % E.g. A source block which was added even before the
                     % analysis began.
-%                     fprintf('%d is already visited\n', c.n.my_id);
+                    if cfg.PRINT_TYPESMART
+                        fprintf('%d is already visited\n', c.n.my_id);
+                    end
                     continue;
                 end
 
-
-%                 fprintf('\t\t\t\tVisiting %d\n', c.n.my_id);
+                if cfg.PRINT_TYPESMART
+                    fprintf('\t\t\t\tVisiting %d\n', c.n.my_id);
+                end
+                
                 c.n.is_visited = true;
                 obj.num_visited = obj.num_visited + 1;  
                 obj.visited_nodes(c.n.my_id) = 1;
@@ -208,14 +214,18 @@ classdef simulator < handle
             
             for i=1:slb.nondfts.len
                 c_s = slb.nondfts.get(i);
-                fprintf('pushing non-DFT %d\n', c_s.my_id);     % TODO handle conditionally DFTs
+                if cfg.PRINT_TYPESMART
+                    fprintf('pushing non-DFT %d\n', c_s.my_id);     % TODO handle conditionally DFTs
+                end
                 dfs.push(slbnodetags(c_s));
             end
             
             
             for i=1:slb.sources.len
                 c_s = slb.sources.get(i);
-                fprintf('pushing source %d\n', c_s.my_id);
+                if cfg.PRINT_TYPESMART
+                    fprintf('pushing source %d\n', c_s.my_id);
+                end
                 dfs.push(slbnodetags(c_s));
             end
             

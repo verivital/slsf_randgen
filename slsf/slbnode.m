@@ -145,8 +145,19 @@ classdef slbnode < handle
             end
             
             if obj.is_source
-                ret = mycell({'double'});
+                ret = mycell({'double'}); % TODO
                 fprintf('Got DEFAULT return data type for SOURCE\n');
+                return;
+            end
+            
+            % If output types for this block are explicitly specified, use
+            % them. For now only use the default output param.
+            
+            if ~isempty(obj.docref) && ~isempty(obj.docref.default_out_param)
+                ret = mycell({obj.docref.default_out_param});
+                if cfg.PRINT_TYPESMART
+                    fprintf('Got parsed O/P data type; using default one\n');
+                end
                 return;
             end
             
@@ -155,7 +166,7 @@ classdef slbnode < handle
                 if ~isempty(obj.dft_status)
                     if ~isempty(obj.docref) && obj.docref.out_dtypes.len > 0
                         ret = obj.docref.out_dtypes;
-                        fprintf('Got return data type from parsing\n');
+                        fprintf('Got return data type from parsing SL docs\n');
                         return;
                     end
                     
@@ -168,7 +179,7 @@ classdef slbnode < handle
                 end
             else
                 ret = obj.in_type;
-                fprintf('Got FED  data type from input port\n');
+                fprintf('Got FED  data-type from input port\n');
                 return;
             end
             

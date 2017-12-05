@@ -72,7 +72,7 @@ classdef simple_generator < handle
         hz_space = 100;
         vt_space = 150;
 
-        blk_in_line = 5;
+        blk_in_line = cfg.NUM_BLOCKS_IN_A_ROW;
         
         % hierarchy related
         hierarchy_new_old = []; % Ratio of new and old submodels

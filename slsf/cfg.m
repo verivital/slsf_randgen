@@ -5,7 +5,7 @@ classdef cfg
     %   understand various "phases" of experiment.
     
     properties(Constant = true)
-        NUM_TESTS = 1;                                % Number of random models to generate (and use in differntial testing)
+        NUM_TESTS = 100;                                % Number of random models to generate (and use in differntial testing)
         CSMITH_CREATE_C = false;                % Whether to call Csmith to create C files. Set to False if reproducing previous experiment.
         
         SIMULATE_MODELS = true;                 % To invoke "Analyze Model" and "Fix Errors" phase 
@@ -35,7 +35,7 @@ classdef cfg
         GENERATE_TYPESMART_MODELS = true;      % Will create models that respects data-type compatibility between blocks.
         ELIMINATE_FEEDBACK_LOOPS = true;
         
-        NUM_BLOCKS = [75 100];
+        NUM_BLOCKS = [10 15];
         CHILD_MODEL_NUM_BLOCKS = [20 30];
         SUBSYSTEM_NUM_BLOCKS = [20 30];
         IF_ACTION_SUBSYS_NUM_BLOCKS = [5 15];
@@ -125,13 +125,18 @@ classdef cfg
         
         EMI_TESTING = false;
         NUM_STATIC_EMI_VARS = 3;
+        
+        % Drawing specific
+        
+        NUM_BLOCKS_IN_A_ROW = 10;
 
         % Debugging Related
         
         PRINT_BLOCK_CONNECTION = false;
         PRINT_BLOCK_CONFIG = false;
-        STOP_IF_DTC_ERROR = false; % Data type conversion from typesmart analysis
+        STOP_IF_DTC_ERROR = true; % Data type conversion from typesmart analysis
         STOP_BEFORE_SIMULATION = false;  % To return abruptly before iterative simulations in the "Fix Errors" phase
+        PRINT_TYPESMART = true; % Print debugging info regarding typesmart analysis
         
         % Don't change folllowing
         
