@@ -166,6 +166,8 @@ classdef simple_generator < handle
                 open_system(obj.sys);
             end
             
+            obj.configure_model();
+            
             if obj.skip_after_creation
                 fprintf('Skip_After_Creation: Skipping rest of the experiments after creating the model.\n');
                 obj.my_result.exc = MException('RandGen:SL:SkippedAfterCreation', 'Skipped experiment after model creation.');
@@ -233,7 +235,9 @@ classdef simple_generator < handle
             fprintf('------------------- END of One Generator Call -------------------\n');
         end
         
-        
+        function obj  = configure_model(obj)
+            set_param(obj.sys, 'BooleanDataType', 'off'); % If this optimization is kept on, boolean values will not be treated as doubles. see "Implement logic signals as Boolean data (vs. double)"
+        end
         
         function obj = init(obj)
             % Perform Initialization

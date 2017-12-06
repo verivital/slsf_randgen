@@ -24,7 +24,7 @@ classdef util < handle
         end
         
         function ret = starts_with(s1, s2)
-            % Returs true if s2 starts with s1
+            % s2: prefix; s1: larger string
             res = strfind(s1, s2);
             
             if res == 1
@@ -463,6 +463,13 @@ classdef util < handle
             x = find_system(sys, 'SearchDepth','1','FindAll','on', 'LookUnderMasks', 'all', 'FollowLinks','on', 'type','line');
             for i=1:numel(x)
                 get_param(x(i), 'type')
+            end
+        end
+        
+        function ret = is_nativelike_type(dtype)
+            ret = false;
+            if util.cell_str_in({'double', 'single', 'boolean'}, dtype) || util.starts_with(dtype, 'int') || util.starts_with(dtype, 'uint') % TODO fix points
+                ret = true;
             end
         end
         

@@ -153,10 +153,10 @@ classdef slbnode < handle
             % If output types for this block are explicitly specified, use
             % them. For now only use the default output param.
             
-            if ~isempty(obj.docref) && ~isempty(obj.docref.default_out_param)
+            if ~isempty(obj.docref) && ~isempty(obj.docref.default_out_param) && util.is_nativelike_type(obj.docref.default_out_param)
                 ret = mycell({obj.docref.default_out_param});
                 if cfg.PRINT_TYPESMART
-                    fprintf('Got parsed O/P data type; using default one\n');
+                    fprintf('Got parsed O/P data type; using default one: %s\n', obj.docref.default_out_param);
                 end
                 return;
             end

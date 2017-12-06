@@ -289,7 +289,8 @@ classdef (Sealed) slblockdocparser < handle
                             else
                                 cur_d_stripped = util.strip(cur_d, '''');
                                 if util.starts_with(cur_d_stripped, 'Inherit:')
-%                                     fprintf('Inherited\n');
+%                                     fprintf('Inherited\n'); %TODO save
+%                                     inherit options
                                 else
                                     if strcmp(cur_d_stripped, 'double')
                                         blobj.out_dtypes.add(obj.DTYPES{3});

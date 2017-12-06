@@ -47,7 +47,7 @@ classdef cfg
         SAVE_COMPARE_ERR_MODELS = true;         % Save models for which we got signal compare error after diff. testing
         SAVE_SUCC_MODELS = false;                % Save successful simulation models in a folder
 
-        PAUSE_BETWEEN_FIX_ERROR_STEPS = false;
+        PAUSE_BETWEEN_FIX_ERROR_STEPS = true;
         PAUSE_BETWEEN_CYCLE_REMOVING = false;
         PRESENTATION_MODE = false;   % Pause between various CyFuzz phases.
         
@@ -92,6 +92,7 @@ classdef cfg
             'simulink/Discrete/First-OrderHold'
             'simulink/Discrete/Memory'
             'simulink/Math Operations/Algebraic Constraint'
+            'simulink/Logic and Bit Operations/Interval Test Dynamic' % uses the `Data Type Duplicate` block
         };
     
         % ALLOW LIST: LOOKS LIKE ALLOW_LIST IS NOT IMPLEMENTED.
