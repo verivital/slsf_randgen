@@ -801,11 +801,11 @@ classdef simple_generator < handle
         
         
         function ret = draw_blocks(obj)
-            % Puts blocks in the newly created  empty model, starts
+            % Puts ("draws") blocks in the newly created  empty model. Then starts
             % configuring and constructing them.
             ret = true;
             
-            disp('DRAWING BLOCKS...');
+%             disp('DRAWING BLOCKS...');
             
             obj.slb = slblocks(obj.NUM_BLOCKS);
             
@@ -814,9 +814,6 @@ classdef simple_generator < handle
             x = obj.pos_x;
             y = obj.pos_y;
             
-%             disp('Candidate Blocks:');
-%             disp(obj.candi_blocks); % Doesn't work: only mentions that
-%             elements are cell
 
             while true
                 % block_name is a cell, where
@@ -1233,6 +1230,12 @@ classdef simple_generator < handle
             set_param(h, 'FunctionName', sfname)
         end
         
+        function introduce_new_blocks(obj, blk_type)
+            obj.NUM_BLOCKS = obj.NUM_BLOCKS + 1;
+            obj.candi_blocks{obj.NUM_BLOCKS} = {blk_type, false};
+            obj.slb.NUM_BLOCKS = obj.NUM_BLOCKS;
+        end
+        
         function bc_if(obj, h, blk_id)
             % Hook: Block construction for If subsytems
             fprintf('BC HOOK: IF SUBSYSTEM..... \n');
@@ -1240,11 +1243,14 @@ classdef simple_generator < handle
             
             obj.post_block_connection.add({'post_bc_if', {blk_id, num_output, obj.NUM_BLOCKS}});
             
-            obj.candi_blocks{obj.NUM_BLOCKS + 1} = {sprintf('simulink/Ports &\nSubsystems/If Action\nSubsystem'), false};
-            obj.candi_blocks{obj.NUM_BLOCKS + 2} = {sprintf('simulink/Ports &\nSubsystems/If Action\nSubsystem'), false};
+            obj.introduce_new_blocks(sprintf('simulink/Ports &\nSubsystems/If Action\nSubsystem'));
+            obj.introduce_new_blocks(sprintf('simulink/Ports &\nSubsystems/If Action\nSubsystem'));
             
-            obj.NUM_BLOCKS = obj.NUM_BLOCKS + num_output;
-            obj.slb.NUM_BLOCKS = obj.NUM_BLOCKS;
+%             obj.candi_blocks{obj.NUM_BLOCKS + 1} = {sprintf('simulink/Ports &\nSubsystems/If Action\nSubsystem'), false};
+%             obj.candi_blocks{obj.NUM_BLOCKS + 2} = {sprintf('simulink/Ports &\nSubsystems/If Action\nSubsystem'), false};
+            
+%             obj.NUM_BLOCKS = obj.NUM_BLOCKS + num_output;
+%             obj.slb.NUM_BLOCKS = obj.NUM_BLOCKS;
 
         end
         
@@ -1252,7 +1258,7 @@ classdef simple_generator < handle
             fprintf('Post-BlockConnection HOOK: IF SUBSYSTEM..... \n');
             % Hook: Pre-block-connection for If Subsystems. Connects output
             % ports of the IF block to Action ports of the If-Action
-            % subsystems. Both draws and connect slbnodes objects.
+            % subsystems. Both draws and connects slbnodes objects.
             
             id_if = data{1};
             num_outputs = data{2};

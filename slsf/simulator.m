@@ -475,8 +475,8 @@ classdef simulator < handle
         function ret = simulate(obj, slb, pre_analysis_only)
             % Returns true if simulation did not raise any error.
             
-            done = false;
-            ret = false;
+            done = false;  % Set to  true when we want to break from the "Fix Error" loop, i.e. the model does not contain error OR an error is not fixable.
+            ret = false; % A "fixer" tried to fix the model by making some changes.
             
             obj.fxd = slblockdocfixed.getInstance();
             
@@ -511,7 +511,7 @@ classdef simulator < handle
                     pause();
                 end
                 
-                found = false;
+                found = false; % Note: did not initialize DONE to false.
                 obj.generator.my_result.num_fe_attempts = obj.generator.my_result.num_fe_attempts + 1;
                 try
                     obj.sim();
@@ -733,7 +733,7 @@ classdef simulator < handle
         
         
         function [done, found] = fix_port_dimensions_mismatch(obj, e)
-            done = false;
+            done = true; % For only one case (combinatorial logic) we are doing something, otherwise the error is not fixable.
             found = false;
             
             for j = 1:numel(e.handles)
@@ -750,6 +750,7 @@ classdef simulator < handle
                     else
                         obj.fix_combinatorial_logic_block(handles);
                         found = true;
+                        done = false;
                     end
                 end
             end
