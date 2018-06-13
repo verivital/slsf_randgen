@@ -9,13 +9,8 @@ classdef analyze_complexity_cfg < handle
     properties
         bp_render;  % Which box plots to render
 
-        % sldemo_mdlref_counter_bus causing issues in getAlgebraicLoops
-%         examples = {'sldemo_mdlref_variants_enum', 'sldemo_mdlref_bus','sldemo_mdlref_conversion','sldemo_mdlref_counter_datamngt','sldemo_mdlref_dsm','sldemo_mdlref_dsm_bot','sldemo_mdlref_dsm_bot2','sldemo_mdlref_F2C','ex_algebraic_loop'};
-%         examples = {'sldemo_mdlref_variants_enum','sldemo_mdlref_bus','sldemo_mdlref_conversion','sldemo_mdlref_counter_bus','sldemo_mdlref_counter_datamngt','sldemo_mdlref_dsm','sldemo_mdlref_dsm_bot','sldemo_mdlref_dsm_bot2','sldemo_mdlref_F2C'};
-%         examples = {'aeroblk_HL20'};
         examples = {'sldemo_mdlref_variants_enum', 'sldemo_mdlref_bus','sldemo_mdlref_conversion','sldemo_mdlref_counter_datamngt'};
-%         examples = {'sldemo_mdlref_basic'};
-%         examples = {'untitled1'};
+
         github = {'aeroblk_self_cond_cntr'};
         
         github_complex = {};
@@ -59,8 +54,9 @@ classdef analyze_complexity_cfg < handle
             'realtime_pacer_example', 'dcIntrocomplete'}
         mc_rest = {'PDQuadrotor', 'GearSelect_Testrig', 'PV_MPPT', 'PV_model_Param', 'PV_module'}
         
-%         scripts_to_run = {};
-        scripts_to_run = {'InitializeCSTHDisturbedStdOp1', 'InitializeCSTHDisturbedStdOp2', 'install_3dscope', 'startup_DCT_Model', 'Machine_Parameters_new'};
+        % For some models to compile, we need to run some scripts
+        scripts_to_run = {};
+%         scripts_to_run = {'InitializeCSTHDisturbedStdOp1', 'InitializeCSTHDisturbedStdOp2', 'install_3dscope', 'startup_DCT_Model', 'Machine_Parameters_new'};
         
         mc_simple_lina = {'blink_challenge_sch', 'blink_challenge_sf', 'blink_led_sim', 'encoder_sim', 'motor_sim', 'servo_sim', 'stepper_sim', 'Driver_Speed_Test', 'LEGO_NXT_M1V4_Closed_Loop_DC_Motor_Position_Control', 'LEGO_NXT_M1V4_Motor_Step_Response', 'LEGO_NXT_M2V3_Closed_Loop_DC_Motor_Position_Control', 'LEGO_NXT_M2V3_Motor_Step_Response', 'LEGO_NXT_MSM_Closed_Loop_DC_Motor_Position_Control', 'LEGO_NXT_MSM_Motor_Step_Response', 'Maxon_M1V4_Motor_Step_Response', 'Maxon_M2V3_Motor_Step_Response', 'Maxon_MSM_Motor_Step_Response', 'MinSegMega_Demo_V2', 'MinSegNano_Demo', 'MinSegPro_Demo', 'MinSegShield_Demo_M1V4', 'MinSegShield_Demo_M1V4_UNO', 'MinSegShield_Demo_M1V5', 'MinSegShield_Demo_M2V3', 'PandO', 'mod_ref_root', 'myarduino_LCD_LED', 'myarduino_UART_basic', 'myarduino_blink', 'myarduino_blink2', 'myarduino_blink2_PIL', 'myarduino_blink2_leonardo', 'myarduino_blink_ExtMode_mega2560', 'myarduino_blink_double', 'myarduino_blink_double_leonardo', 'myarduino_blink_expander', 'myarduino_blink_micros_UART', 'myarduino_blink_sr04', 'myarduino_blink_sr04_LCD_printf', 'myarduino_blink_uart', 'myarduino_empty', 'myarduino_extint', 'myarduino_extint_test', 'myarduino_extint_test2', 'myarduino_extint_test_manageTimer', 'myarduino_hc04_test', 'myarduino_i2c_master', 'myarduino_i2c_slave', 'myarduino_performance_test', 'myarduino_servo', 'myarduino_stairs_uart', 'myarduino_uart_in', 'myarduino_varaible_blink', 'myarduino_varaible_blink_leonardo', 'realtime_pacer_example', 'encoder_slsp', 'encoder_slsp_mega', 'input_slsp', 'output_slsp', 'output_slsp_masked', 'aout_eml', 'din_eml', 'dio_eml', 'dout_eml', 'enc_eml', 'encaout_eml', 'aout_lct', 'din_lct', 'dio_lct', 'dout_lct', 'enc_lct', 'encaout_lct', 'analog_output_arduino_test', 'analog_output_raspi_test', 'digitalio_arduino_test', 'digitalio_raspi_test', 'digitalwrite_arduino_test', 'encoder_arduino_test', 'encoder_raspi_test', 'source_sink_test', 'arduinouno_gettingstarted', 'arduinouno_servocontrol_potentiometer', 'arduinouno_servocontrol_sweep', 'sys6', 's1eig', 'cs3', 's1a', 's1b', 's1c', 'smg', 's4eig', 's4stp', 's3a', 's3b', 's1c', 'Driver_Glider', 'PTB_GliderModel', 'Geneva_Drive_imported', 'Collision_01_Ball_Infinite_Plane', 'Geneva_Drive_imported', 'Collision_01_Ball_Infinite_Plane', 'Geneva_Drive_imported', 'Collision_01_Ball_Infinite_Plane', 'ASK', 'BPSK', 'OOK', 'cppll', 'dpll', 'dpll_fixpt', 'linearpll', 'BasicQuadRotor', 'Blade', 'CascadeControl_DCmotor', 'Motor_Param_Est', 'Simple_Blade', 'smc_mass_1d', 'fig2_18', 'fig2_19ax', 'fig2_19bx', 'fig8_08', 'fig8_10a', 'fig2_17', 'PMSM_speed', 'blink_challenge_sch', 'blink_challenge_sf', 'blink_led_sim', 'encoder_sim', 'motor_sim', 'servo_sim', 'stepper_sim', 'DC_Motor_Model', 'SVMph3', 'host_rx', 'DC_Motor_Fuzzy', 'logger', 'anndemo', 'Control_Design_PID', 'EmbeddedOpenLoop', 'Host_serial_final', 'Host_serial_final_MATLAB', 'EmbeddedClosedLoop_Ard', 'moveMotor', 'IMU_Serial_Example', 'myo_sfun_one_myo_imu', 'myo_sfun_one_myo_imu_emg'};
         mc_complex_lina = {'blink_challenge_sim', 'MICROGRID_PV_Wind', 'Solar_MPPT_Resistaince_load', 'power_HEV_powertrain', 'IEEE_9bus_new_o', 'arduinouno_drive_closedloop', 'arduinouno_drive_openloop', 'anfismicrogrid', 'simple_svpwm', 'BLDC_speed_control', 'mpptir9', 'fuzzytriangular15', 's1', 's2', 's2eig', 's3', 's3eig', 's3g', 's3geig', 's4', 's5', 's1', 's2', 's3', 's4', 's2', 's4', 's2', 's3', 's1', 's5a', 's5b', 's6', 's1', 's3', 's3eig', 's4', 's5', 's1', 's2', 's4', 's5', 's1o', 's2c', 's2o', 's3', 'BatteryChargeControl', 'direct_torque_control', 'BEV', 'ConventionalVehicle', 'PTB_BatteryElectricVehicle', 'PTB_ConventionalModel', 'Cam_Follower', 'Belts_01_Two_Belts', 'Geneva_Drive', 'Collision_02_Disk_Finite_Plane_Fixed', 'Collision_03_Disk_Finite_Plane_Spin', 'Collision_04_Disks_in_Box', 'Collision_05_Disk_in_Ring', 'Collision_06_Catapult', 'Collision_07_Ball_Finite_Plane_Float', 'Collision_08_Compare_Forces', 'Friction_01_Box_on_Ramp_Constraint', 'Friction_02_Box_on_Ramp', 'Friction_03_Double_Pendulum_Constraint', 'Friction_04_Disk_Rolling_on_Ramp', 'Friction_05_Beam_on_Wheel', 'Friction_06_Disk_on_Disk', 'Friction_07_Floating_Disks', 'Friction_08_Disks_and_Ring', 'Friction_09_Ring_on_Disk_Float', 'Friction_10_Ball_on_Wheel', 'Spinning_Boxes', 'Gripper_2Belts', 'Robot_2_Whl', 'Coll3D_01_Ball_Plane_Fixed', 'Coll3D_02_Ball_Plane_Spin', 'Coll3D_03_Balls_in_Box', 'Coll3D_04_Ball_in_Tube_Fixed', 'Coll3D_05_Ball_Peg_Board', 'Coll3D_06_Ball_in_Ball', 'Coll3D_07_Balls_and_Sliding_Tube', 'Coll3D_08_Ball_in_Spinning_Cone', 'Frict3D_01_Box_on_Table', 'Frict3D_02_Ball_on_Table', 'Frict3D_03_Board_on_Balls', 'Frict3D_04_Ball_on_Ball', 'Frict3D_05_Tube_on_Balls', 'Frict3D_06_Ball_on_Balls', 'Frict3D_07_Ball_in_Ball', 'Cam_Follower', 'Belts_01_Two_Belts', 'Geneva_Drive', 'Collision_02_Disk_Finite_Plane_Fixed', 'Collision_03_Disk_Finite_Plane_Spin', 'Collision_04_Disks_in_Box', 'Collision_05_Disk_in_Ring', 'Collision_06_Catapult', 'Collision_07_Ball_Finite_Plane_Float', 'Collision_08_Compare_Forces', 'Friction_01_Box_on_Ramp_Constraint', 'Friction_02_Box_on_Ramp', 'Friction_03_Double_Pendulum_Constraint', 'Friction_04_Disk_Rolling_on_Ramp', 'Friction_05_Beam_on_Wheel', 'Friction_06_Disk_on_Disk', 'Friction_07_Floating_Disks', 'Friction_08_Disks_and_Ring', 'Friction_09_Ring_on_Disk_Float', 'Friction_10_Ball_on_Wheel', 'Spinning_Boxes', 'Gripper_2Belts', 'Robot_2_Whl', 'Coll3D_01_Ball_Plane_Fixed', 'Coll3D_02_Ball_Plane_Spin', 'Coll3D_03_Balls_in_Box', 'Coll3D_04_Ball_in_Tube_Fixed', 'Coll3D_05_Ball_Peg_Board', 'Coll3D_06_Ball_in_Ball', 'Coll3D_07_Balls_and_Sliding_Tube', 'Coll3D_08_Ball_in_Spinning_Cone', 'Frict3D_01_Box_on_Table', 'Frict3D_02_Ball_on_Table', 'Frict3D_03_Board_on_Balls', 'Frict3D_04_Ball_on_Ball', 'Frict3D_05_Tube_on_Balls', 'Frict3D_06_Ball_on_Balls', 'Frict3D_07_Ball_in_Ball', 'Cam_Follower', 'Belts_01_Two_Belts', 'Geneva_Drive', 'Collision_02_Disk_Finite_Plane_Fixed', 'Collision_03_Disk_Finite_Plane_Spin', 'Collision_04_Disks_in_Box', 'Collision_05_Disk_in_Ring', 'Collision_06_Catapult', 'Collision_07_Ball_Finite_Plane_Float', 'Collision_08_Compare_Forces', 'Friction_01_Box_on_Ramp_Constraint', 'Friction_02_Box_on_Ramp', 'Friction_03_Double_Pendulum_Constraint', 'Friction_04_Disk_Rolling_on_Ramp', 'Friction_05_Beam_on_Wheel', 'Friction_06_Disk_on_Disk', 'Friction_07_Floating_Disks', 'Friction_08_Disks_and_Ring', 'Friction_09_Ring_on_Disk_Float', 'Friction_10_Ball_on_Wheel', 'Spinning_Boxes', 'Gripper_2Belts', 'Robot_2_Whl', 'Coll3D_01_Ball_Plane_Fixed', 'Coll3D_02_Ball_Plane_Spin', 'Coll3D_03_Balls_in_Box', 'Coll3D_04_Ball_in_Tube_Fixed', 'Coll3D_05_Ball_Peg_Board', 'Coll3D_06_Ball_in_Ball', 'Coll3D_07_Balls_and_Sliding_Tube', 'Coll3D_08_Ball_in_Spinning_Cone', 'Frict3D_01_Box_on_Table', 'Frict3D_02_Ball_on_Table', 'Frict3D_03_Board_on_Balls', 'Frict3D_04_Ball_on_Ball', 'Frict3D_05_Tube_on_Balls', 'Frict3D_06_Ball_on_Balls', 'Frict3D_07_Ball_in_Ball', 'FSK', 'QPSK', 'PV15kw', 'PMSM_DRIVES_SIMULATION', 'powerpll', 'DFIG_Basics', 'QUADROTOR', 'Quadrotor_Controller', 'inverter_SVM4', 'microgridwithMICukdc_dcby_indraneel_saki', 'Battery_Charging_Discharding_model', 'MLIunequalDCsources', 'quadrotorsim', 'hybridPV_FUELCELL', 'microgridwithmicrturbine', 'microgridwithwind', 'Buck_Boost', 'blink_challenge_sim', 'c28027pmsmfoc', 'c28027pmsmfoc_ert', 'SAPF', 'MPPT_charger_V2', 'SPWMinverter3P_Final', 'BLDC_PI', 'boostr', 'Tariq', 'simple_wind_turbine_pmsg', 'nxtway_gs', 'nxtway_gs_controller_fixpt', 'nxtway_gs_vr', 'pndo', 'finalmodel15_10', 'se_filter', 'myo_sfun_one_myo_imu_visualization', 'myo_sfun_two_myo_imu', 'Simulink_serial_example', 'IEEE80211a', 'IEEE80211a_NoSF', 'IEEE80211a', 'boostspi'};
@@ -86,6 +82,9 @@ classdef analyze_complexity_cfg < handle
         end
         
         function obj = populate(obj)
+            % Lists which models we want to analyze, in various groups.
+            
+            % Tutorial Models
             examples_a = {'sldemo_fuelsys', 'sldemo_auto_climatecontrol', 'sldemo_autotrans', 'sldemo_auto_carelec', 'sldemo_suspn', 'sldemo_auto_climate_elec',...
                 'sldemo_absbrake', 'sldemo_enginewc', 'sldemo_engine', 'sldemo_fuelsys_dd', 'sldemo_clutch', 'sldemo_clutch_if'};
             examples_b = {'aero_guidance', 'sldemo_radar_eml', 'aero_atc', 'slexAircraftPitchControlExample', 'aero_six_dof', 'aero_dap3dof',...
@@ -95,12 +94,8 @@ classdef analyze_complexity_cfg < handle
                 'asbGravWPrec', 'aeroblk_calibrated', 'aeroblk_self_cond_cntr',};
             examples_e = {'sldemo_mdlref_variants_enum', 'sldemo_mdlref_bus','sldemo_mdlref_conversion','sldemo_mdlref_counter_datamngt','sldemo_mdlref_dsm','sldemo_mdlref_dsm_bot','sldemo_mdlref_dsm_bot2','sldemo_mdlref_F2C'};
 
-%             obj.examples = {'HEV_SeriesParallel'};
+%             obj.examples = {'sldemo_mdlref_variants_enum', 'sldemo_mdlref_bus','sldemo_mdlref_conversion','sldemo_mdlref_counter_datamngt'};
             obj.examples = [examples_a, examples_b, examples_c, examples_d, examples_e];
-%             obj.examples = [ {'ess_adapt_cs'}, examples_e];
-%             obj.examples = {'sldemo_fuelsys',  'sldemo_engine'};  
-
-
             
             % Research
             
@@ -116,7 +111,7 @@ classdef analyze_complexity_cfg < handle
             
 %             obj.research = research_e;
             
-            % GitHub
+            % Temporary groups for simple and advanced category
             
             gh_a = {'AC_Quadcopter_Simulation', 'PC_Quadcopter_Simulation', 'Team37_Quadcopter_Simulation'};
             gh_b = {'GasTurbine_Dyn_Template', 'Plant_GasTurbine', 'GasTurbine_SS_Template', 'JT9D_Model_Dyn', 'JT9D_Model_SS', 'JT9D_SS_Cantera_Template', ...
@@ -124,13 +119,9 @@ classdef analyze_complexity_cfg < handle
             gh_c = {'fourBar', 'hackrf_simple_tx_demo', 'hackrf_spectrum_scope_demo', 'HEV', 'motorcontroller'};
             gh_d = { 'ATWS',  'DCMotor',  'DEVICE1',  'LQR',  'OCA_2_Prop',  'OCA_SUB',  'OCA_SUB_modified',  'Orientation',  'PID',  'PR9',  'QTM2SI',  'Transmitter',  'XC',  'aa',  'analogicalgates',  'bianpinx1',  'danxiangjiangya',  'danxiangtiaoya',  'demostration09',  'demostration1',  'enginecontroller',  'feedforward1',  'feedforward2',  'jieyue',  'measurement',  'modello',  'nibian',  'pdcontrol',  'picpicpic',  'pidmodel',  'powercontroller',  'prog2',  'proj',  'quadtestmodel',  'rasberry',  'rester',  'robotjointmodel',  'shengyazhanbo',  'simone',  'simulation',  'test',  'testmodel',  'transmissioncontroller',  'u2pwm',  'untitled1_slx',  'vehiclecontroller',  'zh2fsk',  'zhengliu',  'Ackermann',  'Arrays1',  'Arrays2',  'Arrays3_0',  'Arrays3_1',  'Counter_with_prop',  'CruiseControl3',  'Early1',  'Events1',  'Events2',  'Events3',  'Events3Out',  'Events4',  'Events5',  'Events6',  'Events7',  'Flowchart1',  'Flowchart10',  'Flowchart2',  'Flowchart3',  'Flowchart4',  'Flowchart5',  'Flowchart6',  'Flowchart7',  'Flowchart8',  'Flowchart9',  'GraphFun1',  'Hierarchy1',  'Hierarchy2',  'Hierarchy3',  'Hierarchy4',  'History1',  'Iek1',  'Iek2',  'Inner1',  'Inner2',  'Inner3',  'Inner4',  'Junctions1',  'Junctions2',  'Junctions3',  'Junctions4',  'Junctions5',  'Junctions6',  'Junctions7',  'Junctions8',  'Junctions9',  'Loops1',  'Loops10',  'Loops2',  'Loops3',  'Loops4',  'Loops5',  'Loops6',  'Loops7',  'Loops8',  'Loops9',  'Nonterm1',  'On1',  'Outer1',  'Parallel1',  'Parallel2',  'Parallel3',  'Parallel4',  'Parallel5',  'ROSACE_VA_control',  'ROSACE_VA_control_simu',  'SetReset',  'SetResetOut',  'SetResetWait',  'SetResetWaitOut',  'SfSecurity',  'Single1',  'Stopwatch1',  'Stopwatch2',  'Subsys1',  'Super1',  'Super10',  'Super11',  'Super12',  'Super13',  'Super2',  'Super2Out',  'Super3',  'Super4',  'Super5',  'Super6',  'Super7',  'Super8',  'Super9',  'Temporal1',  'Twochart1'  };
 
-
-%             obj.github = gh_d; %g1
-%             obj.github_complex = [gh_a, gh_b, gh_c]; %g2
-
-
             obj.simple = [obj.mc_simple, obj.mc_simple_lina3, gh_d, obj.mc_simple_lina, obj.sf_simpe];
             obj.complex = [obj.mc_complex_lina3, obj.mc_complex_e, obj.mc_rest, obj.mc_complex, gh_a, gh_b, gh_c, obj.mc_complex_lina, obj.sf_complex];
+            
         end
     end
     

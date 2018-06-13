@@ -2,6 +2,18 @@ classdef analyze_complexity < handle
     % Model Metrics Analyzer
     % Analyzes Simulink models to retrive and report various metrics.
     
+    % To begin experiments call the static `go` method as: 
+    % analyze_complexity.go()
+    % From a MATLAB command prompt.
+    
+    % See the `go` method and modify as needed.
+    % You must specify the directories to search for the models
+    % in the `go` method.
+    
+    % Also see the `start` method which starts analyses/experiments for a
+    % single group. This method shows how to assign a model to a particular
+    % group, using the analyze_complexity_cfg class.
+    
     properties(Constant = true)
         % Excel File Columns (Currently unused)
         MODEL_NAME = 1;
@@ -14,7 +26,8 @@ classdef analyze_complexity < handle
         
         BP_LIBCOUNT_GROUPLEN = 7;  % length of group for Metric 9
         BP_ALL_EXPERIMENTS_GROUPLEN = 2;  % length of group for those boxplots which have all experiments inside them
-        % Different classes of simulink models (i.e. different experiment types)
+        
+        % Identifier for different model groups
         EXP_EXAMPLES = 't';   % Examples and demos that come with Simulink 
         EXP_GITHUB = 'g1';
         EXP_GITHUB_COMPLEX = 'g2'
@@ -354,7 +367,19 @@ classdef analyze_complexity < handle
         end
         
         function start(obj, exptype)
-            % Process a single model group `exptype`
+            % Process a single model group
+            % The group is specified using the `exptype` argument.
+            
+            % We put all the models in  the group in the `examples`
+            % property (see code below)
+            % And then call analyze_all_models_from_a_class to begin the
+            % experiments.
+            
+            % the `cfg` property is an object of class
+            % `analyze_complexity_cfg`. This class defines which models
+            % belongs to which group. Change this file as required.
+            
+            
             obj.exp_pointer = obj.exp_pointer + 1;
             obj.exp_names.add(exptype);
             obj.exptype = exptype;
@@ -530,6 +555,8 @@ classdef analyze_complexity < handle
         end
            
         function analyze_all_models_from_a_class(obj)
+            % Analyzes all models under a single group
+            
             fprintf('=================== Analyzing %s =====================\n', obj.exptype);
             
             obj.data = cell(1, 7);
@@ -1322,6 +1349,7 @@ classdef analyze_complexity < handle
         end
     end
     
+    
     methods(Static)
         
         function ac = go()
@@ -1338,10 +1366,9 @@ classdef analyze_complexity < handle
             % located
             
             addpath(genpath([base_dir filesep 'academic_models']));
-%             addpath([base_dir filesep 'matalb_central_models']);
-%             addpath(genpath([base_dir filesep 'sourceforge']));
             
             addpath('')
+            
             disp('--- Complexity Analysis --');
             ac = analyze_complexity();
             
