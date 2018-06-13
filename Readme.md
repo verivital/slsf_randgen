@@ -1,6 +1,10 @@
+# SLforge: Automatically Finding Bugs in a Commercial Cyber-Physical Systems Development Tool
+
+Welcome to the SLforge project! Check out our [homepage](https://github.com/verivital/slsf_randgen/wiki) for latest news, running the tools and to contribute.
+
 # CyFuzz: A Differential Testing Framework for Cyber-Physical Systems Development Environments
 
-Welcome to the CyFuzz project! Check out our [homepage](https://github.com/verivital/slsf_randgen/wiki) for latest news, running the tools and to contribute.
+SLforge is developed extending CyFuzz's code base, which is still availale in the `cyfuzz-experiments` branch.
 
 ## Acknowledgement
 

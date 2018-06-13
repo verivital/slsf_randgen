@@ -12,6 +12,8 @@ classdef boxplotmanager < handle
         calc_stats = false;
         all_data;   % For collecting status explicitly
         my_title; % Will be populated when calling draw();
+        is_y_log = true; % log scale for Y axis
+        add_eps = true;
     end
     
     methods
@@ -29,7 +31,12 @@ classdef boxplotmanager < handle
         end
         
         function add(obj, d, g)
-            obj.data(obj.index, 1) = d;
+            if obj.add_eps
+                obj.data(obj.index, 1) = d + eps;
+            else
+                obj.data(obj.index, 1) = d;
+            end
+%             obj.data(obj.index, 1) = d;
             
             if numel(g) < obj.group_len
                 g = pad(g, obj.group_len);
@@ -89,7 +96,10 @@ classdef boxplotmanager < handle
                 xlabel(x_label);
             end
             ylabel(y_label);
-            set(gca, 'YScale', 'log');
+            
+            if obj.is_y_log
+                set(gca, 'YScale', 'log');
+            end
         end
         
         function get_stat(obj)
@@ -97,7 +107,7 @@ classdef boxplotmanager < handle
             for i=1:obj.all_data.len_keys()
                 k = obj.all_data.key(i);
                 d = obj.all_data.get(k);
-                d = cell2mat(d.data);
+                d = cell2mat(d.get_cell());
 %                 fprintf('\t\t %s | \t\t Min: %.2f | \t\t Max: %.2f | \t\t Med: %.2f \n',k, min(d), max(d), median(d));
                 
                 if util.starts_with(obj.my_title, 'Compile Time')

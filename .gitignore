@@ -3,6 +3,7 @@ backup/*
 *.out
 *~
 *.mexa64
+*.mexw64
 randgen.c
 dhakacity.c
 randgen

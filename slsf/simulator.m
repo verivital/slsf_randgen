@@ -1239,7 +1239,7 @@ classdef simulator < handle
 
         function ret = get_connected_components(slb)
             
-            fprintf('Inside gcc\n');
+%             fprintf('Inside gcc\n');
             
             ret = mycell();
             
