@@ -1,6 +1,6 @@
 classdef analyze_complexity < handle
-    %ANALYZE_COMPLEXITY Summary of this class goes here
-    %   Detailed explanation goes here
+    % Model Metrics Analyzer
+    % Analyzes Simulink models to retrive and report various metrics.
     
     properties(Constant = true)
         % Excel File Columns (Currently unused)
@@ -1323,47 +1323,44 @@ classdef analyze_complexity < handle
     end
     
     methods(Static)
+        
         function ac = go()
-            % Entry point to run ALL analysis
+            % Entry point to run ALL analysis. Call this static method to
+            % begin analyzing models.
+            
+            % Change below as required
+            
+            % Assumes models are under this directory, relative to this
+            % script's location
             base_dir = 'publicmodels';
+            
+            % Add subdirectories under `base_dir` where models are
+            % located
+            
             addpath(genpath([base_dir filesep 'academic_models']));
-            addpath(genpath([base_dir filesep 'gh']));
-            addpath([base_dir filesep 'github_slx_files']);
 %             addpath([base_dir filesep 'matalb_central_models']);
-            addpath(genpath([base_dir filesep 'shafiulmc']));
-            addpath(genpath([base_dir filesep 'ARCH']));
-            addpath(genpath([base_dir filesep 'mclina1']));
-            addpath(genpath([base_dir filesep 'mclina2']));
-            addpath(genpath([base_dir filesep 'mclina3']));
-            addpath(genpath([base_dir filesep 'sourceforge']));
+%             addpath(genpath([base_dir filesep 'sourceforge']));
             
             addpath('')
             disp('--- Complexity Analysis --');
             ac = analyze_complexity();
             
-            % Call as many experiments you want to run
+            % We classify the models in different groups to analyze them
+            % separately.
+            
+            % Analyze as many groups as you wish.
+            
             ac.start(analyze_complexity.EXP_EXAMPLES);
-            ac.start(analyze_complexity.EXP_SIMPLE);
-            ac.start(analyze_complexity.EXP_COMPLEX);
-            ac.start(analyze_complexity.EXP_RESEARCH);
-            
-%             ac.start(analyze_complexity.EXP_CYFUZZ);
-%             ac.start(analyze_complexity.EXP_CYFUZZ_OLD);
-            
-            %%%% OLD EXPERIMENTS %%%
-            
-%             ac.start(analyze_complexity.EXP_GITHUB);
-%             ac.start(analyze_complexity.EXP_GITHUB_COMPLEX);
-%             ac.start(analyze_complexity.EXP_MATLAB_CENTRAL);
-
+%             ac.start(analyze_complexity.EXP_SIMPLE);
+%             ac.start(analyze_complexity.EXP_COMPLEX);
+%             ac.start(analyze_complexity.EXP_RESEARCH);
                         
-            % Get results for all experiments
-            
+            % Get and display results for all experiments
             ac.get_metric_for_all_experiments(); 
-            ac.do_corr_analysis();
             
-%             fprintf('Special Github models');
-%             ac.github_special.print_all([]);
+            % Do correlation analysis
+            ac.do_corr_analysis();
+
         end
     end
 end
