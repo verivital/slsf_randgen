@@ -351,33 +351,6 @@ classdef analyze_complexity_cfg < handle
         end
         
         
-        function parse_github_repos()
-            gh_data_file = 'github_data';
-            load(gh_data_file);
-            global github_repos;
-            
-            target_dir = ['publicmodels' filesep 'gms' filesep];
-            
-            num_reps = 0;
-            
-            for i=1:numel(github_repos)
-                
-                c = github_repos{i};
-                
-                if isempty(c)
-                    continue;
-                end
-                
-                c = strip(c);
-                
-                num_reps = num_reps + 1;
-                
-                repo_parts = strsplit(c, '/');
-                
-                system(['git clone ' c ' ' target_dir repo_parts{end}])
-            end
-        end
-        
         function print_models_for_excel()
             acc = analyze_complexity_cfg();
             cat = sort(acc.examples);
