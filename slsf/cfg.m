@@ -10,7 +10,7 @@ classdef cfg
         
         NUM_TESTS = 200;                                % Number of random models to generate (and use in differntial testing)
         
-        NUM_BLOCKS = [100 300];
+        NUM_BLOCKS = [30 300];
         
         COMPARE_SIM_RESULTS = false;         % Compare simulation results obtained by logging signals ("Compare" phases),
         
