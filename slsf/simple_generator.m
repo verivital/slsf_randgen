@@ -236,7 +236,7 @@ classdef simple_generator < handle
         end
         
         function obj  = configure_model(obj)
-            set_param(obj.sys, 'BooleanDataType', 'off'); % If this optimization is kept on, boolean values will not be treated as doubles. see "Implement logic signals as Boolean data (vs. double)"
+%             set_param(obj.sys, 'BooleanDataType', 'off'); % If this optimization is kept on, boolean values will not be treated as doubles. see "Implement logic signals as Boolean data (vs. double)"
         end
         
         function obj = init(obj)

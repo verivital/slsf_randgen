@@ -1,1 +1,0 @@
-We will store matlab crashes in this directory.
