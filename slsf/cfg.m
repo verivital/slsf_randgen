@@ -8,7 +8,7 @@ classdef cfg
         
         % Frequently-used options
         
-        NUM_TESTS = 200;                                % Number of random models to generate (and use in differntial testing)
+        NUM_TESTS = 300;                                % Number of random models to generate (and use in differntial testing)
         
         NUM_BLOCKS = [30 300];
         
@@ -87,6 +87,7 @@ classdef cfg
     
         SL_BLOCKS_BLACKLIST = {
             'simulink/Sources/From File'
+            'simulink/Sources/Signal Editor'
             'simulink/Sources/FromWorkspace'
             'simulink/Sources/EnumeratedConstant'
             'simulink/Sources/FromSpreadsheet'
