@@ -8,9 +8,9 @@ classdef cfg
         
         % Frequently-used options
                 
-        NUM_TESTS = 4;                                % Number of random models to generate (and use in differntial testing)
+        NUM_TESTS = 300;                                % Number of random models to generate (and use in differntial testing)
         
-        NUM_BLOCKS = [30 50];
+        NUM_BLOCKS = [30 300];
         
         COMPARE_SIM_RESULTS = false;         % Compare simulation results obtained by logging signals ("Compare" phases),
         
@@ -87,6 +87,7 @@ classdef cfg
     
         SL_BLOCKS_BLACKLIST = {
             'simulink/Sources/From File'
+            'simulink/Sources/Signal Editor'
             'simulink/Sources/FromWorkspace'
             'simulink/Sources/EnumeratedConstant'
             'simulink/Sources/FromSpreadsheet'
