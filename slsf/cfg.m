@@ -7,10 +7,10 @@ classdef cfg
     properties(Constant = true)
         
         % Frequently-used options
+                
+        NUM_TESTS = 4;                                % Number of random models to generate (and use in differntial testing)
         
-        NUM_TESTS = 200;                                % Number of random models to generate (and use in differntial testing)
-        
-        NUM_BLOCKS = [30 300];
+        NUM_BLOCKS = [30 50];
         
         COMPARE_SIM_RESULTS = false;         % Compare simulation results obtained by logging signals ("Compare" phases),
         
@@ -32,7 +32,7 @@ classdef cfg
 %          generating model will use this particular model for further
 %          phases of CyFuzz
 
-        LOAD_RNG_STATE = true;                  % Set this `true` if we want to create NEW models each time the script is run. Set to `false` if generating same models at each run of the script is desired. For first time running in a new computer set to false, as this will fail first time if set to true.
+        LOAD_RNG_STATE = false;                  % Set this `true` if we want to create NEW models each time the script is run. Set to `false` if generating same models at each run of the script is desired. For first time running in a new computer set to false, as this will fail first time if set to true.
 
         SKIP_IF_LAST_CRASHED = false;            % Skip one model if last time Matlab crashed trying to run the same model.
         
