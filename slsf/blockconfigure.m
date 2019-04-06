@@ -35,16 +35,23 @@ classdef blockconfigure < handle
         
         function obj = populate_data(obj)
             d = struct();
+            
             %   simulink/Math Operations/Add
             t = {
                 bcprops('Inputs', char(['+' '-']), 2, 'r')
             };
             d.(util.mvn('simulink/Math Operations/Add')) = t;
             
+            %   simulink/Math Operations/Sqrt
+            t = {
+                bcprops('AlgorithmType', {'Newton-Raphson'}, [], 'e');
+            };
+        
+            d.(util.mvn('simulink/Math Operations/Reciprocal Sqrt')) = t;
             
             % simulink/Sources/Constant
             t = {
-                bcprops('Value', char('0':'9'), 4, 'r')
+                bcprops('Value', char('0':'9'), 8, 'r')
             };
             d.(util.mvn('simulink/Sources/Constant')) = t;
             
@@ -81,7 +88,7 @@ classdef blockconfigure < handle
             
             % simulink/Continuous/VariableTime Delay
             t = {
-                bcprops('InitialOutput', char('1':'3'), 1, 'r'),...
+                bcprops('InitialOutput', char('1':'9'), 8, 'r'),...
                 bcprops('ZeroDelay', {'on'}, [], 'e')
             };
             d.(util.mvn('simulink/Continuous/VariableTime Delay')) = t;
@@ -89,7 +96,7 @@ classdef blockconfigure < handle
             
             % simulink/Continuous/TransportDelay
             t = {
-                bcprops('InitialOutput', char('1':'3'), 1, 'r')
+                bcprops('InitialOutput', char('1':'9'), 8, 'r')
             };
             d.(util.mvn('simulink/Continuous/TransportDelay')) = t;
             
@@ -97,7 +104,7 @@ classdef blockconfigure < handle
             
             % simulink/Continuous/VariableTransportDelay
             t = {
-                bcprops('InitialOutput', char('1':'4'), 1, 'r'),...
+                bcprops('InitialOutput', char('1':'9'), 8, 'r'),...
                 bcprops('ZeroDelay', {'on'}, [], 'e')
             };
             d.(util.mvn('simulink/Continuous/VariableTransportDelay')) = t;

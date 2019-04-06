@@ -8,9 +8,9 @@ classdef cfg
         
         % Frequently-used options
                 
-        NUM_TESTS = 50;                                % Number of random models to generate (and use in differntial testing)
+        NUM_TESTS = 300;                                % Number of random models to generate (and use in differntial testing)
         
-        NUM_BLOCKS = [30 150];
+        NUM_BLOCKS = [30 200];
         
         COMPARE_SIM_RESULTS = false;         % Compare simulation results obtained by logging signals ("Compare" phases),
         
@@ -45,8 +45,8 @@ classdef cfg
         GENERATE_TYPESMART_MODELS = false;      % Will create models that respects data-type compatibility between blocks.
         ELIMINATE_FEEDBACK_LOOPS = true;
         
-        CHILD_MODEL_NUM_BLOCKS = [20 30];
-        SUBSYSTEM_NUM_BLOCKS = [20 30];
+        CHILD_MODEL_NUM_BLOCKS = [5 15];
+        SUBSYSTEM_NUM_BLOCKS = [5 15];
         IF_ACTION_SUBSYS_NUM_BLOCKS = [5 15];
         
         MAX_HIERARCHY_LEVELS =3;               % Minimum value is 1 indicating a flat model with no hierarchy.
@@ -79,7 +79,8 @@ classdef cfg
 %             struct('name', 'Logic and Bit Operations', 'is_blk', false,  'num', 0.2)
             struct('name', 'Sinks', 'is_blk', false, 'num', 0.2)
             struct('name', 'Sources', 'is_blk', false, 'num', 0.2)
-           struct('name', 'simulink/Ports & Subsystems/If', 'is_blk', true, 'num', 0.05)
+            struct('name', 'simulink/Ports & Subsystems/Subsystem', 'is_blk', true, 'num', 0.05)
+%            struct('name', 'simulink/Ports & Subsystems/If', 'is_blk', true, 'num', 0.05)
          %   struct('name', 'simulink/Ports & Subsystems/Model', 'is_blk', true, 'num', 0.05)
         };
     
@@ -107,6 +108,7 @@ classdef cfg
             'simulink/Math Operations/Vector Concatenate' % Outputs 2d signal
             'simulink/Math Operations/Real-Imag To Complex' % Outputs complex signal
             'simulink/Math Operations/Magnitude-Angle To Complex' % Outputs complex signal
+            'simulink/Math Operations/Signed Sqrt' % data type prop - float only
             'simulink/Logic and Bit Operations/Interval Test Dynamic' % uses the `Data Type Duplicate` block
         };
     
