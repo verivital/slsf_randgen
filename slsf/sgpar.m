@@ -187,7 +187,7 @@ function sgpar()
     end
 
     cfg.print_warnings();
-    fprintf('------ BYE from SGPAR. Report saved in reportsneo/%s directory. -------\n', nowtime_str);
+    fprintf('------ BYE from SGPAR. Report saved in reportsneo/%s directory.\n Call sgpreport to see reports. -------\n', nowtime_str);
 end
 
 function save_sole_results(SOLE_MODEL_REPORT, sr, sole_result, num_blocks) %#ok<INUSD>

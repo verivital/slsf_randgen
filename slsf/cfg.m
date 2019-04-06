@@ -8,9 +8,9 @@ classdef cfg
         
         % Frequently-used options
                 
-        NUM_TESTS = 300;                                % Number of random models to generate (and use in differntial testing)
+        NUM_TESTS = 50;                                % Number of random models to generate (and use in differntial testing)
         
-        NUM_BLOCKS = [30 300];
+        NUM_BLOCKS = [30 150];
         
         COMPARE_SIM_RESULTS = false;         % Compare simulation results obtained by logging signals ("Compare" phases),
         
@@ -73,13 +73,13 @@ classdef cfg
         % library, set `is_blk` false. Set true for blocks.
         
         SL_BLOCKLIBS = {
-           struct('name', 'Discrete', 'is_blk', false, 'num', 0.4)
+           struct('name', 'Discrete', 'is_blk', false, 'num', 0.30)
 %             struct('name', 'Continuous', 'is_blk', false,  'num', 0.2)
-%              struct('name', 'Math Operations', 'is_blk', false,  'num', 0.03)
+             struct('name', 'Math Operations', 'is_blk', false,  'num', 0.25)
 %             struct('name', 'Logic and Bit Operations', 'is_blk', false,  'num', 0.2)
             struct('name', 'Sinks', 'is_blk', false, 'num', 0.2)
             struct('name', 'Sources', 'is_blk', false, 'num', 0.2)
-           struct('name', 'simulink/Ports & Subsystems/If', 'is_blk', true, 'num', 0.10)
+           struct('name', 'simulink/Ports & Subsystems/If', 'is_blk', true, 'num', 0.05)
          %   struct('name', 'simulink/Ports & Subsystems/Model', 'is_blk', true, 'num', 0.05)
         };
     
@@ -106,6 +106,7 @@ classdef cfg
             'simulink/Math Operations/Matrix Concatenate' % Outputs 2d signal
             'simulink/Math Operations/Vector Concatenate' % Outputs 2d signal
             'simulink/Math Operations/Real-Imag To Complex' % Outputs complex signal
+            'simulink/Math Operations/Magnitude-Angle To Complex' % Outputs complex signal
             'simulink/Logic and Bit Operations/Interval Test Dynamic' % uses the `Data Type Duplicate` block
         };
     
