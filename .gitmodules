@@ -1,3 +1,6 @@
 [submodule "3rdparty/logging4matlab"]
 	path = 3rdparty/logging4matlab
 	url = https://github.com/shafiul/logging4matlab.git
+[submodule "3rdparty/emi"]
+	path = 3rdparty/emi
+	url = https://github.com/CyEMI/slsf_randgen.git
