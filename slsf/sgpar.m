@@ -130,14 +130,16 @@ function sgpar()
               getReport(e)
             util.cond_save_model(true, model_name, OTHER_ERR_MODEL_STORAGE, sg.my_result);
 
-            if cfg.STOP_IF_OTHER_ERROR                
-                if util.cell_str_in(cfg.CONTINUE_ERRORS_LIST, e.identifier)
-                    fprintf('Continuing SGTEST script, although an "other error" occured. This is specified in cfg.m file.\n');
-                else
-                    disp('Stopping: STOP_IF_OTHER_ERROR=True. WARNING: This will not be saved in reports.');
-                    error('Other error');
-                end
-            end
+%             if cfg.STOP_IF_OTHER_ERROR                
+%                 if util.cell_str_in(cfg.CONTINUE_ERRORS_LIST, e.identifier)
+%                     fprintf('Continuing SGTEST script, although an "other error" occured. This is specified in cfg.m file.\n');
+%                 else
+%                     disp('Stopping: STOP_IF_OTHER_ERROR=True. WARNING: This will not be saved in reports.');
+%                     error('Other error');
+%                 end
+%             end
+
+            sr.is_slforge_crash = true;
 
             if cfg.CLOSE_MODEL
                 sg.close();

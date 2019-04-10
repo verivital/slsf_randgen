@@ -1208,7 +1208,19 @@ classdef simple_generator < handle
                 if cfg.PRINT_BLOCK_CONFIG
                     disp(['Configuring ', i{1}.p()]);
                 end
-                set_param(h, i{1}.p(), i{1}.get());
+                
+                try
+                    pm_val = i{1}.get();
+                    set_param(h, i{1}.p(), pm_val);
+                catch e
+                    throw( ...
+                        MException('RandGen:SL:BlockConfigBySetParam',...
+                            sprintf('setparam failed for %s. key: %s; value: %s',...
+                                blk_type, i{1}.p(), pm_val ...
+                            )...
+                        )...
+                    );
+                end
             end           
             
         end

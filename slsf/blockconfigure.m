@@ -36,22 +36,60 @@ classdef blockconfigure < handle
         function obj = populate_data(obj)
             d = struct();
             
-            %   simulink/Math Operations/Add
+            %%%%%%%%%%%%%% Math Ops %%%%%%%%%%%%%%
+            
+            %   Add
             t = {
                 bcprops('Inputs', char(['+' '-']), 2, 'r')
             };
             d.(util.mvn('simulink/Math Operations/Add')) = t;
             
+            %   Gain
+            t = {
+                bcprops('Gain', [], [], 'n')
+            };
+            d.(util.mvn('simulink/Math Operations/Gain')) = t;
+            
+            %   Math Function
+            t = {
+                bcprops('Operator', {'exp', 'log', '10^u' , 'log10' ,...
+                        'magnitude^2', 'square' , 'pow' , 'conj' ,...
+                        'reciprocal' , 'hypot' , 'rem' , 'mod' ,...
+                        'transpose' , 'hermitian'}, [], 'e')
+            };
+            d.(util.mvn('simulink/Math Operations/Math Function')) = t;
+                        
+            %   Divide
+            t = {
+                bcprops('Inputs', char(['*' '/']), 2, 'r')
+            };
+            d.(util.mvn('simulink/Math Operations/Divide')) = t;
+            
+            %   Min Max
+            t = {
+                bcprops('Function', {'min', 'max'}, [], 'e')
+                bcprops('Inputs', char('1': '3'), 1, 'r')
+            };
+            d.(util.mvn('simulink/Math Operations/MinMax')) = t;
+            
             %   simulink/Math Operations/Sqrt
             t = {
                 bcprops('AlgorithmType', {'Newton-Raphson'}, [], 'e');
             };
-        
             d.(util.mvn('simulink/Math Operations/Reciprocal Sqrt')) = t;
+            
+            % Bias
+            
+            t = {
+                bcprops('Bias', [], [], 'n');
+            };
+            d.(util.mvn('simulink/Math Operations/Bias')) = t;
+            
+            %%%%%%%%%%%%%% Sources %%%%%%%%%%%%%%
             
             % simulink/Sources/Constant
             t = {
-                bcprops('Value', char('0':'9'), 8, 'r')
+                bcprops('Value', [], [], 'n')
             };
             d.(util.mvn('simulink/Sources/Constant')) = t;
             

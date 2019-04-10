@@ -9,6 +9,7 @@ classdef savedresult < handle
         is_successful;
         num_fe_attempts = 0;
         solvers_used;
+        is_slforge_crash = false;
         
     end
     

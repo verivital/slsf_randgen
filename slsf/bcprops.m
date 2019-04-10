@@ -6,7 +6,7 @@ classdef bcprops < handle
         chars;      % Allowed Characters
         len;        % How many random characters we need in a string
         len_chars;
-        kind;       % Type e.g. Enum vs. random chars etc.
+        kind;       % Type e.g. Enum (e)/ random chars (r) / number (n)
         
         param_name; % Name of the parameter
     end
@@ -29,6 +29,9 @@ classdef bcprops < handle
                 case {'r'}
                     i = ceil(obj.len_chars * rand(1, obj.len));
                     ret = obj.chars(i);
+                case {'n'}
+                    % uniformly distributed fro -10E8 to 10E8
+                    ret = sprintf('%.6f', -10e8 + (2*10e8) * rand(1,1));
                 case {'e'}
                     ret = obj.chars{util.rand_int(1, obj.len_chars, 1)};
                 case {'m'}

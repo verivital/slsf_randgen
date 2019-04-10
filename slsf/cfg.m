@@ -8,9 +8,9 @@ classdef cfg
         
         % Frequently-used options
                 
-        NUM_TESTS = 300;                                % Number of random models to generate (and use in differntial testing)
+        NUM_TESTS = 100;                                % Number of random models to generate (and use in differntial testing)1
         
-        NUM_BLOCKS = [30 200];
+        NUM_BLOCKS = [30 100];
         
         COMPARE_SIM_RESULTS = false;         % Compare simulation results obtained by logging signals ("Compare" phases),
         
@@ -36,7 +36,7 @@ classdef cfg
 
         SKIP_IF_LAST_CRASHED = false;            % Skip one model if last time Matlab crashed trying to run the same model.
         
-        STOP_IF_OTHER_ERROR = false;             % Stop the script for errors not related to simulation e.g. unhandled exceptions or code bug. ALWAYS KEEP IT TRUE to detect my own bugs.
+        STOP_IF_OTHER_ERROR = true;             % Stop the script for errors not related to simulation e.g. unhandled exceptions or code bug. ALWAYS KEEP IT TRUE to detect my own bugs.
 
         CLOSE_OK_MODELS = true;                % Close "OK" models (refer to CyPhy paper)
         
@@ -78,7 +78,8 @@ classdef cfg
              struct('name', 'Math Operations', 'is_blk', false,  'num', 0.25)
 %             struct('name', 'Logic and Bit Operations', 'is_blk', false,  'num', 0.2)
             struct('name', 'Sinks', 'is_blk', false, 'num', 0.2)
-            struct('name', 'Sources', 'is_blk', false, 'num', 0.2)
+            struct('name', 'Sources', 'is_blk', false, 'num', 0.1)
+            struct('name', 'simulink/Sources/Constant', 'is_blk', true, 'num', 0.1)
             struct('name', 'simulink/Ports & Subsystems/Subsystem', 'is_blk', true, 'num', 0.05)
 %            struct('name', 'simulink/Ports & Subsystems/If', 'is_blk', true, 'num', 0.05)
          %   struct('name', 'simulink/Ports & Subsystems/Model', 'is_blk', true, 'num', 0.05)

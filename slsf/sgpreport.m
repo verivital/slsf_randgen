@@ -43,17 +43,28 @@ function sgp_result = sgpreport(report_loc, aggregate)
     
     errors = srs(~oks);
     exceptions = [errors.errors];
-
-    exc_ids = {exceptions.identifier};
     
     l.info('Is Successful?');
     tabulate(oks);
     
-    l.info('Is Error After Normal Simulation?');
-    tabulate([srs.is_err_after_normal_sim]);
+    errs_after_norm = [srs.is_err_after_normal_sim];
+    if any(errs_after_norm)
+        l.info('Is Error After Normal Simulation?');
+        tabulate(errs_after_norm);
+    end
     
-    l.info('Exceptions:');
-    tabulate(exc_ids);
+    
+    if ~isempty(exceptions) 
+        l.info('Exceptions:');
+        exc_ids = {exceptions.identifier};
+        tabulate(exc_ids);
+    end
+    
+    n_exp = size(sgp_result, 1);
+    
+    if length(oks) ~= n_exp
+        l.error('Possible crashes during %d experiments -- data unavailable', n_exp-length(oks) );
+    end
 
     % Write in disc
 %     save(emi.cfg.RESULT_FILE, 'emi_result', 'stats_table');
