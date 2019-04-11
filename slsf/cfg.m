@@ -8,7 +8,7 @@ classdef cfg
         
         % Frequently-used options
                 
-        NUM_TESTS = 100;                                % Number of random models to generate (and use in differntial testing)1
+        NUM_TESTS = 600;                                % Number of random models to generate (and use in differntial testing)1
         
         NUM_BLOCKS = [30 100];
         

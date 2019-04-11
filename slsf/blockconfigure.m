@@ -54,14 +54,14 @@ classdef blockconfigure < handle
             t = {
                 bcprops('Operator', {'exp', 'log', '10^u' , 'log10' ,...
                         'magnitude^2', 'square' , 'pow' , 'conj' ,...
-                        'reciprocal' , 'hypot' , 'rem' , 'mod' ,...
+                         'hypot' , 'rem' , 'mod' ,...
                         'transpose' , 'hermitian'}, [], 'e')
             };
             d.(util.mvn('simulink/Math Operations/Math Function')) = t;
                         
             %   Divide
             t = {
-                bcprops('Inputs', char(['*' '/']), 2, 'r')
+                bcprops('Inputs', char(['*' '*']), 2, 'r')
             };
             d.(util.mvn('simulink/Math Operations/Divide')) = t;
             
