@@ -73,14 +73,14 @@ classdef cfg
         % library, set `is_blk` false. Set true for blocks.
         
         SL_BLOCKLIBS = {
-           struct('name', 'Discrete', 'is_blk', false, 'num', 0.30)
+           struct('name', 'Discrete', 'is_blk', false, 'num', 0.20)
 %             struct('name', 'Continuous', 'is_blk', false,  'num', 0.2)
-             struct('name', 'Math Operations', 'is_blk', false,  'num', 0.25)
+             struct('name', 'Math Operations', 'is_blk', false,  'num', 0.30)
 %             struct('name', 'Logic and Bit Operations', 'is_blk', false,  'num', 0.2)
             struct('name', 'Sinks', 'is_blk', false, 'num', 0.2)
             struct('name', 'Sources', 'is_blk', false, 'num', 0.1)
             struct('name', 'simulink/Sources/Constant', 'is_blk', true, 'num', 0.1)
-            struct('name', 'simulink/Ports & Subsystems/Subsystem', 'is_blk', true, 'num', 0.05)
+            struct('name', 'simulink/Ports & Subsystems/Subsystem', 'is_blk', true, 'num', 0.1)
 %            struct('name', 'simulink/Ports & Subsystems/If', 'is_blk', true, 'num', 0.05)
          %   struct('name', 'simulink/Ports & Subsystems/Model', 'is_blk', true, 'num', 0.05)
         };

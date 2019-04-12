@@ -14,8 +14,13 @@ classdef bcprops < handle
     methods
         
         function obj = bcprops(param_name, chars, len, kind)
-            % CONSTRUCTOR %
-            % Values of kind: r, e
+            % CONSTRUCTOR % Randomly choose block parameters
+            % `param_name` the block parameter we want to configure.
+            % Values of kind: 
+            %r randomly choose `len` characters from `chars`
+            %e
+            %n Numeric - uniformly chosen random number. `chars`, if
+            %present, denotes range.
             obj.param_name = param_name;
             obj.chars = chars;
             obj.len = len;
@@ -31,7 +36,12 @@ classdef bcprops < handle
                     ret = obj.chars(i);
                 case {'n'}
                     % uniformly distributed fro -10E8 to 10E8
-                    ret = sprintf('%.6f', -10e8 + (2*10e8) * rand(1,1));
+                    if isempty(obj.chars)
+                        lr = [-10e8, 10e8];
+                    else
+                        lr = obj.chars;
+                    end
+                    ret = sprintf('%.6f', lr(1) + (lr(2) - lr(1)) * rand(1,1));
                 case {'e'}
                     ret = obj.chars{util.rand_int(1, obj.len_chars, 1)};
                 case {'m'}

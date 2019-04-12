@@ -87,19 +87,33 @@ classdef blockconfigure < handle
             
             %%%%%%%%%%%%%% Sources %%%%%%%%%%%%%%
             
-            % simulink/Sources/Constant
             t = {
                 bcprops('Value', [], [], 'n')
             };
             d.(util.mvn('simulink/Sources/Constant')) = t;
             
             
-            % simulink/Sources/Step
+            t = {
+                bcprops('Cov', [1, 10e9], [], 'n')
+                bcprops('seed', [1, 10e9], [], 'n')
+            };
+            d.(util.mvn('simulink/Sources/Band-LimitedWhite Noise')) = t;
+            
+            
+            t = {
+                bcprops('f1', [], [], 'n')
+                bcprops('T', [], [], 'n')
+                bcprops('f2', [], [], 'n')
+            };
+            d.(util.mvn('simulink/Sources/Chirp Signal')) = t;
+            
             t = {
                 bcprops('After', char('1':'9'), 2, 'r')
             };
             d.(util.mvn('simulink/Sources/Step')) = t;
             
+            
+             %%%%%%%%%%%%%% Sinks %%%%%%%%%%%%%%
             
             % simulink/Sinks/To Workspace
             t = {
