@@ -113,6 +113,93 @@ classdef blockconfigure < handle
             d.(util.mvn('simulink/Sources/Step')) = t;
             
             
+            t = {
+                bcprops('NumBits', [1, 60], [], 'n', @floor);
+            };
+            d.(util.mvn('simulink/Sources/CounterFree-Running')) = t;
+            
+            
+            t = {
+                bcprops('uplimit', [1, 1000], [], 'n', @floor);
+            };
+            d.(util.mvn('simulink/Sources/CounterLimited')) = t;
+            
+            t = {
+                bcprops('uplimit', [1, 1000], [], 'n', @floor);
+            };
+            d.(util.mvn('simulink/Sources/CounterLimited')) = t;
+            
+            t = {
+                bcprops('Amplitude', [], [], 'n');
+                bcprops('Period', [1, 10e7], [], 'n');
+                bcprops('PhaseDelay', [1, 1000], [], 'n', @floor);
+            };
+            d.(util.mvn('simulink/Sources/PulseGenerator')) = t;
+            
+            t = {
+                bcprops('slope', [-10e3, 10e3], [], 'n');
+                bcprops('start', [1, 50], [], 'n');
+                bcprops('InitialOutput', [-10e5, 10e5], [], 'n');
+            };
+            d.(util.mvn('simulink/Sources/Ramp')) = t;
+            
+            t = {
+                bcprops('Mean', [-10e4, 10e4], [], 'n');
+                bcprops('Variance', [-10e4, 10e4], [], 'n');
+                bcprops('Seed', [1, 10e8], [], 'n', @floor);
+            };
+            d.(util.mvn('simulink/Sources/RandomNumber')) = t;
+            
+            
+            t = {
+                bcprops('rep_seq_y', [], 2, 'n'); % 1X2 vector
+            };
+            d.(util.mvn('simulink/Sources/RepeatingSequence')) = t;
+            
+            t = {
+                bcprops('OutValues', [], 5, 'n'); % 1X5 vector
+                bcprops('LookUpMeth', {'Interpolation-Use End Values',...
+                                        'Use Input Nearest',...
+                                        'Use Input Below',  ...
+                                        'Use Input Above'}, [], 'e'); 
+            };
+            d.(util.mvn('simulink/Sources/RepeatingSequenceInterpolated')) = t;
+            
+            t = {
+                bcprops('OutValues', [], 2, 'n'); % 1X5 vector
+            };
+            d.(util.mvn('simulink/Sources/RepeatingSequenceStair')) = t;
+            
+            t = {
+                bcprops('Amplitude', [], [], 'n'); 
+                bcprops('Frequency', [], [], 'n'); 
+                bcprops('WaveForm', {'sine', 'square', 'sawtooth', 'random',...
+                                    }, [], 'e');
+                bcprops('Units', { 'rad/sec' , 'Hertz',...
+                                    }, [], 'e');
+            };
+            d.(util.mvn('simulink/Sources/SignalGenerator')) = t;
+            
+            t = {
+                bcprops('Amplitude', [], [], 'n'); 
+                bcprops('Bias', [], [], 'n'); 
+            };
+            d.(util.mvn('simulink/Sources/Sine Wave')) = t;
+            
+            t = {
+                bcprops('Time', [1, 50], [], 'n', @floor); 
+                bcprops('Before', [], [], 'n'); 
+                bcprops('After', [], [], 'n'); 
+            };
+            d.(util.mvn('simulink/Sources/Step')) = t;
+            
+            t = {
+                bcprops('Minimum', [-10e9, 0], [], 'n'); 
+                bcprops('Maximum', [0, 10e9], [], 'n'); 
+                bcprops('Seed', [1,1e8], [], 'n', @floor); 
+            };
+            d.(util.mvn('simulink/Sources/Uniform RandomNumber')) = t;
+            
              %%%%%%%%%%%%%% Sinks %%%%%%%%%%%%%%
             
             % simulink/Sinks/To Workspace

@@ -9,11 +9,15 @@ classdef bcprops < handle
         kind;       % Type e.g. Enum (e)/ random chars (r) / number (n)
         
         param_name; % Name of the parameter
+        
+        % A function to apply on the generated value before creating
+        % string. Currently only supported for `n` kind
+        fn;          
     end
     
     methods
         
-        function obj = bcprops(param_name, chars, len, kind)
+        function obj = bcprops(param_name, chars, len, kind, fn)
             % CONSTRUCTOR % Randomly choose block parameters
             % `param_name` the block parameter we want to configure.
             % Values of kind: 
@@ -21,6 +25,13 @@ classdef bcprops < handle
             %e
             %n Numeric - uniformly chosen random number. `chars`, if
             %present, denotes range.
+            
+            if nargin < 5
+                fn = [];
+            end
+            
+            obj.fn = fn;
+            
             obj.param_name = param_name;
             obj.chars = chars;
             obj.len = len;
@@ -41,7 +52,23 @@ classdef bcprops < handle
                     else
                         lr = obj.chars;
                     end
-                    ret = sprintf('%.6f', lr(1) + (lr(2) - lr(1)) * rand(1,1));
+                    
+                    if isempty(obj.len)
+                        obj.len = 1;
+                    end
+                    
+                    ret = lr(1) + (lr(2) - lr(1)) * rand(1,obj.len);
+                    
+                    if ~isempty(obj.fn)
+                        ret = obj.fn(ret);
+                    end
+                    
+                    ret = arrayfun(...
+                            @(p)sprintf('%.6f', p) , ...
+                            ret, 'UniformOutput', false ...
+                    );
+                
+                    ret = sprintf('[%s]', strjoin(ret, ', '));
                 case {'e'}
                     ret = obj.chars{util.rand_int(1, obj.len_chars, 1)};
                 case {'m'}
