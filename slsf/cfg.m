@@ -8,7 +8,7 @@ classdef cfg
         
         % Frequently-used options
                 
-        NUM_TESTS = 50;                                % Number of random models to generate (and use in differntial testing)1
+        NUM_TESTS = 1000;                                % Number of random models to generate (and use in differntial testing)1
         
         NUM_BLOCKS = [30 100];
         
@@ -49,7 +49,7 @@ classdef cfg
         SUBSYSTEM_NUM_BLOCKS = [5 15];
         IF_ACTION_SUBSYS_NUM_BLOCKS = [5 15];
         
-        MAX_HIERARCHY_LEVELS =3;               % Minimum value is 1 indicating a flat model with no hierarchy.
+        MAX_HIERARCHY_LEVELS =5;               % Minimum value is 1 indicating a flat model with no hierarchy.
 
         SAVE_ALL_ERR_MODELS = true;             % Save the models which we can not simulate 
         LOG_ERR_MODEL_NAMES = true;             % Log error model names keyed by their errors
@@ -73,15 +73,15 @@ classdef cfg
         % library, set `is_blk` false. Set true for blocks.
         
         SL_BLOCKLIBS = {
-           struct('name', 'Discrete', 'is_blk', false, 'num', 0.20)
+           struct('name', 'Discrete', 'is_blk', false, 'num', 0.14)
 %             struct('name', 'Continuous', 'is_blk', false,  'num', 0.2)
-             struct('name', 'Math Operations', 'is_blk', false,  'num', 0.30)
+             struct('name', 'Math Operations', 'is_blk', false,  'num', 0.23)
 %             struct('name', 'Logic and Bit Operations', 'is_blk', false,  'num', 0.2)
-            struct('name', 'Sinks', 'is_blk', false, 'num', 0.2)
-            struct('name', 'Sources', 'is_blk', false, 'num', 0.1)
-            struct('name', 'simulink/Sources/Constant', 'is_blk', true, 'num', 0.1)
-            struct('name', 'simulink/Ports & Subsystems/Subsystem', 'is_blk', true, 'num', 0.1)
-%            struct('name', 'simulink/Ports & Subsystems/If', 'is_blk', true, 'num', 0.05)
+            struct('name', 'Sinks', 'is_blk', false, 'num', 0.17)
+            struct('name', 'Sources', 'is_blk', false, 'num', 0.12)
+            struct('name', 'simulink/Sources/Constant', 'is_blk', true, 'num', 0.06)
+            struct('name', 'simulink/Ports & Subsystems/Subsystem', 'is_blk', true, 'num', 0.24)
+           struct('name', 'simulink/Ports & Subsystems/If', 'is_blk', true, 'num', 0.04)
          %   struct('name', 'simulink/Ports & Subsystems/Model', 'is_blk', true, 'num', 0.05)
         };
     
