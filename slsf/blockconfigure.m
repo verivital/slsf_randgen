@@ -108,7 +108,7 @@ classdef blockconfigure < handle
             
             t = {
                 bcprops('f1', [], [], 'n')
-                bcprops('T', [], [], 'n') % lastchk
+                bcprops('T', [], [], 'n') 
                 bcprops('f2', [], [], 'n')
             };
             d.(util.mvn('simulink/Sources/Chirp Signal')) = t;
@@ -138,7 +138,7 @@ classdef blockconfigure < handle
             t = {
                 bcprops('Amplitude', [], [], 'n');
                 bcprops('Period', [1, 10e7], [], 'n');
-                bcprops('PhaseDelay', [1, 10], [], 'n', @floor); % lastchk
+                bcprops('PhaseDelay', [1, 10], [], 'n', @floor); 
             };
             d.(util.mvn('simulink/Sources/PulseGenerator')) = t;
             
@@ -152,7 +152,7 @@ classdef blockconfigure < handle
             t = {
                 bcprops('Mean', [-10e4, 10e4], [], 'n');
                 bcprops('Variance', [0, 10e4], [], 'n');
-                bcprops('Seed', [1, 10e8], [], 'n', @floor); % lastchk
+                bcprops('Seed', [1, 10e8], [], 'n', @floor); 
             };
             d.(util.mvn('simulink/Sources/RandomNumber')) = t;
             
@@ -188,7 +188,7 @@ classdef blockconfigure < handle
             
             t = {
                 bcprops('Amplitude', [], [], 'n'); 
-                bcprops('Bias', [], [], 'n'); % lastchk
+                bcprops('Bias', [], [], 'n'); 
             };
             d.(util.mvn('simulink/Sources/Sine Wave')) = t;
             
