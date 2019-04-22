@@ -36,6 +36,11 @@ classdef blockconfigure < handle
         function obj = populate_data(obj)
             d = struct();
             
+            t = {
+                bcprops('IfExpression', {'u1 >= 0'}, [], 'e')
+            };
+            d.(util.mvn('simulink/Ports & Subsystems/If')) = t;
+            
             %%%%%%%%%%%%%% Math Ops %%%%%%%%%%%%%%
             
             %   Add
@@ -89,20 +94,21 @@ classdef blockconfigure < handle
             
             t = {
                 bcprops('Value', [], [], 'n')
+                bcprops('SampleTime', {'1'}, [], 'e')
             };
             d.(util.mvn('simulink/Sources/Constant')) = t;
             
             
             t = {
                 bcprops('Cov', [1, 10e9], [], 'n')
-                bcprops('seed', [1, 10e9], [], 'n')
+                bcprops('seed', [1, 10e9], [], 'n', @floor)
             };
             d.(util.mvn('simulink/Sources/Band-LimitedWhite Noise')) = t;
             
             
             t = {
                 bcprops('f1', [], [], 'n')
-                bcprops('T', [], [], 'n')
+                bcprops('T', [], [], 'n') % lastchk
                 bcprops('f2', [], [], 'n')
             };
             d.(util.mvn('simulink/Sources/Chirp Signal')) = t;
@@ -132,7 +138,7 @@ classdef blockconfigure < handle
             t = {
                 bcprops('Amplitude', [], [], 'n');
                 bcprops('Period', [1, 10e7], [], 'n');
-                bcprops('PhaseDelay', [1, 1000], [], 'n', @floor);
+                bcprops('PhaseDelay', [1, 10], [], 'n', @floor); % lastchk
             };
             d.(util.mvn('simulink/Sources/PulseGenerator')) = t;
             
@@ -145,8 +151,8 @@ classdef blockconfigure < handle
             
             t = {
                 bcprops('Mean', [-10e4, 10e4], [], 'n');
-                bcprops('Variance', [-10e4, 10e4], [], 'n');
-                bcprops('Seed', [1, 10e8], [], 'n', @floor);
+                bcprops('Variance', [0, 10e4], [], 'n');
+                bcprops('Seed', [1, 10e8], [], 'n', @floor); % lastchk
             };
             d.(util.mvn('simulink/Sources/RandomNumber')) = t;
             
@@ -172,17 +178,17 @@ classdef blockconfigure < handle
             
             t = {
                 bcprops('Amplitude', [], [], 'n'); 
-                bcprops('Frequency', [], [], 'n'); 
+%                 bcprops('Frequency', [1, 10e8], [], 'n'); % causing timeouts
                 bcprops('WaveForm', {'sine', 'square', 'sawtooth', 'random',...
                                     }, [], 'e');
                 bcprops('Units', { 'rad/sec' , 'Hertz',...
-                                    }, [], 'e');
+                                    }, [], 'e'); 
             };
             d.(util.mvn('simulink/Sources/SignalGenerator')) = t;
             
             t = {
                 bcprops('Amplitude', [], [], 'n'); 
-                bcprops('Bias', [], [], 'n'); 
+                bcprops('Bias', [], [], 'n'); % lastchk
             };
             d.(util.mvn('simulink/Sources/Sine Wave')) = t;
             

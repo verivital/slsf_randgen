@@ -29,7 +29,7 @@ classdef subsystem_block_chooser < blockchooser
 %                     
 %                     new_cats_num = new_cats_num + 1;
 %                     new_cats{new_cats_num} = new_s;
-                    obj.source_proportion = c.num/3;
+                    obj.source_proportion = c.num/1.0;
                 elseif strcmpi(c.name, 'Sinks') 
                     % Don't add any sink -- most of them are blacklisted
                     obj.sink_proportion = c.num/3;

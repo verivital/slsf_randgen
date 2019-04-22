@@ -630,7 +630,7 @@ classdef simulator < handle
                         case {'Simulink:DataType:PropForwardDataTypeError', 'Simulink:blocks:DiscreteFirHomogeneousDataType', 'Simulink:blocks:SumBlockOutputDataTypeIsBool'}
                             [done, found] = obj.fix_data_type_mismatch(e, 'both');
 %                             found = true;
-                        case {'Simulink:DataType:PropBackwardDataTypeError'}
+                        case {'Simulink:DataType:PropBackwardDataTypeError', 'Simulink:blocks:ProductViolateInheritanceRule'}
                             [done, found] = obj.fix_data_type_mismatch(e, 'both');
 %                             found = true;
                         case {'SimulinkFixedPoint:util:fxpBitOpUnsupportedFloatType'}
