@@ -20,6 +20,9 @@ classdef cfg
         STOP_IF_DTC_ERROR = false; % Data type conversion from typesmart analysis
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+        SOLVER_TYPE = 'Fixed-step';
+%        SOLVER_TYPE = 'Variable-step';
         
         CSMITH_CREATE_C = false;                % Whether to call Csmith to create C files. Set to False if reproducing previous experiment.
         

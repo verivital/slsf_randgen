@@ -179,7 +179,7 @@ classdef blockconfigure < handle
             t = {
                 bcprops('Amplitude', [], [], 'n'); 
 %                 bcprops('Frequency', [1, 10e8], [], 'n'); % causing timeouts
-                bcprops('WaveForm', {'sine', 'square', 'sawtooth', 'random',...
+                bcprops('WaveForm', {'sine', 'square', 'sawtooth',... % random not supported in Acc mode
                                     }, [], 'e');
                 bcprops('Units', { 'rad/sec' , 'Hertz',...
                                     }, [], 'e'); 
